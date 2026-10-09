@@ -161,7 +161,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun toggleAudioGun(enable: Boolean) {
         _isAudioGunEnabled.value = enable
         if (enable) {
-            audioGunDetector = AudioGunDetector {
+            audioGunDetector = AudioGunDetector(context = getApplication()) {
                 if (!_isTimerRunning.value) {
                     startTimer()
                 }

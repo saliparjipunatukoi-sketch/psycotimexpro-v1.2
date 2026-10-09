@@ -2,8 +2,10 @@
 /**
  * Psyco Time X Pro - Training Management Central Database & Subscription Helper
  * Lokasi: htdocs/training-management/api/db.php
- * Menyediakan pengurusan data SQLite/JSON fail automatik tanpa konfigurasi rumit.
+ * Menyokong kedua-dua MySQL (PDO) dan Fallback JSON automatik tanpa ralat.
  */
+
+require_once __DIR__ . '/config.php';
 
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS, PUT, DELETE');
@@ -66,6 +68,25 @@ $SUBSCRIPTION_PLANS = [
     ]
 ];
 
+// Helper PDO Connection
+function getDbConnection() {
+    static $pdo = null;
+    if ($pdo !== null) return $pdo;
+
+    try {
+        $dsn = "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";port=" . DB_PORT . ";charset=" . DB_CHARSET;
+        $options = [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES => false,
+        ];
+        $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
+        return $pdo;
+    } catch (Exception $e) {
+        return null; // Return null if MySQL offline/unconfigured
+    }
+}
+
 function readJsonFile($filePath) {
     if (!file_exists($filePath)) {
         return [];
@@ -79,7 +100,7 @@ function writeJsonFile($filePath, $data) {
     file_put_contents($filePath, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
 }
 
-// Inisialisasi User Default (Superadmin) jika fail kosong
+// Inisialisasi User Default jika fail kosong
 if (!file_exists($usersFile) || count(readJsonFile($usersFile)) === 0) {
     $now = time();
     $initialUsers = [
@@ -87,9 +108,9 @@ if (!file_exists($usersFile) || count(readJsonFile($usersFile)) === 0) {
             'id' => 'USR-001',
             'name' => 'Coach Salipar Jipun',
             'email' => 'saliparjipun.atukoi@gmail.com',
-            'password' => 'admin123', // Boleh ditukar di settings
+            'password' => 'admin123',
             'role' => 'superadmin',
-            'phone' => '60123456789',
+            'phone' => '601112345678',
             'club_name' => 'Psyco Track & Field Elite Malaysia',
             'plan' => 'unlimited',
             'plan_name' => 'Superadmin Unlimited',
@@ -107,7 +128,7 @@ if (!file_exists($usersFile) || count(readJsonFile($usersFile)) === 0) {
             'email' => 'coach.demo@gmail.com',
             'password' => 'demo123',
             'role' => 'coach',
-            'phone' => '60111222334',
+            'phone' => '60123456789',
             'club_name' => 'Kelab Olahraga Gemilang',
             'plan' => 'trial',
             'plan_name' => 'Percubaan Percuma 7 Hari',
