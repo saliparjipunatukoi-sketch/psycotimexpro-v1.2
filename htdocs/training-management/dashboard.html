@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Jurulatih & Admin | Psyco Time X Pro Training Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Teko:wght@500;700&family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        track: '#0A0F1D',
+                        trackDark: '#050811',
+                        surface: '#111827',
+                        surfaceLight: '#1F2937',
+                        cyanAccent: '#06B6D4',
+                        orangeLaser: '#F97316',
+                        speedAmber: '#FBBF24',
+                        finishRed: '#EF4444',
+                        successGreen: '#10B981'
+                    },
+                    fontFamily: {
+                        teko: ['Teko', 'sans-serif'],
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-track text-gray-100 font-sans antialiased min-h-screen flex flex-col">
+
+    <!-- TOP HEADER -->
+    <header class="bg-trackDark border-b border-gray-800 sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <a href="index.html" class="flex items-center space-x-2 text-white hover:text-cyanAccent transition">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    <span class="font-teko text-2xl font-bold uppercase tracking-wider">PSYCO TIME X PRO</span>
+                </a>
+                <span class="text-xs bg-cyanAccent/10 text-cyanAccent px-2.5 py-0.5 rounded-full border border-cyanAccent/20 font-semibold hidden sm:inline">
+                    Server Sync Active
+                </span>
+            </div>
+
+            <!-- Current User Badge -->
+            <div class="flex items-center space-x-4">
+                <a href="index.html#download-apk" class="px-3 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500 hover:text-black border border-emerald-500 text-emerald-400 font-extrabold text-xs transition flex items-center gap-1.5">
+                    <i class="fa-brands fa-android text-sm"></i>
+                    <span>Download APK</span>
+                </a>
+                <div class="text-right hidden sm:block">
+                    <p id="userDisplayName" class="text-xs font-bold text-white">Coach Salipar Jipun</p>
+                    <p id="userRoleBadge" class="text-[10px] text-orangeLaser font-semibold">SUPERADMIN (saliparjipun.atukoi@gmail.com)</p>
+                </div>
+                <div class="w-9 h-9 rounded-full bg-cyanAccent/20 border border-cyanAccent flex items-center justify-center text-cyanAccent font-bold text-sm">
+                    <i class="fa-solid fa-user-shield"></i>
+                </div>
+                <button onclick="logout()" class="p-2 text-gray-400 hover:text-white" title="Log Keluar">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN DASHBOARD CONTENT -->
+    <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full space-y-8">
+
+        <!-- STATUS LANGGANAN & MAKLUMAT KELAB BANNER -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- Card 1: Pelan Langganan & Tarikh Luput -->
+            <div class="p-6 rounded-3xl bg-surface border border-gray-800 flex flex-col justify-between relative overflow-hidden">
+                <div class="space-y-2">
+                    <div class="flex justify-between items-start">
+                        <span class="text-xs font-bold text-gray-400 uppercase tracking-widest">STATUS LANGGANAN APK</span>
+                        <span id="planBadge" class="px-3 py-1 rounded-full text-xs font-extrabold bg-orangeLaser/20 text-orangeLaser border border-orangeLaser/40">
+                            Pakej Unlimited
+                        </span>
+                    </div>
+                    <h2 id="planTitle" class="font-teko text-3xl font-bold text-white uppercase">Akses Penuh Jurulatih</h2>
+                    <p class="text-xs text-gray-400">
+                        Tarikh Tamat / Luput: <strong id="planExpiry" class="text-cyanAccent font-mono">2027-10-09</strong>
+                    </p>
+                    <p class="text-xs text-gray-400">
+                        Baki Tempoh: <strong id="planDaysLeft" class="text-successGreen">365 Hari</strong>
+                    </p>
+                </div>
+                
+                <div class="pt-4 border-t border-gray-800 mt-4 flex items-center justify-between">
+                    <span class="text-xs text-gray-400">Perlukan kuota atlit lebih?</span>
+                    <button onclick="openUpgradeModal()" class="px-3 py-1.5 rounded-lg bg-orangeLaser hover:bg-orange-500 text-black font-extrabold text-xs transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-arrow-up-right-dots"></i> Upgrade Pelan
+                    </button>
+                </div>
+            </div>
+
+            <!-- Card 2: Had Kuota Atlit & Rekod Terkini -->
+            <div class="p-6 rounded-3xl bg-surface border border-gray-800 flex flex-col justify-between">
+                <div class="space-y-2">
+                    <span class="text-xs font-bold text-gray-400 uppercase tracking-widest">KUOTA ATLIT SISTEM</span>
+                    <div class="flex items-baseline space-x-2">
+                        <span id="athletesCount" class="font-teko text-5xl font-bold text-white">3</span>
+                        <span id="athletesMax" class="text-sm font-semibold text-gray-400">/ 25 Atlit Dibenarkan</span>
+                    </div>
+                    <div class="w-full bg-trackDark rounded-full h-2.5 overflow-hidden">
+                        <div id="athletesProgressBar" class="bg-cyanAccent h-2.5 rounded-full" style="width: 12%"></div>
+                    </div>
+                    <p class="text-[11px] text-gray-400">
+                        Pakej RM30 (25 Atlit), RM40 (35 Atlit), RM50 (50 Atlit).
+                    </p>
+                </div>
+
+                <div class="pt-4 border-t border-gray-800 mt-4 flex items-center justify-between text-xs">
+                    <span class="text-gray-400">Rekod Masa Race:</span>
+                    <strong id="racesCount" class="text-yellow-400 font-mono text-sm">1 Larian</strong>
+                </div>
+            </div>
+
+            <!-- Card 3: Pautan Pantas & Mobile Pairing Cam 2 -->
+            <div class="p-6 rounded-3xl bg-gradient-to-br from-surface to-trackDark border border-cyanAccent/30 flex flex-col justify-between space-y-4">
+                <div>
+                    <div class="flex items-center space-x-2 text-cyanAccent text-xs font-bold uppercase tracking-wider mb-2">
+                        <i class="fa-solid fa-qrcode text-base"></i>
+                        <span>PAUTAN FINISHER CAM 2</span>
+                    </div>
+                    <p class="text-xs text-gray-300 leading-relaxed">
+                        Buka pautan gerbang Cam 2 di telefon kedua atau laptop untuk menerima bacaan penamat Torso secara langsung.
+                    </p>
+                </div>
+
+                <div class="flex flex-col gap-2">
+                    <a href="cam2.html" class="w-full py-2.5 rounded-xl bg-cyanAccent/10 hover:bg-cyanAccent hover:text-black border border-cyanAccent text-cyanAccent font-bold text-xs text-center transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-camera"></i> Buka Web Finisher Cam 2
+                    </a>
+                    <button onclick="triggerSyncRefresh()" class="w-full py-2 rounded-xl bg-surfaceLight hover:bg-gray-700 text-gray-300 font-semibold text-xs border border-gray-700 transition flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-arrows-rotate text-cyanAccent"></i> Kemaskini Data Server
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- TABS NAV: ATLIT BERDAFTAR, REKOD RACE, & PENGURUSAN ADMIN -->
+        <div class="space-y-6">
+            <div class="flex border-b border-gray-800 space-x-8 text-sm font-bold">
+                <button onclick="switchTab('athletes')" id="tabBtnAthletes" class="pb-3 border-b-2 border-cyanAccent text-cyanAccent flex items-center gap-2">
+                    <i class="fa-solid fa-users"></i>
+                    <span>Senarai Atlit & Rekod PB</span>
+                </button>
+                <button onclick="switchTab('races')" id="tabBtnRaces" class="pb-3 border-b-2 border-transparent text-gray-400 hover:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-stopwatch"></i>
+                    <span>Keputusan Race & Video ET</span>
+                </button>
+                <button onclick="switchTab('users')" id="tabBtnUsers" class="pb-3 border-b-2 border-transparent text-gray-400 hover:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-user-gear"></i>
+                    <span>Pengurusan User & Langganan (Admin)</span>
+                </button>
+            </div>
+
+            <!-- TAB 1: SENARAI ATLIT & PB -->
+            <div id="tabAthletes" class="space-y-4">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h3 class="text-lg font-bold text-white">Senarai Atlit Terselaras dari APK</h3>
+                        <p class="text-xs text-gray-400">Semua nama atlit, acara, dan nilai Personal Best (PB) disimpan secara kekal di server.</p>
+                    </div>
+                    <div class="flex items-center gap-2 w-full sm:w-auto">
+                        <input type="text" id="athleteSearch" onkeyup="filterAthletes()" placeholder="Cari nama atlit atau acara..." class="px-4 py-2 bg-surface border border-gray-700 rounded-xl text-xs text-white focus:outline-none focus:border-cyanAccent w-full sm:w-64">
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto rounded-2xl border border-gray-800 bg-surface">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-trackDark text-gray-400 uppercase font-bold border-b border-gray-800">
+                            <tr>
+                                <th class="p-4">Nama Atlit</th>
+                                <th class="p-4">Kategori & Acara</th>
+                                <th class="p-4">Personal Best (PB)</th>
+                                <th class="p-4">Kelab / Pasukan</th>
+                                <th class="p-4">Status Yuran</th>
+                                <th class="p-4 text-right">Tarikh Sync</th>
+                            </tr>
+                        </thead>
+                        <tbody id="athletesTableBody" class="divide-y divide-gray-800">
+                            <!-- Populated via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TAB 2: KEPUTUSAN RACE & VIDEO ET -->
+            <div id="tabRaces" class="space-y-4 hidden">
+                <div>
+                    <h3 class="text-lg font-bold text-white">Keputusan Masa & Rakaman Race Elektronik</h3>
+                    <p class="text-xs text-gray-400">Termasuk paparan masa rasmi 0:00:00:000, kelajuan angin, cadence dan sudut torso.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="racesCardsGrid">
+                    <!-- Populated via JavaScript -->
+                </div>
+            </div>
+
+            <!-- TAB 3: PENGURUSAN USER & LANGGANAN (ADMIN & SUPERADMIN) -->
+            <div id="tabUsers" class="space-y-4 hidden">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h3 class="text-lg font-bold text-white">Pengurusan Pengguna & Rekod Pembayaran Langganan</h3>
+                        <p class="text-xs text-gray-400">Akses Khas Superadmin (Coach Salipar Jipun) untuk mengesahkan bayaran RM30, RM40, RM50 sebulan.</p>
+                    </div>
+                    <button onclick="openAddUserModal()" class="px-4 py-2 rounded-xl bg-cyanAccent text-black font-extrabold text-xs">
+                        <i class="fa-solid fa-plus"></i> Tambah User Baharu
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto rounded-2xl border border-gray-800 bg-surface">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-trackDark text-gray-400 uppercase font-bold border-b border-gray-800">
+                            <tr>
+                                <th class="p-4">Email / ID</th>
+                                <th class="p-4">Nama Jurulatih & Kelab</th>
+                                <th class="p-4">Pakej Langganan</th>
+                                <th class="p-4">Kuota Atlit</th>
+                                <th class="p-4">Tarikh Luput</th>
+                                <th class="p-4">Status</th>
+                                <th class="p-4 text-right">Tindakan Admin</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody" class="divide-y divide-gray-800">
+                            <!-- Populated via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- MODAL UPGRADE LANGGANAN -->
+    <div id="upgradeModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-surface border border-gray-700 w-full max-w-lg rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl relative">
+            <button onclick="closeUpgradeModal()" class="absolute top-5 right-5 text-gray-400 hover:text-white text-xl">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <div class="space-y-1">
+                <span class="text-xs text-orangeLaser font-bold uppercase tracking-wider">UPGRADE SISTEM APK</span>
+                <h3 class="font-teko text-3xl font-bold text-white uppercase tracking-wide">PILIH PAKEJ NAIK TARAF</h3>
+                <p class="text-xs text-gray-400">Pembayaran penuh akan menganjakkan tarikh luput akaun anda 30 hari ke hadapan bermula hari ini.</p>
+            </div>
+
+            <div class="space-y-3">
+                <label class="block p-4 rounded-xl border border-gray-700 hover:border-cyanAccent cursor-pointer bg-trackDark">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <input type="radio" name="upgradePlan" value="basic" checked class="text-cyanAccent focus:ring-0">
+                            <div>
+                                <p class="text-sm font-bold text-white">Pakej Asas (25 Orang Atlit)</p>
+                                <p class="text-xs text-gray-400">Sesuai untuk kelab biasa / sekolah</p>
+                            </div>
+                        </div>
+                        <span class="text-lg font-black text-cyanAccent">RM30/bln</span>
+                    </div>
+                </label>
+
+                <label class="block p-4 rounded-xl border border-gray-700 hover:border-orangeLaser cursor-pointer bg-trackDark">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <input type="radio" name="upgradePlan" value="pro" class="text-orangeLaser focus:ring-0">
+                            <div>
+                                <p class="text-sm font-bold text-white">Pakej Pro (35 Orang Atlit)</p>
+                                <p class="text-xs text-gray-400">Untuk kontinjen daerah & akademi</p>
+                            </div>
+                        </div>
+                        <span class="text-lg font-black text-orangeLaser">RM40/bln</span>
+                    </div>
+                </label>
+
+                <label class="block p-4 rounded-xl border border-gray-700 hover:border-yellow-400 cursor-pointer bg-trackDark">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <input type="radio" name="upgradePlan" value="elite" class="text-yellow-400 focus:ring-0">
+                            <div>
+                                <p class="text-sm font-bold text-white">Pakej Elite (50 Orang Atlit)</p>
+                                <p class="text-xs text-gray-400">Untuk pusat kejohanan & skuad elit</p>
+                            </div>
+                        </div>
+                        <span class="text-lg font-black text-yellow-400">RM50/bln</span>
+                    </div>
+                </label>
+            </div>
+
+            <button onclick="submitUpgrade()" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-orangeLaser to-finishRed text-white font-black text-sm shadow-lg shadow-orangeLaser/20 transition flex items-center justify-center gap-2">
+                <i class="fa-brands fa-whatsapp text-lg"></i>
+                <span>Sahkan & Hubungi Admin WhatsApp</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIK DASHBOARD -->
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        let currentUserEmail = urlParams.get('email') || localStorage.getItem('psyco_logged_email') || 'saliparjipun.atukoi@gmail.com';
+        
+        let allAthletesData = [];
+        let allRacesData = [];
+        let allUsersData = [];
+
+        function logout() {
+            localStorage.removeItem('psyco_logged_email');
+            window.location.href = 'index.html';
+        }
+
+        function switchTab(tab) {
+            document.getElementById('tabAthletes').classList.add('hidden');
+            document.getElementById('tabRaces').classList.add('hidden');
+            document.getElementById('tabUsers').classList.add('hidden');
+
+            document.getElementById('tabBtnAthletes').className = 'pb-3 border-b-2 border-transparent text-gray-400 hover:text-white flex items-center gap-2';
+            document.getElementById('tabBtnRaces').className = 'pb-3 border-b-2 border-transparent text-gray-400 hover:text-white flex items-center gap-2';
+            document.getElementById('tabBtnUsers').className = 'pb-3 border-b-2 border-transparent text-gray-400 hover:text-white flex items-center gap-2';
+
+            if (tab === 'athletes') {
+                document.getElementById('tabAthletes').classList.remove('hidden');
+                document.getElementById('tabBtnAthletes').className = 'pb-3 border-b-2 border-cyanAccent text-cyanAccent flex items-center gap-2';
+            } else if (tab === 'races') {
+                document.getElementById('tabRaces').classList.remove('hidden');
+                document.getElementById('tabBtnRaces').className = 'pb-3 border-b-2 border-orangeLaser text-orangeLaser flex items-center gap-2';
+            } else if (tab === 'users') {
+                document.getElementById('tabUsers').classList.remove('hidden');
+                document.getElementById('tabBtnUsers').className = 'pb-3 border-b-2 border-yellow-400 text-yellow-400 flex items-center gap-2';
+            }
+        }
+
+        function loadDashboardData() {
+            fetch('api/data.php?email=' + encodeURIComponent(currentUserEmail))
+                .then(res => res.json())
+                .then(data => {
+                    allAthletesData = data.athletes || [];
+                    allRacesData = data.races || [];
+                    allUsersData = data.users || [];
+
+                    // Render Athletes Count
+                    document.getElementById('athletesCount').innerText = allAthletesData.length;
+                    document.getElementById('racesCount').innerText = allRacesData.length + ' Larian';
+
+                    renderAthletesTable(allAthletesData);
+                    renderRacesGrid(allRacesData);
+                    renderUsersTable(allUsersData);
+                })
+                .catch(err => {
+                    console.error('Error fetching data:', err);
+                });
+        }
+
+        function renderAthletesTable(athletes) {
+            const tbody = document.getElementById('athletesTableBody');
+            if (athletes.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-gray-500">Tiada atlit direkodkan. Sila gunakan fungsi 'Daftar Atlit' di dalam APK atau sync data.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = athletes.map(a => {
+                const isTrack = (a.category || '').toLowerCase() === 'track';
+                const badgeClass = isTrack ? 'bg-cyanAccent/10 text-cyanAccent border-cyanAccent/30' : 'orangeLaser/10 text-orangeLaser border-orangeLaser/30';
+                
+                return `
+                    <tr class="hover:bg-trackDark/50 transition">
+                        <td class="p-4 font-bold text-white flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-surfaceLight border border-gray-700 flex items-center justify-center text-xs">
+                                <i class="fa-solid fa-person-running text-cyanAccent"></i>
+                            </div>
+                            <span>${a.name}</span>
+                        </td>
+                        <td class="p-4">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold border ${badgeClass}">
+                                ${a.category || 'Track'}
+                            </span>
+                            <span class="ml-1 text-gray-300">${a.specificEvent || '-'}</span>
+                        </td>
+                        <td class="p-4 font-mono font-bold text-white">
+                            ${a.pbValue || '-'} <span class="text-[10px] text-gray-400 font-normal">${a.pbUnit || 's'}</span>
+                        </td>
+                        <td class="p-4 text-gray-400">${a.clubName || 'Psyco Elite'}</td>
+                        <td class="p-4">
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${a.feePaidStatus ? 'bg-successGreen/20 text-successGreen' : 'bg-speedAmber/20 text-speedAmber'}">
+                                ${a.feePaidStatus ? 'Lunas' : 'Belum Selesai'}
+                            </span>
+                        </td>
+                        <td class="p-4 text-right text-gray-500 font-mono text-[11px]">${a.syncedAt || 'Baru'}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function renderRacesGrid(races) {
+            const grid = document.getElementById('racesCardsGrid');
+            if (races.length === 0) {
+                grid.innerHTML = `<div class="col-span-3 p-8 text-center bg-surface rounded-2xl border border-gray-800 text-gray-500">Tiada rekod ujian masa larian lagi. Jalankan ujian masa di Tab ET Timing APK.</div>`;
+                return;
+            }
+
+            grid.innerHTML = races.map(r => `
+                <div class="p-5 rounded-2xl bg-surface border border-gray-800 hover:border-orangeLaser/50 transition space-y-3">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="text-[10px] font-mono text-cyanAccent uppercase">${r.eventName || '100m Sprint'}</span>
+                            <h4 class="text-base font-bold text-white">${r.title}</h4>
+                        </div>
+                        <span class="px-2 py-0.5 rounded text-xs font-mono font-black bg-trackDark text-yellow-400 border border-gray-700">
+                            ${r.formattedTime || '0:00:10:000'}
+                        </span>
+                    </div>
+
+                    <div class="text-xs text-gray-300 space-y-1">
+                        <p><i class="fa-solid fa-user text-gray-500 w-4"></i> Atlit: <strong class="text-white">${r.athleteName}</strong></p>
+                        <p><i class="fa-solid fa-wind text-gray-500 w-4"></i> Angin: <strong>${r.windReading || '+0.0 m/s'}</strong> (Lorong ${r.lane || 4})</p>
+                        <p><i class="fa-solid fa-video text-gray-500 w-4"></i> Dual-Cam: Cam 1 ✓ &bull; Cam 2 Torso ✓</p>
+                    </div>
+
+                    <div class="pt-3 border-t border-gray-800 flex justify-between items-center text-xs">
+                        <span class="text-gray-500 font-mono text-[10px]">${r.createdAt || ''}</span>
+                        <a href="${r.photoFinishUri || '#'}" target="_blank" class="text-cyanAccent hover:underline font-bold flex items-center gap-1">
+                            <i class="fa-solid fa-image"></i> Photo Finish
+                        </a>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderUsersTable(users) {
+            const tbody = document.getElementById('usersTableBody');
+            if (!users || users.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-gray-500">Tiada rekod pengguna lain atau fungsi ini terhad kepada Superadmin.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = users.map(u => `
+                <tr class="hover:bg-trackDark/50 transition">
+                    <td class="p-4 font-mono font-bold text-cyanAccent">${u.email}</td>
+                    <td class="p-4 font-semibold text-white">${u.name} <br><span class="text-[10px] text-gray-400">${u.club_name}</span></td>
+                    <td class="p-4 font-bold text-orangeLaser">${u.plan_name || u.plan}</td>
+                    <td class="p-4 font-mono">${u.max_athletes} Atlit</td>
+                    <td class="p-4 font-mono text-gray-300">${u.subscription_end || '-'}</td>
+                    <td class="p-4">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold ${u.status === 'active' ? 'bg-successGreen/20 text-successGreen' : 'bg-red-500/20 text-red-400'}">
+                            ${u.status || 'Active'}
+                        </span>
+                    </td>
+                    <td class="p-4 text-right">
+                        <a href="https://api.whatsapp.com/send?phone=${u.phone || '601112345678'}&text=Salam%20${encodeURIComponent(u.name)}" target="_blank" class="px-2 py-1 rounded bg-green-600/20 text-green-400 font-bold hover:bg-green-600 hover:text-white transition">
+                            <i class="fa-brands fa-whatsapp"></i> Chat
+                        </a>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function filterAthletes() {
+            const q = document.getElementById('athleteSearch').value.toLowerCase();
+            const filtered = allAthletesData.filter(a => 
+                (a.name || '').toLowerCase().includes(q) || 
+                (a.specificEvent || '').toLowerCase().includes(q)
+            );
+            renderAthletesTable(filtered);
+        }
+
+        function openUpgradeModal() {
+            document.getElementById('upgradeModal').classList.remove('hidden');
+        }
+        function closeUpgradeModal() {
+            document.getElementById('upgradeModal').classList.add('hidden');
+        }
+
+        function submitUpgrade() {
+            const selectedPlan = document.querySelector('input[name="upgradePlan"]:checked').value;
+            fetch('api/upgrade.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: currentUserEmail,
+                    targetPlan: selectedPlan,
+                    paymentMethod: 'WhatsApp'
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert('Permohonan berjaya! Anda akan dialihkan ke WhatsApp Superadmin.');
+                    closeUpgradeModal();
+                    if (data.whatsapp_url) {
+                        window.open(data.whatsapp_url, '_blank');
+                    }
+                    loadDashboardData();
+                } else {
+                    alert(data.message);
+                }
+            });
+        }
+
+        function triggerSyncRefresh() {
+            loadDashboardData();
+            alert('Data server berjaya disegarkan!');
+        }
+
+        // Auto load on ready
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDashboardData();
+        });
+    </script>
+</body>
+</html>

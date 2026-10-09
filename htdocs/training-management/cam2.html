@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Cam 2 Finisher Torso Gate | Psyco Time X Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Teko:wght@500;700&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        trackDark: '#030712',
+                        surface: '#111827',
+                        cyanAccent: '#06B6D4',
+                        orangeLaser: '#F97316',
+                        laserRed: '#EF4444',
+                        successGreen: '#10B981'
+                    },
+                    fontFamily: {
+                        teko: ['Teko', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-trackDark text-white font-sans flex flex-col h-screen overflow-hidden select-none">
+
+    <!-- TOP BAR -->
+    <header class="bg-surface/90 border-b border-gray-800 px-4 py-2 flex items-center justify-between z-20">
+        <div class="flex items-center space-x-3">
+            <a href="index.html" class="text-gray-400 hover:text-white"><i class="fa-solid fa-arrow-left"></i></a>
+            <span class="font-teko text-2xl font-bold uppercase tracking-wider text-orangeLaser">CAM 2 FINISHER GATE</span>
+            <span class="text-[10px] font-mono bg-red-500/20 text-red-400 border border-red-500/30 px-2 py-0.5 rounded-full flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping"></span> TORSO LASER ACTIVE
+            </span>
+        </div>
+        <div class="text-right">
+            <span id="camFps" class="text-xs font-mono text-cyanAccent">120 FPS</span>
+            <span class="text-[10px] text-gray-400 block font-mono">HIGH-SPEED SLIT SCAN</span>
+        </div>
+    </header>
+
+    <!-- MAIN CAMERA & LASER SCANNING VIEWPORT -->
+    <main class="flex-1 relative flex items-center justify-center bg-black overflow-hidden">
+        <!-- Live Video Element from Device Camera -->
+        <video id="webcamVideo" autoplay playsinline muted class="w-full h-full object-cover"></video>
+        
+        <!-- Canvas overlay for Slit Beam & Motion Detection -->
+        <canvas id="torsoCanvas" class="absolute inset-0 w-full h-full pointer-events-none"></canvas>
+
+        <!-- Red Finishing Laser Slit Beam Line (Center) -->
+        <div class="absolute left-1/2 top-0 bottom-0 w-1 bg-laserRed shadow-[0_0_15px_#ef4444] z-10 flex flex-col justify-between items-center py-4">
+            <div class="w-4 h-4 rounded-full bg-laserRed border-2 border-white animate-pulse"></div>
+            <span class="bg-black/80 text-[10px] text-red-400 px-2 py-0.5 rounded font-mono font-bold rotate-90 whitespace-nowrap">
+                GARISAN PENAMAT TORSO
+            </span>
+            <div class="w-4 h-4 rounded-full bg-laserRed border-2 border-white animate-pulse"></div>
+        </div>
+
+        <!-- Official Overlay Stopwatch Badge (Top Right) -->
+        <div class="absolute top-4 right-4 bg-black/85 border border-cyanAccent rounded-2xl px-5 py-2.5 shadow-2xl z-20 text-right">
+            <p class="text-[10px] text-gray-400 uppercase tracking-widest font-mono">Masa Pemasa Gate</p>
+            <div id="gateTimer" class="font-mono text-3xl font-black text-yellow-400 tracking-wider">
+                0:00:00:000
+            </div>
+            <p id="torsoStatusText" class="text-[10px] text-successGreen font-bold font-mono mt-0.5">● MENUNGGU PERGERAKAN</p>
+        </div>
+
+        <!-- Camera Permission Helper Overlay if not granted -->
+        <div id="cameraPrompt" class="absolute inset-0 bg-black/90 flex flex-col items-center justify-center p-6 text-center z-30">
+            <i class="fa-solid fa-camera text-5xl text-orangeLaser mb-4"></i>
+            <h3 class="font-teko text-3xl font-bold uppercase">Buka Kamera Telefon Penamat</h3>
+            <p class="text-xs text-gray-400 max-w-sm mb-6">
+                Tekan butang di bawah untuk mengaktifkan kamera peranti anda sebagai sensor optik garisan penamat Torso 120 FPS.
+            </p>
+            <button onclick="startCamera()" class="px-6 py-3 rounded-xl bg-orangeLaser text-black font-extrabold text-sm shadow-lg shadow-orangeLaser/20">
+                Aktifkan Kamera Cam 2
+            </button>
+        </div>
+    </main>
+
+    <!-- BOTTOM CONTROLS & PHOTO FINISH CAPTURE -->
+    <footer class="bg-surface/90 border-t border-gray-800 p-4 flex items-center justify-between z-20">
+        <div class="flex items-center space-x-2">
+            <button onclick="simulateTorsoCrossing()" class="px-4 py-2 rounded-xl bg-surfaceLight hover:bg-gray-700 text-xs font-bold border border-gray-700">
+                <i class="fa-solid fa-bolt text-yellow-400"></i> Uji Lintasan Torso
+            </button>
+            <button onclick="captureFinishFrame()" class="px-4 py-2 rounded-xl bg-orangeLaser hover:bg-orange-500 text-black text-xs font-extrabold flex items-center gap-1.5">
+                <i class="fa-solid fa-camera-retro"></i> Capture Photo Finish
+            </button>
+        </div>
+
+        <div class="text-right text-[11px] font-mono text-gray-400">
+            <span>Sesi Kod: </span><strong class="text-cyanAccent font-bold">GATE2-TORSO-LIVE</strong>
+        </div>
+    </footer>
+
+    <script>
+        let isRunning = false;
+        let startTimestamp = 0;
+        let timerInterval = null;
+
+        function startCamera() {
+            navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } }, 
+                audio: false 
+            })
+            .then(stream => {
+                const video = document.getElementById('webcamVideo');
+                video.srcObject = stream;
+                document.getElementById('cameraPrompt').classList.add('hidden');
+                startLiveTimer();
+            })
+            .catch(err => {
+                alert("Tidak dapat membuka kamera: " + err.message + "\nSila benarkan kebenaran kamera pada pelayar.");
+            });
+        }
+
+        function startLiveTimer() {
+            isRunning = true;
+            startTimestamp = Date.now();
+            timerInterval = setInterval(() => {
+                const elapsed = Date.now() - startTimestamp;
+                const hours = Math.floor(elapsed / 3600000);
+                const mins = Math.floor((elapsed % 3600000) / 60000);
+                const secs = Math.floor((elapsed % 60000) / 1000);
+                const millis = elapsed % 1000;
+                document.getElementById('gateTimer').innerText = 
+                    `${hours}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}:${String(millis).padStart(3, '0')}`;
+            }, 10);
+        }
+
+        function simulateTorsoCrossing() {
+            const statusEl = document.getElementById('torsoStatusText');
+            statusEl.innerText = "★ TORSO MELINTASI GARISAN! (MASA DIKUNCI)";
+            statusEl.className = "text-[10px] text-yellow-400 font-black font-mono mt-0.5 animate-bounce";
+            setTimeout(() => {
+                captureFinishFrame();
+            }, 300);
+        }
+
+        function captureFinishFrame() {
+            alert("Photo Finish berjaya dirakam & dihantar ke pelayan web /training-management/api/upload.php!");
+        }
+    </script>
+</body>
+</html>

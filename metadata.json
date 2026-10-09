@@ -1,0 +1,6 @@
+{
+  "name": "Psyco Time X Pro",
+  "description": "Electronic Timing System for Training & Sports Management with AI Torso Detection, Dual-Cam Gate Sync, and Athlete Performance Tracking.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="200"
+    android:viewportHeight="200">
+
+    <!-- Circular Badge Outer Rings -->
+    <path
+        android:pathData="M100,5 A95,95 0 1,0 100.001,5 Z"
+        android:fillColor="#000000"
+        android:strokeColor="#374151"
+        android:strokeWidth="3" />
+
+    <path
+        android:pathData="M100,12 A88,88 0 1,0 100.001,12 Z"
+        android:strokeColor="#4B5563"
+        android:strokeWidth="1.5" />
+
+    <!-- Center Giant Red X -->
+    <path
+        android:pathData="M58,54 L86,100 L56,146 H80 L98,118 L116,146 H140 L110,100 L138,54 H116 L98,82 L80,54 Z"
+        android:fillColor="#DC2626" />
+
+    <!-- Red X 3D Shade Accent -->
+    <path
+        android:pathData="M98,82 L116,54 H124 L102,88 Z"
+        android:fillColor="#B91C1C" />
+
+    <!-- White Bold PRO Text Overlaid in Center -->
+    <!-- P -->
+    <path
+        android:pathData="M48,82 H76 C84,82 88,86 88,93 C88,100 84,104 76,104 H60 V118 H48 Z M60,90 V96 H74 C76,96 78,95 78,93 C78,91 76,90 74,90 Z"
+        android:fillColor="#FFFFFF" />
+
+    <!-- R -->
+    <path
+        android:pathData="M90,82 H116 C124,82 128,86 128,93 C128,98 125,102 120,103 L130,118 H118 L108,104 H102 V118 H90 Z M102,90 V96 H114 C116,96 118,95 118,93 C118,91 116,90 114,90 Z"
+        android:fillColor="#FFFFFF" />
+
+    <!-- O -->
+    <path
+        android:pathData="M132,100 C132,88 139,82 150,82 C161,82 168,88 168,100 C168,112 161,118 150,118 C139,118 132,112 132,100 Z M144,100 C144,108 146,110 150,110 C154,110 156,108 156,100 C156,92 154,90 150,90 C146,90 144,92 144,100 Z"
+        android:fillColor="#FFFFFF" />
+
+    <!-- Electric Lightning Bolt (Iconic brand mark cutting through right side) -->
+    <path
+        android:pathData="M148,72 L128,100 H142 L132,128 L162,94 H146 Z"
+        android:fillColor="#EF4444"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.2" />
+
+    <!-- Top Digital Style Text: PSYCO TIME -->
+    <!-- Digital P -->
+    <path
+        android:pathData="M44,24 H56 V36 H48 V44 H44 Z M48,27 V33 H52 V27 Z"
+        android:fillColor="#FFFFFF" />
+    <!-- Digital S -->
+    <path
+        android:pathData="M60,24 H72 V32 H64 V36 H72 V44 H60 V36 H68 V32 H60 Z"
+        android:fillColor="#FFFFFF" />
+    <!-- Digital Y -->
+    <path
+        android:pathData="M76,24 H80 V32 H84 V24 H88 V34 H84 V44 H80 V34 H76 Z"
+        android:fillColor="#FFFFFF" />
+    <!-- Digital C -->
+    <path
+        android:pathData="M92,24 H104 V28 H96 V40 H104 V44 H92 Z"
+        android:fillColor="#FFFFFF" />
+    <!-- Digital O -->
+    <path
+        android:pathData="M108,24 H120 V44 H108 Z M112,28 V40 H116 V28 Z"
+        android:fillColor="#FFFFFF" />
+
+    <!-- TIME -->
+    <!-- T -->
+    <path
+        android:pathData="M130,24 H142 V28 H138 V44 H134 V28 H130 Z"
+        android:fillColor="#FFFFFF" />
+    <!-- I -->
+    <path
+        android:pathData="M146,24 H150 V44 H146 Z"
+        android:fillColor="#FFFFFF" />
+    <!-- M -->
+    <path
+        android:pathData="M154,24 H166 V44 H162 V30 L160,34 L158,30 V44 H154 Z"
+        android:fillColor="#FFFFFF" />
+    <!-- E -->
+    <path
+        android:pathData="M170,24 H182 V28 H174 V32 H180 V36 H174 V40 H182 V44 H170 Z"
+        android:fillColor="#FFFFFF" />
+
+    <!-- Middle Gold Bar: PRECISE • SHARP • ACCURATE -->
+    <path
+        android:pathData="M60,126 H140 V130 H60 Z"
+        android:fillColor="#FBBF24" />
+
+    <!-- Bottom Curved Text: SPORT TIMING in Gold/Yellow -->
+    <!-- S -->
+    <path
+        android:pathData="M38,154 H48 V160 H41 V164 H48 V172 H38 V166 H45 V164 H38 Z"
+        android:fillColor="#FBBF24" />
+    <!-- P -->
+    <path
+        android:pathData="M52,156 H62 V166 H56 V174 H52 Z M56,159 V163 H58 V159 Z"
+        android:fillColor="#FBBF24" />
+    <!-- O -->
+    <path
+        android:pathData="M66,160 H76 V176 H66 Z M70,163 V173 H72 V163 Z"
+        android:fillColor="#FBBF24" />
+    <!-- R -->
+    <path
+        android:pathData="M80,162 H90 V171 L92,178 H88 L86,172 H84 V178 H80 Z M84,165 V169 H86 V165 Z"
+        android:fillColor="#FBBF24" />
+    <!-- T -->
+    <path
+        android:pathData="M94,164 H106 V167 H102 V180 H98 V167 H94 Z"
+        android:fillColor="#FBBF24" />
+
+    <!-- TIMING -->
+    <!-- T -->
+    <path
+        android:pathData="M112,164 H124 V167 H120 V180 H116 V167 H112 Z"
+        android:fillColor="#FBBF24" />
+    <!-- I -->
+    <path
+        android:pathData="M128,162 H132 V178 H128 Z"
+        android:fillColor="#FBBF24" />
+    <!-- M -->
+    <path
+        android:pathData="M136,160 H148 V176 H144 V165 L142,169 L140,165 V176 H136 Z"
+        android:fillColor="#FBBF24" />
+    <!-- I -->
+    <path
+        android:pathData="M152,156 H156 V172 H152 Z"
+        android:fillColor="#FBBF24" />
+    <!-- N -->
+    <path
+        android:pathData="M160,154 H164 L170,165 V154 H174 V170 H170 L164,159 V170 H160 Z"
+        android:fillColor="#FBBF24" />
+    <!-- G -->
+    <path
+        android:pathData="M178,150 H188 V154 H182 V162 H186 V158 H184 V156 H188 V166 H178 Z"
+        android:fillColor="#FBBF24" />
+
+</vector>
