@@ -240,7 +240,7 @@ class MainActivity : ComponentActivity() {
                                 onSaveAthlete = { newAthlete ->
                                     viewModel.addAthlete(newAthlete)
                                     currentTab = ScreenTab.ATHLETES
-                                    Toast.makeText(this@MainActivity, "Atlit '${newAthlete.name}' berjaya didaftarkan ke Room!", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(this@MainActivity, "Atlit '${newAthlete.name}' berjaya didaftarkan & disinkronkan ke Web Portal!", Toast.LENGTH_SHORT).show()
                                 },
                                 onNavigateBack = {
                                     currentTab = ScreenTab.ATHLETES

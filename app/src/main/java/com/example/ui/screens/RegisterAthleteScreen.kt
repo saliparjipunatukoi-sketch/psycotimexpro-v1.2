@@ -201,7 +201,7 @@ fun RegisterAthleteScreen(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Simpan ke Room",
+                            text = "Simpan & Sync ke Web",
                             fontWeight = FontWeight.Bold,
                             color = Color.Black,
                             fontSize = 15.sp

@@ -16,7 +16,7 @@ import com.example.data.model.*
         FeeRecordEntity::class,
         AchievementEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -37,7 +37,7 @@ abstract class AppDatabase : RoomDatabase() {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
-                    "psyco_timex_pro_db"
+                    "psyco_timex_pro_v3_db"
                 )
                     .fallbackToDestructiveMigration()
                     .build()

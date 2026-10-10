@@ -57,6 +57,7 @@ if (!$currentUser) {
         'plan' => 'trial',
         'plan_name' => 'Percubaan Percuma (7 Hari)',
         'max_athletes' => 10,
+        'max_sub_coaches' => 1,
         'registered_at' => date('Y-m-d H:i:s', $now),
         'subscription_start' => date('Y-m-d H:i:s', $now),
         'subscription_end' => date('Y-m-d H:i:s', $now + (7 * 86400)),
@@ -68,98 +69,58 @@ if (!$currentUser) {
     writeJsonFile($usersFile, $users);
 }
 
-// Semak tarikh luput langganan
-$subExpiryTime = strtotime($currentUser['subscription_end']);
-$isExpired = (time() > $subExpiryTime);
-$daysLeft = ceil(($subExpiryTime - time()) / 86400);
+// 2. Semak Tarikh Luput Akaun
+$expiryTime = strtotime($currentUser['subscription_end'] ?? 'now');
+$isExpired = (time() > $expiryTime) && ($currentUser['role'] !== 'superadmin');
 
-// 2. Simpan atau kemaskini rekod Atlit dari APK
-$existingAthletes = readJsonFile($athletesFile);
+// 3. Simpan dan gabungkan rekod atlit yang disinkronkan dari APK
 $incomingAthletes = $data['athletes'] ?? [];
-$athletesSyncedCount = 0;
+$allAthletes = readJsonFile($athletesFile);
 
-$currentAthleteCount = count(array_filter($existingAthletes, function($a) use ($coachEmail) {
-    return strtolower($a['coachEmail'] ?? '') === strtolower($coachEmail);
+// Ambil rekod atlit sedia ada dari coach lain
+$otherAthletes = array_values(array_filter($allAthletes, function($a) use ($coachEmail) {
+    return strtolower($a['coachEmail'] ?? '') !== strtolower($coachEmail);
 }));
 
-$maxAllowedAthletes = $currentUser['max_athletes'] ?? 25;
-
-foreach ($incomingAthletes as $inAth) {
-    $athId = $inAth['id'] ?? ('ATH-' . uniqid());
-    $found = false;
-    
-    foreach ($existingAthletes as $k => $exist) {
-        if ($exist['id'] == $athId || ($exist['name'] === $inAth['name'] && strtolower($exist['coachEmail']) === strtolower($coachEmail))) {
-            // Update
-            $existingAthletes[$k] = array_merge($exist, $inAth, [
-                'coachEmail' => $coachEmail,
-                'syncedAt' => date('Y-m-d H:i:s')
-            ]);
-            $found = true;
-            $athletesSyncedCount++;
-            break;
-        }
-    }
-    
-    if (!$found) {
-        // Semak kuota had atlit
-        if ($currentAthleteCount < $maxAllowedAthletes) {
-            $inAth['coachEmail'] = $coachEmail;
-            $inAth['syncedAt'] = date('Y-m-d H:i:s');
-            $existingAthletes[] = $inAth;
-            $currentAthleteCount++;
-            $athletesSyncedCount++;
-        }
-    }
+// Tambah/Kemas kini rekod atlit bagi coach ini
+$syncedAthletesCount = 0;
+foreach ($incomingAthletes as $ia) {
+    $ia['coachEmail'] = $coachEmail;
+    $ia['clubName'] = $currentUser['club_name'] ?? ($data['clubName'] ?? '');
+    $ia['syncedAt'] = date('Y-m-d H:i:s');
+    $otherAthletes[] = $ia;
+    $syncedAthletesCount++;
 }
-writeJsonFile($athletesFile, $existingAthletes);
+writeJsonFile($athletesFile, $otherAthletes);
 
-// 3. Simpan atau kemaskini rekod Race dari APK
-$existingRaces = readJsonFile($racesFile);
+// 4. Simpan dan gabungkan rekod perlumbaan (races)
 $incomingRaces = $data['raceRecords'] ?? [];
-$racesSyncedCount = 0;
+$allRaces = readJsonFile($racesFile);
 
-foreach ($incomingRaces as $inRace) {
-    $raceId = $inRace['id'] ?? ('RACE-' . uniqid());
-    $found = false;
-    foreach ($existingRaces as $k => $exist) {
-        if ($exist['id'] == $raceId) {
-            $existingRaces[$k] = array_merge($exist, $inRace, [
-                'coachEmail' => $coachEmail,
-                'updatedAt' => date('Y-m-d H:i:s')
-            ]);
-            $found = true;
-            $racesSyncedCount++;
-            break;
-        }
-    }
-    if (!$found) {
-        $inRace['coachEmail'] = $coachEmail;
-        $inRace['createdAt'] = date('Y-m-d H:i:s');
-        $existingRaces[] = $inRace;
-        $racesSyncedCount++;
-    }
+$otherRaces = array_values(array_filter($allRaces, function($r) use ($coachEmail) {
+    return strtolower($r['coachEmail'] ?? '') !== strtolower($coachEmail);
+}));
+
+$syncedRacesCount = 0;
+foreach ($incomingRaces as $ir) {
+    $ir['coachEmail'] = $coachEmail;
+    $ir['syncedAt'] = date('Y-m-d H:i:s');
+    $otherRaces[] = $ir;
+    $syncedRacesCount++;
 }
-writeJsonFile($racesFile, $existingRaces);
+writeJsonFile($racesFile, $otherRaces);
 
-// Return response to APK
+// 5. Kembalikan respons rasmi ke APK
 echo json_encode([
     'status' => 'success',
-    'message' => 'Penyelarasan web berjaya!',
-    'serverTimestamp' => date('d M Y, H:i:s'),
-    'user' => [
-        'id' => $currentUser['id'],
-        'email' => $currentUser['email'],
-        'club_name' => $currentUser['club_name'],
-        'plan' => $currentUser['plan'],
-        'plan_name' => $currentUser['plan_name'],
-        'max_athletes' => $currentUser['max_athletes'],
-        'subscription_end' => $currentUser['subscription_end'],
-        'days_remaining' => $daysLeft > 0 ? $daysLeft : 0,
-        'is_expired' => $isExpired
-    ],
-    'synced' => [
-        'athletes_count' => $athletesSyncedCount,
-        'races_count' => $racesSyncedCount
-    ]
+    'message' => 'Penyegerakan ke Portal Web Training Management berjaya!',
+    'isExpired' => $isExpired,
+    'currentPlan' => $currentUser['plan'] ?? 'trial',
+    'planName' => $currentUser['plan_name'] ?? 'Percubaan Percuma',
+    'maxAthletes' => $currentUser['max_athletes'] ?? 10,
+    'maxSubCoaches' => $currentUser['max_sub_coaches'] ?? 1,
+    'subscriptionEnd' => $currentUser['subscription_end'] ?? '-',
+    'syncedAthletes' => $syncedAthletesCount,
+    'syncedRaces' => $syncedRacesCount,
+    'serverTimestamp' => date('Y-m-d H:i:s')
 ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);

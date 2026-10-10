@@ -386,6 +386,129 @@ fun SettingsScreen(
             }
         }
 
+        // PAKEJ LANGGANAN BULANAN & STRUKTUR YURAN RASMI (Item Semakan Yuran)
+        Card(
+            colors = CardDefaults.cardColors(containerColor = StadiumSurface),
+            shape = RoundedCornerShape(16.dp),
+            border = androidx.compose.foundation.BorderStroke(1.dp, StadiumBorder),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.WorkspacePremium, contentDescription = null, tint = LaserOrange, modifier = Modifier.size(24.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column {
+                        Text(
+                            text = "Struktur Pakej Langganan Bulanan",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                        Text(
+                            text = "Kiraan Yuran Rasmi Psyco Time X Pro",
+                            fontSize = 10.sp,
+                            color = LaserOrange,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
+
+                // Grid 4 Pakej Rasmi
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    // Pakej RM30
+                    Surface(
+                        color = StadiumSurfaceVariant,
+                        shape = RoundedCornerShape(10.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, ElectricCyan.copy(alpha = 0.5f)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(10.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text("PAKEJ ASAS (1 BULAN)", fontSize = 10.sp, fontWeight = FontWeight.Black, color = ElectricCyan)
+                                Text("30 Atlit + 2 Sub Coach", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                Text("Ideal untuk kelab sekolah & bakat muda", fontSize = 10.sp, color = TextSecondary)
+                            }
+                            Text("RM 30", fontSize = 18.sp, fontWeight = FontWeight.Black, color = ElectricCyan)
+                        }
+                    }
+
+                    // Pakej RM40
+                    Surface(
+                        color = StadiumSurfaceVariant,
+                        shape = RoundedCornerShape(10.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, LaserOrange.copy(alpha = 0.5f)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(10.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text("PAKEJ STANDARD (1 BULAN)", fontSize = 10.sp, fontWeight = FontWeight.Black, color = LaserOrange)
+                                Text("50 Atlit + 2 Sub Coach", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                Text("Paling popular untuk kontinjen MSSD", fontSize = 10.sp, color = TextSecondary)
+                            }
+                            Text("RM 40", fontSize = 18.sp, fontWeight = FontWeight.Black, color = LaserOrange)
+                        }
+                    }
+
+                    // Pakej RM60
+                    Surface(
+                        color = StadiumSurfaceVariant,
+                        shape = RoundedCornerShape(10.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, SpeedAmber.copy(alpha = 0.5f)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(10.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text("PAKEJ PRO (1 BULAN)", fontSize = 10.sp, fontWeight = FontWeight.Black, color = SpeedAmber)
+                                Text("80 Atlit + 3 Sub Coach", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                Text("Kapasiti besar untuk akademi olahraga", fontSize = 10.sp, color = TextSecondary)
+                            }
+                            Text("RM 60", fontSize = 18.sp, fontWeight = FontWeight.Black, color = SpeedAmber)
+                        }
+                    }
+
+                    // Pakej RM80
+                    Surface(
+                        color = StadiumSurfaceVariant,
+                        shape = RoundedCornerShape(10.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, SuccessGreen.copy(alpha = 0.5f)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(10.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text("PAKEJ ELITE (1 BULAN)", fontSize = 10.sp, fontWeight = FontWeight.Black, color = SuccessGreen)
+                                Text("100 Atlit + 5 Sub Coach", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                Text("Kejohanan terbuka & skuad elit MSSN", fontSize = 10.sp, color = TextSecondary)
+                            }
+                            Text("RM 80", fontSize = 18.sp, fontWeight = FontWeight.Black, color = SuccessGreen)
+                        }
+                    }
+                }
+
+                Text(
+                    text = "* Pelancong dan pendaftaran baharu diberikan Free Trial 7 Hari (10 Atlit). Admin Coach Salipar Jipun boleh melaraskan tarikh luput terus di portal web.",
+                    fontSize = 10.sp,
+                    color = TextMuted,
+                    lineHeight = 14.sp
+                )
+            }
+        }
+
         storageStatusMessage?.let {
             Surface(
                 color = SuccessGreen.copy(alpha = 0.2f),

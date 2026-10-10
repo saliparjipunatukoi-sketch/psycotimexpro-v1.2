@@ -328,6 +328,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 )
             }
             _showAddAthleteDialog.value = false
+            // Auto-sync with web portal whenever a new athlete is registered
+            syncWithWeb()
         }
     }
 

@@ -34,39 +34,55 @@ $planDetails = $SUBSCRIPTION_PLANS[$targetPlanKey];
 $users = readJsonFile($usersFile);
 $userFound = false;
 $updatedUser = null;
-
-$adminWhatsApp = "601112345678"; // Nombor WhatsApp Admin rasmi
+$adminWhatsApp = "601112345678"; // Nombor WhatsApp Admin rasmi (Coach Salipar Jipun)
 
 foreach ($users as $idx => $u) {
     if (strtolower($u['email']) === strtolower($userEmail)) {
         $userFound = true;
         
-        // PENTING: Pengiraan Tarikh Luput Baru (Ganjar ke hadapan mengikut tarikh upgrade penuh)
         $now = time();
         $currentExpiry = strtotime($u['subscription_end'] ?? 'now');
-        
-        // Jika belum tamat tempoh, lanjutkan dari tarikh sekarang + 30 hari penuh
-        $newExpiryTime = $now + (30 * 86400);
+        $base = ($currentExpiry > $now) ? $currentExpiry : $now;
+        $newExpiryTime = $base + (30 * 86400);
 
         $users[$idx]['plan'] = $targetPlanKey;
         $users[$idx]['plan_name'] = $planDetails['name'];
         $users[$idx]['max_athletes'] = $planDetails['max_athletes'];
+        $users[$idx]['max_sub_coaches'] = $planDetails['max_sub_coaches'] ?? 2;
         $users[$idx]['subscription_start'] = date('Y-m-d H:i:s', $now);
         $users[$idx]['subscription_end'] = date('Y-m-d H:i:s', $newExpiryTime);
         $users[$idx]['is_trial'] = false;
         $users[$idx]['status'] = 'active';
-
         $updatedUser = $users[$idx];
         break;
     }
 }
 
 if (!$userFound) {
-    echo json_encode([
-        'status' => 'error',
-        'message' => 'Pengguna tidak ditemui. Sila daftar terlebih dahulu.'
-    ]);
-    exit;
+    // Daftar user baru secara automatik jika belum wujud
+    $now = time();
+    $newExpiryTime = $now + (30 * 86400);
+    $newUser = [
+        'id' => 'USR-' . strtoupper(substr(md5($userEmail . time()), 0, 6)),
+        'name' => $data['name'] ?? 'Jurulatih Baru',
+        'email' => $userEmail,
+        'password' => '123456',
+        'role' => 'coach',
+        'phone' => $data['phone'] ?? '',
+        'club_name' => $data['clubName'] ?? 'Kelab Sukan',
+        'plan' => $targetPlanKey,
+        'plan_name' => $planDetails['name'],
+        'max_athletes' => $planDetails['max_athletes'],
+        'max_sub_coaches' => $planDetails['max_sub_coaches'] ?? 2,
+        'registered_at' => date('Y-m-d H:i:s', $now),
+        'subscription_start' => date('Y-m-d H:i:s', $now),
+        'subscription_end' => date('Y-m-d H:i:s', $newExpiryTime),
+        'status' => 'active',
+        'is_trial' => false,
+        'whatsapp_verified' => false
+    ];
+    $users[] = $newUser;
+    $updatedUser = $newUser;
 }
 
 writeJsonFile($usersFile, $users);
@@ -93,7 +109,7 @@ $waMessage = urlencode(
     "• Email Akaun: {$userEmail}\n" .
     "• Nama Kelab: {$updatedUser['club_name']}\n" .
     "• Pakej Dipilih: {$planDetails['name']} (RM{$planDetails['price']}/Bulan)\n" .
-    "• Kuota Atlit: {$planDetails['max_athletes']} Orang\n" .
+    "• Had Kuota: {$planDetails['max_athletes']} Atlit + {$planDetails['max_sub_coaches']} Sub Coach\n" .
     "• No Rujukan Resit: {$paymentId}\n\n" .
     "Mohon semakan dan pengesahan aktifkan akses APK saya. Terima kasih!"
 );
@@ -106,6 +122,7 @@ echo json_encode([
     'receiptId' => $paymentId,
     'amount' => $planDetails['price'],
     'max_athletes' => $planDetails['max_athletes'],
+    'max_sub_coaches' => $planDetails['max_sub_coaches'],
     'new_expiry_date' => $updatedUser['subscription_end'],
     'whatsapp_url' => $whatsAppUrl
 ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
