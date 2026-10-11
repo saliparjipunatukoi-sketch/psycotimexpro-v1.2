@@ -818,6 +818,66 @@
             window.location.href = 'dashboard.html?email=' + encodeURIComponent(email);
         }
 
+        // PENGURUSAN IKLAN PROMOSI & SHARE POSTER
+        function getPromoAdText() {
+            var liveUrl = window.location.href.split('#')[0];
+            return "🏆 *PSYCO TIME X PRO - SISTEM CATATAN MASA ELEKTRONIK & PHOTO FINISH (ET TIMING)* ⚡\n" +
+                "Tingkatkan kualiti latihan dan kejohanan olahraga kelab anda dengan sistem catatan masa dwi-kamera berketepatan tinggi!\n\n" +
+                "🔥 *PAKEJ LANGGANAN TERBARU (BULANAN):*\n" +
+                "• 🥉 *PAKEJ RM30* = 30 Atlit (1 Bulan) + 2 Sub Coach\n" +
+                "• 🥈 *PAKEJ RM40* = 50 Atlit (1 Bulan) + 2 Sub Coach\n" +
+                "• 🥇 *PAKEJ RM60* = 80 Atlit (1 Bulan) + 3 Sub Coach\n" +
+                "• 👑 *PAKEJ RM80* = 100 Atlit (1 Bulan) + 5 Sub Coach\n\n" +
+                "🎁 *Percuma Trial 7 Hari (10 Atlit)* untuk pendaftaran baharu!\n\n" +
+                "📲 *Daftar Sekarang & Muat Turun APK:*\n" +
+                liveUrl + "\n\n" +
+                "📞 Hubungi Coach Salipar Jipun untuk sebarang pertanyaan: 011-12345678";
+        }
+
+        function initPromoAd() {
+            var el = document.getElementById('promoAdTextarea');
+            if (el) {
+                el.value = getPromoAdText();
+            }
+        }
+
+        function copyAdText() {
+            var el = document.getElementById('promoAdTextarea');
+            var text = el ? el.value : getPromoAdText();
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(function() {
+                    alert('Teks iklan rasmi berjaya disalin! Anda boleh kongsikan ke WhatsApp atau kumpulan sukan.');
+                }).catch(function() {
+                    if (el) { el.select(); document.execCommand('copy'); }
+                    alert('Teks iklan disalin ke papan klip!');
+                });
+            } else {
+                if (el) { el.select(); document.execCommand('copy'); }
+                alert('Teks iklan disalin ke papan klip!');
+            }
+        }
+
+        function shareAdWhatsApp() {
+            var text = getPromoAdText();
+            var waUrl = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(text);
+            window.open(waUrl, '_blank');
+        }
+
+        function copyDirectWebLink() {
+            var liveUrl = window.location.href.split('#')[0];
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(liveUrl).then(function() {
+                    alert('Pautan laman web & APK berjaya disalin:\n' + liveUrl);
+                });
+            } else {
+                prompt('Salin pautan laman web ini:', liveUrl);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initPromoAd();
+        });
+
         // Fungsi Permohonan Pakej Langganan Melalui WhatsApp
         function requestPlanUpgrade(planKey, planName, price, maxAthletes) {
             const userEmail = prompt("Sila masukkan alamat Email pendaftaran APK anda:", localStorage.getItem('psyco_logged_email') || "saliparjipun.atukoi@gmail.com");

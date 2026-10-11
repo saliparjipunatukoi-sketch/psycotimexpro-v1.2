@@ -1,5 +1,9 @@
 package com.example.ui.screens
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -15,6 +19,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -24,11 +29,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import android.media.AudioAttributes
-import android.media.AudioManager
-import android.media.SoundPool
-import android.media.ToneGenerator
+import androidx.core.content.ContextCompat
+import com.example.service.ElectronicStarterGunAudio
 import com.example.service.MotionAnalysisResult
+import com.example.ui.components.RealCameraPreview
 import com.example.ui.theme.*
 
 @Composable
@@ -49,6 +53,25 @@ fun TimingSystemScreen(
     onOpenQrPair: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+
+    // Runtime Permission for Camera
+    var hasCameraPermission by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.CAMERA
+            ) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        hasCameraPermission = isGranted
+    }
+
     // High-Precision Electronic Timing Format: 0:00:00:000 (Hours:Minutes:Seconds:Milliseconds)
     val hours = (elapsedMillis / 3600000).toInt()
     val minutes = ((elapsedMillis % 3600000) / 60000).toInt()
@@ -81,8 +104,8 @@ fun TimingSystemScreen(
                     onClick = { onSetCamMode(1) },
                     label = { Text("CAM 1 (Starter)", fontSize = 11.sp) },
                     colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = ElectricCyan,
-                        selectedLabelColor = Color.Black
+                        selectedContainerColor = FinishLineRed,
+                        selectedLabelColor = Color.White
                     )
                 )
                 Spacer(modifier = Modifier.width(4.dp))
@@ -92,12 +115,12 @@ fun TimingSystemScreen(
                     label = { Text("CAM 2 (Torso Gate)", fontSize = 11.sp) },
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = LaserOrange,
-                        selectedLabelColor = Color.Black
+                        selectedLabelColor = Color.White
                     )
                 )
             }
 
-            // QR Link Button for Phone Backup as Cam 2 (Item 2)
+            // QR Link Button for Phone Backup as Cam 2
             FilledTonalButton(
                 onClick = onOpenQrPair,
                 colors = ButtonDefaults.filledTonalButtonColors(containerColor = StadiumSurfaceVariant),
@@ -105,7 +128,7 @@ fun TimingSystemScreen(
                 contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
                 modifier = Modifier.testTag("open_qr_pair_button")
             ) {
-                Icon(Icons.Default.QrCodeScanner, contentDescription = null, tint = ElectricCyan, modifier = Modifier.size(18.dp))
+                Icon(Icons.Default.QrCodeScanner, contentDescription = null, tint = SilverMetallic, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(6.dp))
                 Text("Link Cam 2 QR", fontSize = 11.sp, color = Color.White, fontWeight = FontWeight.Bold)
             }
@@ -117,14 +140,14 @@ fun TimingSystemScreen(
             shape = RoundedCornerShape(20.dp),
             border = androidx.compose.foundation.BorderStroke(
                 2.dp,
-                if (isTimerRunning) LaserOrange else ElectricCyan
+                if (isTimerRunning) FinishLineRed else StadiumBorder
             ),
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 20.dp, horizontal = 16.dp),
+                    .padding(vertical = 16.dp, horizontal = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Row(
@@ -133,14 +156,14 @@ fun TimingSystemScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Surface(
-                        color = if (isTimerRunning) LaserOrange.copy(alpha = 0.2f) else StadiumSurfaceVariant,
+                        color = if (isTimerRunning) FinishLineRed.copy(alpha = 0.2f) else StadiumSurfaceVariant,
                         shape = RoundedCornerShape(6.dp)
                     ) {
                         Text(
                             text = if (isTimerRunning) "● RUNNING (ET ACTIVE)" else "○ READY AT GATE",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Black,
-                            color = if (isTimerRunning) LaserOrange else ElectricCyan,
+                            color = if (isTimerRunning) FinishLineRed else SilverMetallic,
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                         )
                     }
@@ -148,14 +171,14 @@ fun TimingSystemScreen(
                     // Gun Sound Trigger Toggle
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
-                            imageVector = Icons.Default.Mic,
+                            imageVector = Icons.Default.VolumeUp,
                             contentDescription = null,
                             tint = if (isAudioGunEnabled) SuccessGreen else TextMuted,
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = "Gun Start",
+                            text = "Gun Sound",
                             fontSize = 11.sp,
                             color = if (isAudioGunEnabled) SuccessGreen else TextSecondary
                         )
@@ -167,13 +190,13 @@ fun TimingSystemScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 // One-Row Scaled High-Precision Digital Electronic Stopwatch Display
                 Surface(
                     color = Color.Black,
                     shape = RoundedCornerShape(12.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, if (isTimerRunning) FinishLineRed else SilverBorder.copy(alpha = 0.4f)),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, if (isTimerRunning) FinishLineRed else SilverBorder.copy(alpha = 0.3f)),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 4.dp)
@@ -208,27 +231,75 @@ fun TimingSystemScreen(
             }
         }
 
-        // LIVE CAMERA & AI TORSO SENSOR SURFACE
+        // LIVE REAL CAMERA & AI TORSO SENSOR SURFACE
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(200.dp)
+                .height(220.dp)
                 .clip(RoundedCornerShape(16.dp))
-                .background(Color(0xFF030712))
-                .border(2.dp, if (camMode == 2) LaserOrange else ElectricCyan, RoundedCornerShape(16.dp))
+                .background(Color.Black)
+                .border(2.dp, if (camMode == 2) FinishLineRed else StadiumBorder, RoundedCornerShape(16.dp))
         ) {
+            if (hasCameraPermission) {
+                // Real Live Camera Feed via CameraX
+                RealCameraPreview(
+                    isSlitActive = camMode == 2,
+                    onMotionDetected = { hasMotion, energy ->
+                        onTriggerMotion(hasMotion, energy)
+                    },
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else {
+                // Camera Permission Request Placeholder
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CameraAlt,
+                        contentDescription = null,
+                        tint = FinishLineRed,
+                        modifier = Modifier.size(36.dp)
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Kamera Belum Diaktifkan",
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        fontSize = 14.sp
+                    )
+                    Text(
+                        text = "Benarkan akses kamera untuk melihat garisan penamat & pengesanan torso.",
+                        color = TextSecondary,
+                        fontSize = 11.sp,
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Button(
+                        onClick = { cameraPermissionLauncher.launch(Manifest.permission.CAMERA) },
+                        colors = ButtonDefaults.buttonColors(containerColor = FinishLineRed)
+                    ) {
+                        Text("Aktifkan Kamera Sekarang", fontWeight = FontWeight.Bold, color = Color.White)
+                    }
+                }
+            }
+
+            // Laser / Slit Overlay Canvas
             Canvas(modifier = Modifier.fillMaxSize()) {
                 val w = size.width
                 val h = size.height
 
-                // Grid lines / Track lanes
+                // Track lane guide lines
                 for (i in 1..4) {
                     val y = i * (h / 5f)
                     drawLine(
-                        color = Color(0xFF1F2937),
+                        color = Color.White.copy(alpha = 0.15f),
                         start = Offset(0f, y),
                         end = Offset(w, y),
-                        strokeWidth = 1.5f
+                        strokeWidth = 1f
                     )
                 }
 
@@ -237,23 +308,23 @@ fun TimingSystemScreen(
                     val slitX = w * 0.65f
                     // Laser Beam
                     drawLine(
-                        color = Color(0xFFEF4444),
+                        color = FinishLineRed,
                         start = Offset(slitX, 0f),
                         end = Offset(slitX, h),
-                        strokeWidth = 4f
+                        strokeWidth = 3f
                     )
-                    // Sensor head
+                    // Sensor head indicator
                     drawCircle(
-                        color = if (isMovementDetected) Color(0xFF10B981) else Color(0xFFEF4444),
-                        radius = 12f,
-                        center = Offset(slitX, 30f)
+                        color = if (isMovementDetected) SuccessGreen else FinishLineRed,
+                        radius = 10f,
+                        center = Offset(slitX, 25f)
                     )
                 }
             }
 
-            // Status Indicator Overlay (Item 7: Real Movement Check)
+            // Status Indicator Overlay (Real Movement Check)
             Surface(
-                color = if (isMovementDetected) SuccessGreen.copy(alpha = 0.9f) else Color.Black.copy(alpha = 0.75f),
+                color = if (isMovementDetected) SuccessGreen.copy(alpha = 0.95f) else Color.Black.copy(alpha = 0.75f),
                 shape = RoundedCornerShape(8.dp),
                 modifier = Modifier
                     .align(Alignment.TopStart)
@@ -266,12 +337,12 @@ fun TimingSystemScreen(
                     Icon(
                         imageVector = if (isMovementDetected) Icons.Default.CheckCircle else Icons.Default.Visibility,
                         contentDescription = null,
-                        tint = if (isMovementDetected) Color.Black else ElectricCyan,
+                        tint = if (isMovementDetected) Color.Black else Color.White,
                         modifier = Modifier.size(14.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = if (isMovementDetected) "TORSO DIKESAN DI GARISAN" else "MENUNGGU PERGERAKAN (STATIK)",
+                        text = if (isMovementDetected) "TORSO DIKESAN DI GARISAN!" else "KAMERA AKTIF (MENUNGGU TORSO)",
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
                         color = if (isMovementDetected) Color.Black else Color.White
@@ -281,7 +352,7 @@ fun TimingSystemScreen(
 
             // Motion Test / Cross Trigger button inside Camera overlay
             Surface(
-                color = StadiumSurfaceVariant.copy(alpha = 0.85f),
+                color = Color.Black.copy(alpha = 0.8f),
                 shape = RoundedCornerShape(8.dp),
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
@@ -295,10 +366,10 @@ fun TimingSystemScreen(
                     modifier = Modifier.testTag("simulate_motion_button")
                 ) {
                     Text(
-                        text = if (isMovementDetected) "Reset Sensor" else "Uji Lintasan Torso",
+                        text = if (isMovementDetected) "Reset Sensor" else "Uji Manual",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (isMovementDetected) FinishLineRed else LaserOrange
+                        color = if (isMovementDetected) FinishLineRed else SilverMetallic
                     )
                 }
             }
@@ -312,29 +383,26 @@ fun TimingSystemScreen(
             if (!isTimerRunning) {
                 Button(
                     onClick = {
-                        // Play loud starter gun impulse sound when user presses START RUN
-                        try {
-                            val toneGen = ToneGenerator(AudioManager.STREAM_MUSIC, 100)
-                            toneGen.startTone(ToneGenerator.TONE_PROP_BEEP2, 350)
-                        } catch (e: Exception) {
-                            e.printStackTrace()
+                        // Play genuine explosive Electronic Starter Gun shot audio
+                        if (isAudioGunEnabled) {
+                            ElectronicStarterGunAudio.playExplosiveStarterGunShot(coroutineScope)
                         }
                         onStartTimer()
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = ElectricCyan),
+                    colors = ButtonDefaults.buttonColors(containerColor = FinishLineRed),
                     shape = RoundedCornerShape(14.dp),
                     modifier = Modifier
                         .weight(1.5f)
                         .height(52.dp)
                         .testTag("start_timer_button")
                 ) {
-                    Icon(Icons.Default.PlayArrow, contentDescription = null, tint = Color.Black)
+                    Icon(Icons.Default.PlayArrow, contentDescription = null, tint = Color.White)
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text("MULA TIMING (GUN)", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.Black)
+                    Text("MULA TIMING (GUN)", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White)
                 }
             } else {
                 Button(
-                    onClick = onStopTimer,
+                    onClick = { onStopTimer() },
                     colors = ButtonDefaults.buttonColors(containerColor = FinishLineRed),
                     shape = RoundedCornerShape(14.dp),
                     modifier = Modifier
@@ -344,120 +412,85 @@ fun TimingSystemScreen(
                 ) {
                     Icon(Icons.Default.Stop, contentDescription = null, tint = Color.White)
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text("TAMAT (SIMPAN RACE)", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White)
+                    Text("TAMAT / RAKAM HASIL", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color.White)
                 }
             }
 
             OutlinedButton(
                 onClick = onResetTimer,
                 shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = TextSecondary),
-                border = androidx.compose.foundation.BorderStroke(1.dp, StadiumBorder),
+                border = androidx.compose.foundation.BorderStroke(1.dp, SilverBorder),
                 modifier = Modifier
-                    .weight(1f)
+                    .weight(0.7f)
                     .height(52.dp)
                     .testTag("reset_timer_button")
             ) {
-                Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
+                Icon(Icons.Default.Refresh, contentDescription = null, tint = Color.White)
                 Spacer(modifier = Modifier.width(4.dp))
-                Text("RESET", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                Text("RESET", fontSize = 12.sp, color = Color.White, fontWeight = FontWeight.Bold)
             }
         }
 
-        // AI BIOMECHANICAL TELEMETRY CARD (Item 7: Genuine Data Only When Motion Detected)
-        Card(
-            colors = CardDefaults.cardColors(containerColor = StadiumSurface),
-            shape = RoundedCornerShape(16.dp),
-            border = androidx.compose.foundation.BorderStroke(1.dp, StadiumBorder),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(modifier = Modifier.padding(14.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+        // BIOMECHANICS & METRICS ANALYSIS CARD
+        latestAiAnalysis?.let { analysis ->
+            Card(
+                colors = CardDefaults.cardColors(containerColor = StadiumSurface),
+                shape = RoundedCornerShape(16.dp),
+                border = androidx.compose.foundation.BorderStroke(1.dp, StadiumBorder),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.padding(14.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text(
-                        text = "Analisis AI Sains Sukan (Biomechanical)",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                    Surface(
-                        color = if (isMovementDetected) SuccessGreen.copy(alpha = 0.2f) else StadiumSurfaceVariant,
-                        shape = RoundedCornerShape(4.dp)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = if (isMovementDetected) "DATA SAHIH" else "TIADA PERGERAKAN",
-                            fontSize = 9.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = if (isMovementDetected) SuccessGreen else TextMuted,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            text = "AI BIOMECHANICS & PHOTO FINISH",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Black,
+                            color = SilverMetallic
                         )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                if (!isMovementDetected) {
-                    // Strictly NO fake values if stationary (Item 7)
-                    Surface(
-                        color = StadiumSurfaceVariant,
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(modifier = Modifier.padding(12.dp)) {
+                        Surface(
+                            color = StadiumSurfaceVariant,
+                            shape = RoundedCornerShape(6.dp)
+                        ) {
                             Text(
-                                text = "Kamera Statik / Tiada Subjek Melintasi Sensor",
-                                fontSize = 12.sp,
+                                text = "GRED KEJOHANAN",
+                                fontSize = 9.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = SpeedAmber
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = "AI pintar tidak menjana data palsu semasa kamera statik. Sila mulakan larian atau lakukan lintasan di garisan penamat untuk menjana analisis sains sukan sebenar.",
-                                fontSize = 11.sp,
-                                color = TextSecondary
+                                color = FinishLineRed,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                             )
                         }
                     }
-                } else {
-                    val analysis = latestAiAnalysis
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.SpaceAround
                     ) {
-                        KinematicMetric("Cadence", "${analysis?.cadenceSpM ?: 264} spm", ElectricCyan, Modifier.weight(1f))
-                        KinematicMetric("GCT Sentuhan", "${analysis?.groundContactTimeMs ?: 106} ms", LaserOrange, Modifier.weight(1f))
-                        KinematicMetric("Torso Lean", "${String.format("%.1f", analysis?.torsoLeanAngleDeg ?: 14.5)}°", SpeedAmber, Modifier.weight(1f))
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("Cadence", fontSize = 10.sp, color = TextSecondary)
+                            Text("${analysis.cadenceSpM} spm", fontSize = 16.sp, fontWeight = FontWeight.Black, color = Color.White)
+                        }
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("Stride Freq", fontSize = 10.sp, color = TextSecondary)
+                            Text("${String.format("%.2f", analysis.strideFrequencyHz)} Hz", fontSize = 16.sp, fontWeight = FontWeight.Black, color = Color.White)
+                        }
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("Contact Time", fontSize = 10.sp, color = TextSecondary)
+                            Text("${analysis.groundContactTimeMs} ms", fontSize = 16.sp, fontWeight = FontWeight.Black, color = Color.White)
+                        }
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("Torso Lean", fontSize = 10.sp, color = TextSecondary)
+                            Text("${String.format("%.1f", analysis.torsoLeanAngleDeg)}°", fontSize = 16.sp, fontWeight = FontWeight.Black, color = FinishLineRed)
+                        }
                     }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Text(
-                        text = analysis?.sportsScienceSummary ?: "Analisis biomekanik fasa penamat aktif.",
-                        fontSize = 11.sp,
-                        color = TextPrimary
-                    )
                 }
             }
         }
     }
 }
-
-@Composable
-private fun KinematicMetric(label: String, value: String, color: Color, modifier: Modifier = Modifier) {
-    Surface(
-        color = StadiumSurfaceVariant,
-        shape = RoundedCornerShape(8.dp),
-        modifier = modifier
-    ) {
-        Column(modifier = Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(label, fontSize = 10.sp, color = TextSecondary, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(value, fontSize = 13.sp, fontWeight = FontWeight.Black, color = color)
-        }
-    }
-}
-
-private fun Modifier.scale(scale: Float): Modifier = this
