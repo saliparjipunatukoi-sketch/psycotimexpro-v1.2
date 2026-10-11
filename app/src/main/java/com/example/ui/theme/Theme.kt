@@ -5,17 +5,18 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
+// Palette Tema: Merah, Hitam, Silver, Putih
 private val SportsColorScheme = darkColorScheme(
-    primary = ElectricCyan,
-    onPrimary = Color.Black,
-    primaryContainer = Color(0xFF0E3A4A),
-    onPrimaryContainer = ElectricCyanGlow,
-    secondary = LaserOrange,
+    primary = FinishLineRed,
+    onPrimary = Color.White,
+    primaryContainer = Color(0xFF450A0A),
+    onPrimaryContainer = Color(0xFFFECACA),
+    secondary = SilverMetallic,
     onSecondary = Color.Black,
-    secondaryContainer = Color(0xFF431407),
-    onSecondaryContainer = Color(0xFFFFEDD5),
-    tertiary = SpeedAmber,
-    onTertiary = Color.Black,
+    secondaryContainer = Color(0xFF27272A),
+    onSecondaryContainer = Color.White,
+    tertiary = LaserOrange,
+    onTertiary = Color.White,
     background = TrackDarkNavy,
     onBackground = TextPrimary,
     surface = StadiumSurface,

@@ -150,7 +150,7 @@ class MainActivity : ComponentActivity() {
                                         Icon(
                                             tab.icon,
                                             contentDescription = tab.title,
-                                            tint = if (currentTab == tab) ElectricCyan else TextSecondary
+                                            tint = if (currentTab == tab) FinishLineRed else SilverMetallic
                                         )
                                     },
                                     label = {
@@ -158,7 +158,7 @@ class MainActivity : ComponentActivity() {
                                             tab.title,
                                             fontSize = 9.sp,
                                             fontWeight = if (currentTab == tab) FontWeight.Bold else FontWeight.Normal,
-                                            color = if (currentTab == tab) ElectricCyan else TextSecondary
+                                            color = if (currentTab == tab) Color.White else SilverMetallic
                                         )
                                     },
                                     colors = NavigationBarItemDefaults.colors(

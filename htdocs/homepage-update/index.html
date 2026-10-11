@@ -1,0 +1,1803 @@
+<!DOCTYPE html>
+<html lang="ms" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>Psyco Time X Pro - Sports Management & ET Rental System</title>
+  <meta name="description" content="Laman rasmi Psyco Time X Pro: Pengurusan Sukan Profesional, Sewaan Electronic Timing System, Live Result, Galeri & Tempahan Produk." />
+  
+  <link rel="icon" type="image/svg+xml" href="/public/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/assets/live-sync.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: { red: '#dc2626', dark: '#09090b', card: '#111116' },
+            cyanAccent: '#00F0FF',
+            orangeLaser: '#FF6B00'
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      background-color: #09090b;
+      color: #f1f5f9;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      overflow-x: hidden;
+      margin: 0;
+      padding: 0;
+      transition: background-color 0.3s, color 0.3s;
+    }
+    html.light body {
+      background-color: #f8fafc;
+      color: #0f172a;
+    }
+    html.light .bg-[#09090b], html.light .bg-[#08080a] { background-color: #f1f5f9 !important; }
+    html.light .bg-[#0e0e12], html.light .bg-[#111115], html.light .bg-[#121216], html.light .bg-[#141418] { 
+      background-color: #ffffff !important; 
+      color: #0f172a !important;
+      border-color: #e2e8f0 !important;
+    }
+    html.light .text-white { color: #0f172a !important; }
+    html.light .text-zinc-300, html.light .text-zinc-400 { color: #475569 !important; }
+    html.light .border-zinc-800 { border-color: #e2e8f0 !important; }
+
+    .font-orbitron { font-family: 'Orbitron', monospace; }
+    .carousel-slide { display: none; transition: opacity 0.7s ease-in-out; }
+    .carousel-slide.active { display: flex; }
+    .page-section { display: none; }
+    .page-section.active { display: block; }
+
+    .pulse-glow { animation: pulseGlow 2s infinite; }
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: .5; transform: scale(1.05); }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between bg-[#09090b] text-zinc-100">
+
+  <!-- Realtime Audio Alert for Push Notification -->
+  <audio id="audio-push-alert" preload="auto">
+    <source src="data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU..." type="audio/wav">
+  </audio>
+
+  <!-- Top Real-time System Bar -->
+  <div class="bg-gradient-to-r from-black via-red-950 to-black text-xs text-zinc-300 py-2 px-4 border-b border-red-900/40">
+    <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-2">
+      <div class="flex items-center gap-2">
+        <span class="px-2 py-0.5 rounded text-[10px] font-black bg-red-600 text-white animate-pulse">
+          LIVE SYSTEM
+        </span>
+        <span class="text-zinc-300 text-[11px]" id="txt-top-cert">
+          Sistem Electronic Timing (ET) Rasmi • FinishLynx World Athletics Certified • Bermula RM450/hari
+        </span>
+      </div>
+      <div class="flex items-center gap-4 text-[11px]">
+        <div class="flex items-center gap-1 text-emerald-400">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 pulse-glow"></span>
+          <span id="live-visitor-badge">24 Pelawat Aktif</span>
+        </div>
+        <span>Admin Bertugas: <strong class="text-white">NIA</strong></span>
+        <a href="https://wa.me/60165861530" target="_blank" class="text-emerald-400 font-bold hover:underline">
+          +6016-5861530
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Header Navbar -->
+  <header class="sticky top-0 z-50 bg-[#09090b]/95 backdrop-blur-md border-b border-zinc-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+      
+      <!-- Brand Logo Rasmi -->
+      <div class="flex items-center gap-3 cursor-pointer" onclick="navigateTo('home')">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-red-600 via-red-500 to-amber-500 flex items-center justify-center font-orbitron font-black text-xl text-white shadow-lg shadow-red-900/50">
+          X
+        </div>
+        <div>
+          <div class="font-orbitron font-black text-base text-white">PSYCO<span class="text-red-500">TIME</span> PRO</div>
+          <div class="text-[9px] tracking-widest uppercase text-red-400 font-black" id="txt-nav-motto">Sukan Balapan & Padang • Electronic Timing</div>
+        </div>
+      </div>
+
+      <!-- Main Navigation Menu -->
+      <nav class="hidden xl:flex items-center gap-1.5 text-xs font-bold">
+        <button onclick="navigateTo('home')" id="nav-home" class="px-3.5 py-2 rounded-xl text-white bg-zinc-800 border border-red-500/40">
+          <span id="nav-lbl-home">Utama</span>
+        </button>
+        <button onclick="navigateTo('et-rental')" id="nav-et-rental" class="px-3 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-zinc-800/60 transition flex items-center gap-1">
+          <span>ET Rental</span>
+          <span class="text-[9px] bg-red-600/90 text-white px-1.5 py-0.5 rounded-full">RM450</span>
+        </button>
+        <a href="/et-schedule/" class="px-3 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-zinc-800/60 transition flex items-center gap-1">
+          <span>Jadual ET</span>
+          <span class="text-[9px] bg-amber-950 text-amber-400 border border-amber-800 px-1 py-0.2 rounded">Admin</span>
+        </a>
+        <a href="/et-results/" class="px-3 py-2 rounded-xl text-emerald-400 hover:text-emerald-300 hover:bg-zinc-800/60 transition flex items-center gap-1.5 font-black">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+          <span>Result Live</span>
+        </a>
+        <a href="/sports-management/" class="px-3 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-zinc-800/60 transition flex items-center gap-1">
+          <span>Pengurusan Sukan</span>
+          <span class="text-[9px] bg-red-950 text-red-400 border border-red-800 px-1 py-0.2 rounded">Portal</span>
+        </a>
+        <!-- TAB KHAS APK TRAINING MANAGEMENT -->
+        <a href="/training-management/" class="px-3.5 py-2 rounded-xl text-black bg-gradient-to-r from-cyan-400 to-cyan-300 hover:from-cyan-300 hover:to-white transition flex items-center gap-1.5 font-black shadow-lg shadow-cyan-900/30">
+          <span>📱</span>
+          <span>Register APK</span>
+          <span class="text-[9px] bg-black text-cyan-400 px-1.5 py-0.5 rounded-full font-extrabold uppercase">Free 7D</span>
+        </a>
+        <a href="#ruang-yuran-training" class="px-3 py-2 rounded-xl text-amber-400 hover:text-amber-300 hover:bg-zinc-800/60 transition flex items-center gap-1 font-bold">
+          <span>💎</span>
+          <span>Yuran Subscribe</span>
+        </a>
+        <a href="/kedai-produk/" class="px-3 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-zinc-800/60 transition flex items-center gap-1">
+          <span>Kedai Produk</span>
+        </a>
+        <a href="/gallery/" class="px-3 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-zinc-800/60 transition flex items-center gap-1">
+          <span>Galeri</span>
+        </a>
+        <button onclick="navigateTo('merchandise')" id="nav-merchandise" class="px-3 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-zinc-800/60 transition">
+          <span>Customize Baju</span>
+        </button>
+      </nav>
+
+      <!-- Action Buttons & Utilities -->
+      <div class="flex items-center gap-2">
+        <!-- Direct Quick Register Button -->
+        <a href="/training-management/" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-cyan-950 border border-cyan-500 text-cyan-300 hover:bg-cyan-900 hover:text-white text-xs font-bold transition">
+          <i class="fa-solid fa-download text-xs"></i>
+          <span>Download APK</span>
+        </a>
+
+        <!-- Dark Mode Switch -->
+        <button onclick="toggleDarkMode()" id="btn-darkmode" title="Tukar Mod Gelap/Terang" class="p-2 rounded-xl bg-zinc-900 border border-zinc-700 text-xs text-zinc-300 hover:text-white">
+          🌙
+        </button>
+
+        <!-- Multi-language Switch -->
+        <button onclick="toggleLanguage()" id="btn-lang" title="Tukar Bahasa / Switch Language" class="px-2.5 py-1.5 rounded-xl bg-zinc-900 border border-zinc-700 text-[11px] font-bold text-zinc-300 hover:text-white">
+          BM | EN
+        </button>
+
+        <!-- Push Notification Toggle -->
+        <button onclick="enablePushNotifications()" id="btn-push-notif" title="Aktifkan Notifikasi Keputusan" class="p-2 rounded-xl bg-zinc-900 border border-zinc-700 text-xs text-amber-400 hover:text-amber-300">
+          🔔
+        </button>
+
+        <!-- Admin Login Button -->
+        <button 
+          onclick="openAdminModal()" 
+          id="btn-admin-auth"
+          class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-red-950/80 hover:bg-red-900 border border-red-700 text-red-200 text-xs font-bold transition"
+        >
+          <span>🔒</span>
+          <span id="admin-btn-label">Superadmin</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile Sub-Navigation Bar -->
+    <div class="xl:hidden flex items-center gap-1.5 overflow-x-auto px-4 py-2 bg-[#0c0c10] border-t border-zinc-800 text-xs font-bold scrollbar-none whitespace-nowrap">
+      <button onclick="navigateTo('home')" class="px-3 py-1.5 rounded-lg bg-zinc-800 text-white">Utama</button>
+      <a href="/training-management/" class="px-3 py-1.5 rounded-lg bg-cyan-500 text-black font-black">📱 Register APK (7D Free)</a>
+      <a href="#ruang-yuran-training" class="px-3 py-1.5 rounded-lg text-amber-400 font-bold">💎 Yuran Subscribe</a>
+      <button onclick="navigateTo('et-rental')" class="px-3 py-1.5 rounded-lg text-zinc-300">ET Rental</button>
+      <a href="/et-schedule/" class="px-3 py-1.5 rounded-lg text-zinc-300">Jadual ET</a>
+      <a href="/et-results/" class="px-3 py-1.5 rounded-lg text-emerald-400 font-bold">Result Live</a>
+      <a href="/sports-management/" class="px-3 py-1.5 rounded-lg text-red-400 font-extrabold">Pengurusan Sukan</a>
+      <a href="/kedai-produk/" class="px-3 py-1.5 rounded-lg text-zinc-300">Kedai Produk</a>
+      <a href="/gallery/" class="px-3 py-1.5 rounded-lg text-zinc-300">Galeri</a>
+      <button onclick="navigateTo('merchandise')" class="px-3 py-1.5 rounded-lg text-zinc-300">Baju</button>
+      <button onclick="openAdminModal()" class="px-3 py-1.5 rounded-lg text-zinc-400 border border-zinc-700">Admin</button>
+    </div>
+  </header>
+
+  <!-- In-App Floating Push Notification Toast -->
+  <div id="home-push-toast" class="fixed bottom-6 right-6 z-50 hidden max-w-sm w-full bg-zinc-900/95 border-2 border-emerald-500 p-4 rounded-3xl shadow-2xl backdrop-blur-md">
+    <div class="flex items-start gap-3">
+      <div class="w-10 h-10 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center font-bold text-lg shrink-0">
+        🔔
+      </div>
+      <div class="flex-1">
+        <div class="flex items-center justify-between">
+          <span class="text-[10px] font-black uppercase text-emerald-400 tracking-wider">NOTIFIKASI MASA NYATA</span>
+          <button onclick="document.getElementById('home-push-toast').classList.add('hidden')" class="text-zinc-400 hover:text-white">&times;</button>
+        </div>
+        <h4 class="text-xs font-bold text-white mt-0.5" id="h-toast-title">Keputusan Acara 100m Diterbitkan!</h4>
+        <p class="text-[11px] text-zinc-300 mt-1" id="h-toast-desc">Keputusan kini boleh dilihat secara langsung di Portal ET Result.</p>
+        <div class="mt-2 text-right">
+          <a href="/et-results/" class="text-[11px] font-bold text-emerald-400 hover:underline">Buka Result Live &rarr;</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- 1. PAGE: HOME SECTION                                    -->
+  <!-- ======================================================== -->
+  <section id="page-home" class="page-section active max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-16">
+    
+    <!-- Hero Banner Rasmi -->
+    <div class="relative rounded-3xl bg-gradient-to-b from-[#141418] via-[#0d0d10] to-[#070709] border border-zinc-800 p-8 sm:p-12 shadow-2xl overflow-hidden">
+      <div class="max-w-3xl space-y-4">
+        <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-red-950/70 border border-red-700/60 text-red-300 text-xs font-bold">
+          <span>LAMAN RASMI WWW.PSYCOTIMEXPRO.MY</span>
+        </div>
+        <h1 class="text-3xl sm:text-5xl font-black font-orbitron text-white leading-tight">
+          PSYCO<span class="text-red-500">TIME</span> X PRO
+        </h1>
+        <p class="text-sm sm:text-base text-zinc-300 leading-relaxed" id="hero-desc">
+          Pusat sewaan sistem timing elektronik <strong class="text-white">(Electronic Timing Rental)</strong>, portal pengurusan kejohanan dari scratch, kedai produk sukan balapan & padang, serta sistem janaan keputusan rasmi.
+        </p>
+        <div class="pt-2 flex flex-wrap gap-3">
+          <a 
+            href="/training-management/"
+            class="px-6 py-3.5 rounded-xl bg-gradient-to-r from-cyan-400 via-cyan-500 to-blue-600 hover:from-cyan-300 hover:to-blue-500 text-black font-black text-xs shadow-xl shadow-cyan-900/50 flex items-center gap-2 transition-all hover:scale-105"
+          >
+            <span>📱</span> 
+            <span>DAFTAR & DOWNLOAD APK (7 HARI FREE)</span>
+          </a>
+          <button 
+            onclick="navigateTo('et-rental')"
+            class="px-6 py-3.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs shadow-lg shadow-red-950 transition-all hover:scale-105"
+          >
+            Sewa ET System (Bermula RM450)
+          </button>
+          <a 
+            href="#ruang-yuran-training"
+            class="inline-block px-5 py-3.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-amber-400 font-bold text-xs border border-amber-600/60 text-center flex items-center gap-1.5"
+          >
+            <span>💎</span> Pakej Langganan (RM30 - RM80)
+          </a>
+          <a 
+            href="/sports-management/"
+            class="inline-block px-6 py-3.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-xs border border-zinc-700 text-center"
+          >
+            Daftar / Urus Kejohanan &rarr;
+          </a>
+          <a 
+            href="/et-results/"
+            class="inline-block px-6 py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow text-center"
+          >
+            Lihat Keputusan Live ⏱️
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- PROMOSI KHAS: DOWNLOAD APPS ANDROID - TRAINING MANAGEMENT -->
+    <!-- (ET STANDALONE APPS + TRAINING MANAGEMENT CLOUD SYNC)   -->
+    <!-- ======================================================== -->
+    <div class="rounded-3xl bg-gradient-to-r from-[#0d1527] via-[#09101d] to-[#120a1c] border-2 border-cyan-500/40 p-6 sm:p-10 shadow-2xl relative overflow-hidden">
+      <div class="absolute -right-20 -top-20 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute -left-20 -bottom-20 w-80 h-80 bg-orange-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
+        <!-- Text & Info -->
+        <div class="lg:col-span-8 space-y-4 text-left">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-cyan-950 text-cyan-300 border border-cyan-700 flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
+              NEW APK RELEASE • PERCUBAAN PERCUMA 7 HARI (7 DAYS TRIAL)
+            </span>
+            <span class="px-3 py-1 rounded-full text-[10px] font-bold bg-orange-950/80 text-orange-400 border border-orange-800">
+              ET STANDALONE APPS + TRAINING MANAGEMENT
+            </span>
+          </div>
+
+          <h2 class="text-2xl sm:text-3xl lg:text-4xl font-black font-orbitron text-white leading-tight">
+            Download Apps Android: <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-orange-400 to-yellow-400">Psyco Time X Pro</span>
+          </h2>
+
+          <p class="text-xs sm:text-sm text-zinc-300 leading-relaxed max-w-2xl">
+            Sistem pengurusan latihan sukan balapan & padang serba lengkap di dalam telefon Android anda. Merangkumi sukatan masa elektronik standalone (Audio Gun Starter, Gate Cam 1 & Cam 2 Finisher, AI Torso Detection), simpanan rekod peribadi (PB), pengurusan yuran atlit, dan sync automatik ke pelayan web cloud portal.
+          </p>
+
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 text-xs">
+            <div class="bg-black/40 border border-zinc-800 p-3 rounded-2xl">
+              <div class="text-[10px] text-zinc-500 font-bold uppercase">Lesen Percubaan</div>
+              <div class="font-black text-emerald-400 font-mono text-sm mt-0.5">7 Days Trial</div>
+            </div>
+            <div class="bg-black/40 border border-zinc-800 p-3 rounded-2xl">
+              <div class="text-[10px] text-zinc-500 font-bold uppercase">Sistem Timing</div>
+              <div class="font-black text-cyan-400 font-mono text-sm mt-0.5">ET Standalone</div>
+            </div>
+            <div class="bg-black/40 border border-zinc-800 p-3 rounded-2xl">
+              <div class="text-[10px] text-zinc-500 font-bold uppercase">Sync Cloud</div>
+              <div class="font-black text-orange-400 font-mono text-sm mt-0.5">Auto Web Sync</div>
+            </div>
+            <div class="bg-black/40 border border-zinc-800 p-3 rounded-2xl">
+              <div class="text-[10px] text-zinc-500 font-bold uppercase">Saiz Fail APK</div>
+              <div class="font-black text-white font-mono text-sm mt-0.5">25.5 MB (v2.4)</div>
+            </div>
+          </div>
+
+          <!-- CTAs -->
+          <div class="pt-3 flex flex-wrap items-center gap-3">
+            <a 
+              href="/training-management/"
+              class="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-300 hover:to-blue-400 text-black font-black text-xs shadow-xl shadow-cyan-950 flex items-center gap-2 transition hover:scale-105"
+            >
+              <span class="text-base">📝</span>
+              <span>Daftar Akaun & Buka Portal APK</span>
+            </a>
+            <a 
+              href="/training-management/downloads/PsycoTimeXPro-Latest.apk"
+              download
+              class="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-black font-black text-xs shadow-xl shadow-emerald-950 flex items-center gap-2 transition hover:scale-105"
+            >
+              <span class="text-base">📥</span>
+              <span>Muat Turun APK Terkini (.apk)</span>
+            </a>
+            <a 
+              href="#ruang-yuran-training"
+              class="px-5 py-3.5 rounded-2xl bg-zinc-900/80 hover:bg-zinc-800 text-amber-300 font-bold text-xs border border-amber-700/60 transition flex items-center gap-1.5"
+            >
+              <span>💎</span>
+              <span>Semak Struktur Yuran Bulanan</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Right App Card Graphic -->
+        <div class="lg:col-span-4 flex justify-center">
+          <div class="w-full max-w-xs rounded-3xl bg-black/60 border border-cyan-500/30 p-6 space-y-4 shadow-2xl relative text-center">
+            <div class="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-cyan-400 via-orange-500 to-red-600 flex items-center justify-center text-3xl text-white shadow-lg shadow-cyan-500/30 font-orbitron font-black">
+              X
+            </div>
+            <div>
+              <div class="font-orbitron font-black text-base text-white">PSYCO TIME X PRO</div>
+              <div class="text-[11px] text-cyan-400 font-bold mt-0.5">Android APK Edition 2026</div>
+              <div class="text-[10px] text-zinc-500 mt-1">Kompatibel: Android 8.0 - 15+</div>
+            </div>
+            <div class="p-3 bg-zinc-950 rounded-2xl border border-zinc-800 space-y-1.5 text-left text-xs">
+              <div class="flex items-center gap-2 text-zinc-300">
+                <span class="text-emerald-400">✔</span> <span>ET Photo Finish Standalone</span>
+              </div>
+              <div class="flex items-center gap-2 text-zinc-300">
+                <span class="text-emerald-400">✔</span> <span>Audio Gun Shot Detector</span>
+              </div>
+              <div class="flex items-center gap-2 text-zinc-300">
+                <span class="text-emerald-400">✔</span> <span>Dual Gate Camera (Cam 1 & Cam 2)</span>
+              </div>
+              <div class="flex items-center gap-2 text-zinc-300">
+                <span class="text-emerald-400">✔</span> <span>Full Cloud Training Management</span>
+              </div>
+            </div>
+            <a 
+              href="/training-management/downloads/PsycoTimeXPro-Latest.apk"
+              download
+              class="block w-full py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs shadow transition"
+            >
+              Download Sekarang (.apk)
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Carousel Poster Slider -->
+    <div class="space-y-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-xl md:text-2xl font-black font-orbitron text-white flex items-center gap-2">
+            <span>SOROTAN & PROMOSI PERKHIDMATAN UTAMA</span>
+          </h2>
+          <p class="text-xs text-zinc-400">Koleksi poster promosi sistem timing, kepegawaian dan penganjuran sukan.</p>
+        </div>
+        <button 
+          onclick="openAdminModal('carousel')" 
+          class="px-3.5 py-1.5 rounded-xl bg-red-950/80 border border-red-700 text-red-300 text-xs font-bold hover:bg-red-900 transition-colors"
+        >
+          &plus; Edit Poster Slider
+        </button>
+      </div>
+
+      <div id="carousel-box" class="relative rounded-3xl overflow-hidden border border-zinc-800 bg-[#0d0d10] shadow-2xl h-[420px]"></div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- PAPAN IKLAN PROMOSI & JADUAL KEJOHANAN BERDAFTAR         -->
+    <!-- ======================================================== -->
+    <div class="space-y-6 pt-2">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-800 pb-4">
+        <div>
+          <div class="inline-flex items-center gap-2 px-2.5 py-0.5 rounded bg-red-950 border border-red-800 text-red-400 text-[10px] font-black uppercase">
+            <span>PAPAN IKLAN PROMOSI KEJOHANAN</span>
+          </div>
+          <h2 class="text-2xl font-black font-orbitron text-white mt-1">Kejohanan Berdaftar & Bakal Berlangsung</h2>
+          <p class="text-xs text-zinc-400">Semua kejohanan yang didaftarkan daripada scratch melalui portal Sports Management disiarkan di sini.</p>
+        </div>
+        <a href="/sports-management/" class="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold shadow w-max">
+          &plus; Daftar Kejohanan Anda Sendiri
+        </a>
+      </div>
+
+      <!-- Championships Billboard Grid -->
+      <div id="home-tournaments-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Dynamically rendered -->
+      </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- PAPAN PROMOSI & JADUAL KESELURUHAN ET RENTAL             -->
+    <!-- ======================================================== -->
+    <div class="space-y-6 pt-2">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-800 pb-4">
+        <div>
+          <div class="inline-flex items-center gap-2 px-2.5 py-0.5 rounded bg-amber-950 border border-amber-800 text-amber-400 text-[10px] font-black uppercase">
+            <span>JADUAL KESELURUHAN & SESI SEWAAN</span>
+          </div>
+          <h2 class="text-2xl font-black font-orbitron text-white mt-1">Promosi Ketersediaan ET Rental</h2>
+          <p class="text-xs text-zinc-400">Jadual tempahan rasmi timing system yang disahkan oleh Admin Psyco Time X Pro.</p>
+        </div>
+        <div class="flex gap-2">
+          <a href="/et-schedule/" class="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 text-xs font-bold">
+            Urus Jadual (Admin)
+          </a>
+          <button onclick="navigateTo('et-rental')" class="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold shadow">
+            Tempah Pakej ET
+          </button>
+        </div>
+      </div>
+
+      <!-- Desktop View: Compact Table -->
+      <div class="hidden md:block rounded-2xl bg-[#111115] border border-zinc-800 overflow-hidden shadow-xl">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-zinc-900 text-zinc-400 uppercase font-bold border-b border-zinc-800">
+            <tr>
+              <th class="py-3 px-4 w-36">Tarikh Acara</th>
+              <th class="py-3 px-4">Nama Kejohanan & Lokasi</th>
+              <th class="py-3 px-4">Pakej ET</th>
+              <th class="py-3 px-4">Penganjur</th>
+              <th class="py-3 px-4 w-28">Status Tempahan</th>
+              <th class="py-3 px-4 text-right w-32">Tindakan</th>
+            </tr>
+          </thead>
+          <tbody id="home-schedule-tbody" class="divide-y divide-zinc-800/80">
+            <!-- Dynamically populated -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Mobile View: Clean Native Cards -->
+      <div id="home-schedule-mobile-cards" class="md:hidden space-y-3">
+        <!-- Dynamically populated for mobile screens -->
+      </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- SLIDESHOW & MULTI-COLUMN PREVIEW GALERI KENANGAN         -->
+    <!-- ======================================================== -->
+    <div class="space-y-6 pt-2">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-800 pb-4">
+        <div>
+          <span class="text-xs font-black uppercase text-red-500 tracking-wider">KENANGAN ACARA & ALBUM PERISTIWA</span>
+          <h2 class="text-2xl font-black font-orbitron text-white">Galeri Kenangan Psyco Time X Pro</h2>
+          <p class="text-xs text-zinc-400">Paparan 1-2 foto pilihan rawak sistem & senarai album penuh kejohanan untuk tatapan umum.</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <a href="/gallery/" class="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold shadow transition w-max">
+            📸 Buka Semua Album (Full Galeri) &rarr;
+          </a>
+        </div>
+      </div>
+
+      <!-- Grid: 1-2 Random Featured Photos + Album Quick Switcher List -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <div class="lg:col-span-7 space-y-3">
+          <div class="flex items-center justify-between text-xs font-bold">
+            <span class="text-red-400 flex items-center gap-1.5">
+              <span>🎲</span> Pilihan Rawak Sistem (Random Showcase)
+            </span>
+            <button onclick="renderHomeGallery()" class="text-zinc-400 hover:text-white text-[11px] underline">
+              🔄 Rawak Semula
+            </button>
+          </div>
+          <div id="home-gallery-preview" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <!-- Injected by JS: 1-2 random photos -->
+          </div>
+        </div>
+
+        <div class="lg:col-span-5 space-y-3">
+          <div class="text-xs font-bold text-zinc-300 flex items-center justify-between">
+            <span>📁 Pilih Album Penuh Kejohanan:</span>
+            <span class="text-[11px] text-zinc-500 font-mono" id="home-total-albums-count">3 Album</span>
+          </div>
+          <div id="home-albums-list" class="space-y-2.5 max-h-96 overflow-y-auto pr-1">
+            <!-- Injected by JS: Album list items -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- DASHBOARD ANALITIK PENGUNJUNG LANGSUNG & CARTA           -->
+    <!-- ======================================================== -->
+    <div class="space-y-8 pt-4">
+      <div class="border-b border-zinc-800 pb-4">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-950 border border-emerald-800 text-emerald-400 text-xs font-black uppercase">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+          <span>DASHBOARD ANALITIK TRAFIK MASA NYATA</span>
+        </div>
+        <h2 class="text-2xl font-black font-orbitron text-white mt-1">Pemantauan Pelawat & Visualisasi Prestasi</h2>
+        <p class="text-xs text-zinc-400">Statistik trafik secara langsung dan visualisasi carta data prestasi kejohanan.</p>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+        <div class="p-5 rounded-2xl bg-[#111115] border border-zinc-800 space-y-2">
+          <div class="text-[10px] text-zinc-400 font-bold uppercase">PELAWAT AKTIF LANGSUNG</div>
+          <div class="text-3xl font-black font-orbitron text-emerald-400 flex items-center gap-2">
+            <span id="stat-active-visitors">24</span>
+            <span class="text-xs font-sans text-emerald-500 font-bold">Online</span>
+          </div>
+          <div class="text-[10px] text-zinc-500">Masa respon pelayan: 18ms</div>
+        </div>
+
+        <div class="p-5 rounded-2xl bg-[#111115] border border-zinc-800 space-y-2">
+          <div class="text-[10px] text-zinc-400 font-bold uppercase">TONTONAN HALAMAN HARI INI</div>
+          <div class="text-3xl font-black font-orbitron text-white">1,480</div>
+          <div class="text-[10px] text-emerald-400 font-bold">+18.4% berbanding semalam</div>
+        </div>
+
+        <div class="p-5 rounded-2xl bg-[#111115] border border-zinc-800 space-y-2">
+          <div class="text-[10px] text-zinc-400 font-bold uppercase">KEJOHANAN DIKENDALIKAN</div>
+          <div class="text-3xl font-black font-orbitron text-red-500">28+</div>
+          <div class="text-[10px] text-zinc-400">Sabah, WPL & Seluruh Malaysia</div>
+        </div>
+
+        <div class="p-5 rounded-2xl bg-[#111115] border border-zinc-800 space-y-2">
+          <div class="text-[10px] text-zinc-400 font-bold uppercase">KEPUTUSAN PHOTO-FINISH DISAHKAN</div>
+          <div class="text-3xl font-black font-orbitron text-amber-400">1,240+</div>
+          <div class="text-[10px] text-zinc-400">Ketepatan 1/1000 saat</div>
+        </div>
+      </div>
+
+      <!-- Interactive Charts Container -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="p-6 rounded-3xl bg-[#111115] border border-zinc-800 space-y-4">
+          <div class="flex justify-between items-center">
+            <h3 class="font-bold font-orbitron text-white text-sm">Visualisasi Masa Terpantas 100m (s) Mengikut Kategori</h3>
+            <span class="text-[10px] font-mono text-red-400 bg-red-950/60 px-2 py-0.5 rounded border border-red-800">Live Metric</span>
+          </div>
+          
+          <div class="space-y-3 pt-2 text-xs">
+            <div>
+              <div class="flex justify-between text-[11px] mb-1">
+                <span class="font-bold text-zinc-300">Lelaki Terbuka</span>
+                <span class="font-mono font-bold text-red-400">10.45s (Rekod Kejohanan)</span>
+              </div>
+              <div class="w-full bg-zinc-900 rounded-full h-3.5 overflow-hidden">
+                <div class="bg-gradient-to-r from-red-600 to-amber-500 h-full rounded-full" style="width: 95%"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between text-[11px] mb-1">
+                <span class="font-bold text-zinc-300">Lelaki B18 (MSSD)</span>
+                <span class="font-mono font-bold text-red-400">11.20s</span>
+              </div>
+              <div class="w-full bg-zinc-900 rounded-full h-3.5 overflow-hidden">
+                <div class="bg-gradient-to-r from-red-600 to-red-400 h-full rounded-full" style="width: 88%"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between text-[11px] mb-1">
+                <span class="font-bold text-zinc-300">Wanita Terbuka</span>
+                <span class="font-mono font-bold text-red-400">11.95s</span>
+              </div>
+              <div class="w-full bg-zinc-900 rounded-full h-3.5 overflow-hidden">
+                <div class="bg-gradient-to-r from-red-600 to-red-500 h-full rounded-full" style="width: 82%"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between text-[11px] mb-1">
+                <span class="font-bold text-zinc-300">Perempuan B18</span>
+                <span class="font-mono font-bold text-red-400">12.30s</span>
+              </div>
+              <div class="w-full bg-zinc-900 rounded-full h-3.5 overflow-hidden">
+                <div class="bg-gradient-to-r from-red-700 to-red-500 h-full rounded-full" style="width: 78%"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between text-[11px] mb-1">
+                <span class="font-bold text-zinc-300">Lelaki B12 (MSSR)</span>
+                <span class="font-mono font-bold text-red-400">12.80s</span>
+              </div>
+              <div class="w-full bg-zinc-900 rounded-full h-3.5 overflow-hidden">
+                <div class="bg-gradient-to-r from-red-800 to-red-600 h-full rounded-full" style="width: 74%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-6 rounded-3xl bg-[#111115] border border-zinc-800 space-y-4">
+          <div class="flex justify-between items-center">
+            <h3 class="font-bold font-orbitron text-white text-sm">Pecahan Acara Kejohanan & Log Langsung</h3>
+            <span class="text-[10px] font-mono text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800">Aktif</span>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2 text-center text-xs">
+            <div class="p-3 rounded-xl bg-zinc-900 border border-zinc-800">
+              <div class="font-black text-lg font-orbitron text-red-400">54%</div>
+              <div class="text-[10px] text-zinc-400 uppercase font-bold mt-1">Balapan & Sprint</div>
+            </div>
+            <div class="p-3 rounded-xl bg-zinc-900 border border-zinc-800">
+              <div class="font-black text-lg font-orbitron text-amber-400">32%</div>
+              <div class="text-[10px] text-zinc-400 uppercase font-bold mt-1">Acara Padang</div>
+            </div>
+            <div class="p-3 rounded-xl bg-zinc-900 border border-zinc-800">
+              <div class="font-black text-lg font-orbitron text-emerald-400">14%</div>
+              <div class="text-[10px] text-zinc-400 uppercase font-bold mt-1">Lari Berganti</div>
+            </div>
+          </div>
+
+          <div class="space-y-2 pt-2 text-[11px] font-mono border-t border-zinc-800">
+            <div class="flex items-center justify-between text-zinc-400">
+              <span>[09:30 AM] Keputusan 100m Akhir Disahkan</span>
+              <span class="text-emerald-400 font-bold">LIVE</span>
+            </div>
+            <div class="flex items-center justify-between text-zinc-400">
+              <span>[09:22 AM] Call Room Saringan 2 Selesai</span>
+              <span class="text-zinc-500">OK</span>
+            </div>
+            <div class="flex items-center justify-between text-zinc-400">
+              <span>[09:15 AM] Kad Padang Lontar Peluru Dicetak</span>
+              <span class="text-zinc-500">PDF</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Random Products Section -->
+    <div class="space-y-6 pt-2">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-800 pb-4">
+        <div>
+          <span class="text-xs font-black uppercase text-red-500 tracking-wider">PRODUK PILIHAN HARI INI</span>
+          <h2 class="text-2xl font-black font-orbitron text-white">Peralatan Sukan Hangat</h2>
+          <p class="text-xs text-zinc-400">Katalog peralatan olahraga berstandard piawai kejohanan.</p>
+        </div>
+        <a href="/kedai-produk/" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-red-950/70 border border-red-800 text-red-400 hover:text-white hover:bg-red-900 text-xs font-bold transition w-max">
+          <span>Lihat Semua Produk di Kedai &rarr;</span>
+        </a>
+      </div>
+
+      <div id="home-random-products" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"></div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- RUANGAN KHAS DI BAWAH SEKALI: PROMOSI YURAN SUBSCRIBE TRAINING MANAGEMENT -->
+    <!-- ========================================================================= -->
+    <div id="ruang-yuran-training" class="pt-10 space-y-10 border-t-2 border-red-900/50">
+      
+      <!-- Header Ruangan Promosi -->
+      <div class="text-center max-w-4xl mx-auto space-y-3">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-950 border border-cyan-500 text-cyan-300 text-xs font-black uppercase tracking-wider">
+          <i class="fa-solid fa-crown text-amber-400"></i>
+          <span>PAKEJ RASMI LANGGANAN TRAINING MANAGEMENT (APK ANDROID)</span>
+        </div>
+        <h2 class="text-3xl sm:text-5xl font-black font-orbitron text-white tracking-wide">
+          STRUKTUR YURAN LANGGANAN <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-orange-400 to-amber-400">BULANAN</span>
+        </h2>
+        <p class="text-xs sm:text-sm text-zinc-300 leading-relaxed max-w-2xl mx-auto">
+          Dapatkan akses penuh pemasa digital rasmi 0:00:00:000, Dwi-Kamera Cam 1 (Starter) & Cam 2 (Torso Finish Gate), AI Biomekanik, dan pangkalan data atlit tanpa had. Pendaftaran pertama diberi <strong class="text-cyan-400">Free Trial 7 Hari (10 Atlit)</strong>!
+        </p>
+      </div>
+
+      <!-- Grid 4 Pakej Rasmi (RM30, RM40, RM60, RM80) -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
+        
+        <!-- Pakej 1: RM30 -->
+        <div class="rounded-3xl bg-[#111116] border-2 border-cyan-500/80 p-7 flex flex-col justify-between relative shadow-xl shadow-cyan-950/30 hover:border-cyan-400 transition group">
+          <div class="absolute -top-3.5 left-1/2 transform -translate-x-1/2 bg-cyan-500 text-black text-[10px] font-black uppercase tracking-widest px-4 py-1 rounded-full shadow">
+            ASAS KELAB
+          </div>
+          <div>
+            <div class="flex justify-between items-center mb-4 mt-2">
+              <span class="text-xs font-bold px-2.5 py-1 bg-cyan-950 text-cyan-300 rounded-full border border-cyan-800">PELAN 1</span>
+              <span class="text-xs text-cyan-400 font-semibold font-mono">1 Bulan</span>
+            </div>
+            <h3 class="font-orbitron text-2xl font-black text-white">PELAN RM30</h3>
+            <div class="my-4">
+              <span class="text-4xl sm:text-5xl font-black font-orbitron text-cyan-400">RM 30</span>
+              <span class="text-xs text-zinc-400 font-sans">/ Bulan</span>
+            </div>
+            <p class="text-xs text-zinc-400 mb-6">Pilihan jimat untuk jurulatih sekolah rendah dan kelab permulaan.</p>
+            <ul class="space-y-3 text-xs text-zinc-200 border-t border-zinc-800 pt-5">
+              <li class="flex items-center gap-2 font-bold text-white"><i class="fa-solid fa-check text-cyan-400"></i> 30 Orang Atlit (1 Bulan)</li>
+              <li class="flex items-center gap-2 font-bold text-cyan-300"><i class="fa-solid fa-check text-cyan-400"></i> + 2 Sub Coach / Urusetia</li>
+              <li class="flex items-center gap-2 text-zinc-300"><i class="fa-solid fa-check text-cyan-400"></i> Cam 1 + Cam 2 Torso Laser</li>
+              <li class="flex items-center gap-2 text-zinc-300"><i class="fa-solid fa-check text-cyan-400"></i> Auto Sync Web Portal</li>
+              <li class="flex items-center gap-2 text-zinc-300"><i class="fa-solid fa-check text-cyan-400"></i> Kad Teknikal Digital & Cetak</li>
+            </ul>
+          </div>
+          <div class="pt-6">
+            <a href="https://wa.me/60165861530?text=Halo%20Admin%20NIA,%20saya%20ingin%20langgan%20Pakej%20RM30%20(30%20Atlit%20%2B%202%20Sub%20Coach)%20untuk%20Training%20Management%20APK." target="_blank" class="w-full py-3 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black font-black text-xs text-center flex items-center justify-center gap-2 transition shadow-lg">
+              <i class="fa-brands fa-whatsapp text-base"></i> Langgan RM30 via WhatsApp
+            </a>
+          </div>
+        </div>
+
+        <!-- Pakej 2: RM40 -->
+        <div class="rounded-3xl bg-[#111116] border-2 border-orange-500/80 p-7 flex flex-col justify-between relative shadow-xl shadow-orange-950/30 hover:border-orange-400 transition group">
+          <div class="absolute -top-3.5 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-orange-500 to-amber-500 text-black text-[10px] font-black uppercase tracking-widest px-4 py-1 rounded-full shadow">
+            PALING POPULAR
+          </div>
+          <div>
+            <div class="flex justify-between items-center mb-4 mt-2">
+              <span class="text-xs font-bold px-2.5 py-1 bg-orange-950 text-orange-300 rounded-full border border-orange-800">PELAN 2</span>
+              <span class="text-xs text-orange-400 font-semibold font-mono">1 Bulan</span>
+            </div>
+            <h3 class="font-orbitron text-2xl font-black text-white">PELAN RM40</h3>
+            <div class="my-4">
+              <span class="text-4xl sm:text-5xl font-black font-orbitron text-orange-400">RM 40</span>
+              <span class="text-xs text-zinc-400 font-sans">/ Bulan</span>
+            </div>
+            <p class="text-xs text-zinc-400 mb-6">Pilihan utama untuk skuad kontinjen MSSD dan akademi latihan.</p>
+            <ul class="space-y-3 text-xs text-zinc-200 border-t border-zinc-800 pt-5">
+              <li class="flex items-center gap-2 font-bold text-white"><i class="fa-solid fa-check text-orange-400"></i> 50 Orang Atlit (1 Bulan)</li>
+              <li class="flex items-center gap-2 font-bold text-orange-300"><i class="fa-solid fa-check text-orange-400"></i> + 2 Sub Coach / Urusetia</li>
+              <li class="flex items-center gap-2 text-zinc-300"><i class="fa-solid fa-check text-orange-400"></i> Janaan Photo Finish Slit</li>
+              <li class="flex items-center gap-2 text-zinc-300"><i class="fa-solid fa-check text-orange-400"></i> AI Biomekanik & Cadence</li>
+              <li class="flex items-center gap-2 text-zinc-300"><i class="fa-solid fa-check text-orange-400"></i> Auto Storan Folder Telefon</li>
+            </ul>
+          </div>
+          <div class="pt-6">
+            <a href="https://wa.me/60165861530?text=Halo%20Admin%20NIA,%20saya%20ingin%20langgan%20Pakej%20RM40%20(50%20Atlit%20%2B%202%20Sub%20Coach)%20untuk%20Training%20Management%20APK." target="_blank" class="w-full py-3 rounded-xl bg-orange-500 hover:bg-orange-400 text-black font-black text-xs text-center flex items-center justify-center gap-2 transition shadow-lg">
+              <i class="fa-brands fa-whatsapp text-base"></i> Langgan RM40 via WhatsApp
+            </a>
+          </div>
+        </div>
+
+        <!-- Pakej 3: RM60 -->
+        <div class="rounded-3xl bg-[#111116] border border-amber-500/60 p-7 flex flex-col justify-between relative shadow-xl hover:border-amber-400 transition group">
+          <div>
+            <div class="flex justify-between items-center mb-4">
+              <span class="text-xs font-bold px-2.5 py-1 bg-amber-950 text-amber-300 rounded-full border border-amber-800">PELAN 3</span>
+              <span class="text-xs text-amber-400 font-semibold font-mono">1 Bulan</span>
+            </div>
+            <h3 class="font-orbitron text-2xl font-black text-white">PELAN RM60</h3>
+            <div class="my-4">
+              <span class="text-4xl sm:text-5xl font-black font-orbitron text-amber-400">RM 60</span>
+              <span class="text-xs text-zinc-400 font-sans">/ Bulan</span>
+            </div>
+            <p class="text-xs text-zinc-400 mb-6">Kapasiti luas bagi akademi berbilang jurulatih & acara trek/padang.</p>
+            <ul class="space-y-3 text-xs text-zinc-200 border-t border-zinc-800 pt-5">
+              <li class="flex items-center gap-2 font-bold text-white"><i class="fa-solid fa-check text-amber-400"></i> 80 Orang Atlit (1 Bulan)</li>
+              <li class="flex items-center gap-2 font-bold text-amber-300"><i class="fa-solid fa-check text-amber-400"></i> + 3 Sub Coach / Urusetia</li>
+              <li class="flex items-center gap-2 text-zinc-300"><i class="fa-solid fa-check text-amber-400"></i> Multi-User Akses Serentak</li>
+              <li class="flex items-center gap-2 text-zinc-300"><i class="fa-solid fa-check text-amber-400"></i> Audio Pistol Piezo Starter</li>
+              <li class="flex items-center gap-2 text-zinc-300"><i class="fa-solid fa-check text-amber-400"></i> Pangkalan Data Web Cloud</li>
+            </ul>
+          </div>
+          <div class="pt-6">
+            <a href="https://wa.me/60165861530?text=Halo%20Admin%20NIA,%20saya%20ingin%20langgan%20Pakej%20RM60%20(80%20Atlit%20%2B%203%20Sub%20Coach)%20untuk%20Training%20Management%20APK." target="_blank" class="w-full py-3 rounded-xl bg-zinc-800 hover:bg-amber-500 hover:text-black text-white font-bold text-xs text-center flex items-center justify-center gap-2 transition border border-zinc-700">
+              <i class="fa-brands fa-whatsapp text-base text-emerald-400 group-hover:text-black"></i> Langgan RM60 via WhatsApp
+            </a>
+          </div>
+        </div>
+
+        <!-- Pakej 4: RM80 -->
+        <div class="rounded-3xl bg-[#111116] border border-emerald-500/60 p-7 flex flex-col justify-between relative shadow-xl hover:border-emerald-400 transition group">
+          <div>
+            <div class="flex justify-between items-center mb-4">
+              <span class="text-xs font-bold px-2.5 py-1 bg-emerald-950 text-emerald-300 rounded-full border border-emerald-800">PELAN 4</span>
+              <span class="text-xs text-emerald-400 font-semibold font-mono">1 Bulan</span>
+            </div>
+            <h3 class="font-orbitron text-2xl font-black text-white">PELAN RM80</h3>
+            <div class="my-4">
+              <span class="text-4xl sm:text-5xl font-black font-orbitron text-emerald-400">RM 80</span>
+              <span class="text-xs text-zinc-400 font-sans">/ Bulan</span>
+            </div>
+            <p class="text-xs text-zinc-400 mb-6">Kapasiti maksimum untuk program sukan negeri, MSSN & kejohanan.</p>
+            <ul class="space-y-3 text-xs text-zinc-200 border-t border-zinc-800 pt-5">
+              <li class="flex items-center gap-2 font-bold text-white"><i class="fa-solid fa-check text-emerald-400"></i> 100 Orang Atlit (1 Bulan)</li>
+              <li class="flex items-center gap-2 font-bold text-emerald-300"><i class="fa-solid fa-check text-emerald-400"></i> + 5 Sub Coach / Urusetia</li>
+              <li class="flex items-center gap-2 text-zinc-300"><i class="fa-solid fa-check text-emerald-400"></i> Eksport Laporan Rasmi PDF</li>
+              <li class="flex items-center gap-2 text-zinc-300"><i class="fa-solid fa-check text-emerald-400"></i> Priority WhatsApp Support</li>
+              <li class="flex items-center gap-2 text-zinc-300"><i class="fa-solid fa-check text-emerald-400"></i> Akses Superadmin Web</li>
+            </ul>
+          </div>
+          <div class="pt-6">
+            <a href="https://wa.me/60165861530?text=Halo%20Admin%20NIA,%20saya%20ingin%20langgan%20Pakej%20RM80%20(100%20Atlit%20%2B%205%20Sub%20Coach)%20untuk%20Training%20Management%20APK." target="_blank" class="w-full py-3 rounded-xl bg-zinc-800 hover:bg-emerald-500 hover:text-black text-white font-bold text-xs text-center flex items-center justify-center gap-2 transition border border-zinc-700">
+              <i class="fa-brands fa-whatsapp text-base text-emerald-400 group-hover:text-black"></i> Langgan RM80 via WhatsApp
+            </a>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Kotak Panggilan Tindakan Pantas & Download APK Terus -->
+      <div class="rounded-3xl bg-gradient-to-r from-zinc-950 via-[#131722] to-zinc-950 border-2 border-cyan-500/40 p-8 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-6">
+        <div class="space-y-2 text-left">
+          <div class="inline-flex items-center gap-2 px-3 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800 text-[11px] font-bold">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+            <span>Semua Pakej Termasuk Percubaan Percuma 7 Hari</span>
+          </div>
+          <h3 class="text-xl sm:text-2xl font-black font-orbitron text-white">
+            Belum Memiliki APK Psyco Time X Pro?
+          </h3>
+          <p class="text-xs text-zinc-400 max-w-xl">
+            Muat turun sekarang dan uji kejituan Photo Finish Torso dan sistem pencatat masa tanpa sebarang bayaran untuk 7 hari pertama.
+          </p>
+        </div>
+        <div class="flex flex-wrap gap-3 shrink-0">
+          <a href="/training-management/" class="px-6 py-3.5 rounded-2xl bg-cyan-500 hover:bg-cyan-400 text-black font-black text-xs flex items-center gap-2 shadow-xl shadow-cyan-950 transition hover:scale-105">
+            <i class="fa-solid fa-user-plus"></i>
+            <span>Daftar Akaun Web</span>
+          </a>
+          <a href="/training-management/downloads/PsycoTimeXPro-Latest.apk" download class="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-400 hover:to-red-500 text-white font-black text-xs flex items-center gap-2 shadow-xl shadow-red-950 transition hover:scale-105">
+            <i class="fa-solid fa-download"></i>
+            <span>Download APK Rasmi (.apk)</span>
+          </a>
+        </div>
+      </div>
+
+    </div>
+
+  </section>
+
+  <!-- ======================================================== -->
+  <!-- 2. PAGE: ET RENTAL (PAKET SEWAAN)                        -->
+  <!-- ======================================================== -->
+  <section id="page-et-rental" class="page-section max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-12">
+    <div class="text-center max-w-3xl mx-auto space-y-4">
+      <span class="px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest bg-red-950 text-red-400 border border-red-800">
+        PAKEJ RASMI SEWAAN ET
+      </span>
+      <h1 class="text-3xl sm:text-5xl font-black font-orbitron text-white">Electronic Timing System Rental</h1>
+      <p class="text-sm sm:text-base text-zinc-300 leading-relaxed">
+        Peralatan kiraan masa automatik berlesen World Athletics untuk kejohanan sekolah, IPT, dan kebangsaan.
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <!-- Pakej 1 -->
+      <div class="p-8 rounded-3xl bg-[#111115] border border-zinc-800 space-y-6 flex flex-col justify-between hover:border-red-600/50 transition">
+        <div class="space-y-4">
+          <span class="px-3 py-1 rounded-full text-[10px] font-bold bg-zinc-800 text-zinc-300">ASAS / TIME TRIAL</span>
+          <h3 class="text-2xl font-black font-orbitron text-white">Pakej Saringan</h3>
+          <div class="text-3xl font-black font-orbitron text-red-500">RM 450<span class="text-xs text-zinc-400 font-sans"> / hari</span></div>
+          <p class="text-xs text-zinc-400 leading-relaxed">Sesuai untuk ujian masa (time trial) kelab, saringan dalaman sekolah, dan kelayakan atlet.</p>
+          <ul class="text-xs text-zinc-300 space-y-2 border-t border-zinc-800 pt-4">
+            <li>✓ 1x Kamera Photofinish Standard</li>
+            <li>✓ Sistem Sensor Pelepas Wayarles</li>
+            <li>✓ 1x Operator Teknikal Bertugas</li>
+            <li>✓ Cetakan Keputusan Saringan</li>
+          </ul>
+        </div>
+        <a href="https://wa.me/60165861530?text=Halo%20Admin%20NIA,%20saya%20berminat%20dengan%20Pakej%20Saringan%20ET%20(RM450/hari)." target="_blank" class="w-full py-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-xs text-center block">
+          Tempah Pakej RM450
+        </a>
+      </div>
+
+      <!-- Pakej 2 (Popular) -->
+      <div class="p-8 rounded-3xl bg-gradient-to-b from-[#1c1417] to-[#111116] border-2 border-red-600 space-y-6 flex flex-col justify-between relative shadow-2xl">
+        <span class="absolute -top-3.5 right-6 px-3 py-1 rounded-full text-[10px] font-black uppercase bg-red-600 text-white shadow">PILIHAN POPULAR</span>
+        <div class="space-y-4">
+          <span class="px-3 py-1 rounded-full text-[10px] font-bold bg-red-950 text-red-300 border border-red-800">SUKAN SEKOLAH</span>
+          <h3 class="text-2xl font-black font-orbitron text-white">Pakej Sekolah Menengah</h3>
+          <div class="text-3xl font-black font-orbitron text-red-500">RM 850<span class="text-xs text-zinc-400 font-sans"> / hari</span></div>
+          <p class="text-xs text-zinc-400 leading-relaxed">Pakej lengkap sukan tahunan sekolah dan MSSD dengan paparan LED masa dan pistol piezo.</p>
+          <ul class="text-xs text-zinc-300 space-y-2 border-t border-zinc-800 pt-4">
+            <li>✓ Kamera Video Finish Resolusi Tinggi</li>
+            <li>✓ Pistol Pelepas Elektronik + Speaker Suara</li>
+            <li>✓ Paparan Skrin Masa Lorong 1-8</li>
+            <li>✓ 2x Krew & Operator Urusetia</li>
+            <li>✓ Integrasi Kad Keputusan Digital</li>
+          </ul>
+        </div>
+        <a href="https://wa.me/60165861530?text=Halo%20Admin%20NIA,%20saya%20berminat%20dengan%20Pakej%20Sekolah%20Menengah%20ET%20(RM850/hari)." target="_blank" class="w-full py-3.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs text-center block shadow-lg">
+          Tempah Pakej Sekolah
+        </a>
+      </div>
+
+      <!-- Pakej 3 -->
+      <div class="p-8 rounded-3xl bg-[#111115] border border-zinc-800 space-y-6 flex flex-col justify-between hover:border-red-600/50 transition">
+        <div class="space-y-4">
+          <span class="px-3 py-1 rounded-full text-[10px] font-bold bg-zinc-800 text-zinc-300">PROFESSIONAL</span>
+          <h3 class="text-2xl font-black font-orbitron text-white">FinishLynx World Athletics</h3>
+          <div class="text-3xl font-black font-orbitron text-red-500">RM 1,500<span class="text-xs text-zinc-400 font-sans"> / hari</span></div>
+          <p class="text-xs text-zinc-400 leading-relaxed">Sistem photofinish gred tertinggi 2000fps untuk kejohanan negeri, kebangsaan dan jemputan rasmi.</p>
+          <ul class="text-xs text-zinc-300 space-y-2 border-t border-zinc-800 pt-4">
+            <li>✓ FinishLynx EtherLynx 2000fps Certified</li>
+            <li>✓ Ultrasonic Wind Gauge (Angin Automatik)</li>
+            <li>✓ Sync Call Room & Live Results Web</li>
+            <li>✓ 3x Pegawai Teknikal Bertauliah</li>
+          </ul>
+        </div>
+        <a href="https://wa.me/60165861530?text=Halo%20Admin%20NIA,%20saya%20berminat%20dengan%20Pakej%20FinishLynx%20Professional%20ET." target="_blank" class="w-full py-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-xs text-center block">
+          Hubungi Perbincangan Khas
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================== -->
+  <!-- 3. PAGE: MERCHANDISE CUSTOMIZE BAJU                      -->
+  <!-- ======================================================== -->
+  <section id="page-merchandise" class="page-section max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-12">
+    <div class="text-center max-w-3xl mx-auto space-y-4">
+      <span class="px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest bg-red-950 text-red-400 border border-red-800">
+        CUSTOM APPAREL & MERCHANDISE
+      </span>
+      <h1 class="text-3xl sm:text-5xl font-black font-orbitron text-white">Customize Baju Kejohanan & Pasukan</h1>
+      <p class="text-sm sm:text-base text-zinc-300">
+        Tempahan jersi sukan sublimation, jaket kontinjen, t-shirt marshal, dan medal kejohanan berkualiti tinggi.
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="p-6 rounded-3xl bg-[#111115] border border-zinc-800 space-y-4">
+        <h3 class="font-bold font-orbitron text-white text-base">Jersi Sublimation Pasukan</h3>
+        <p class="text-xs text-zinc-400">Kain microfibre eyelet sejuk dengan cetakan warna tajam berkualiti tinggi tanpa luntur.</p>
+        <div class="text-red-400 font-bold font-mono text-sm">Bermula RM 28.00 / helai</div>
+      </div>
+      <div class="p-6 rounded-3xl bg-[#111115] border border-zinc-800 space-y-4">
+        <h3 class="font-bold font-orbitron text-white text-base">Jaket Kontinjen & Windbreaker</h3>
+        <p class="text-xs text-zinc-400">Jaket kontinjen rasmi kalis angin dengan sulaman atau cetakan logo sekolah / daerah.</p>
+        <div class="text-red-400 font-bold font-mono text-sm">Bermula RM 65.00 / helai</div>
+      </div>
+      <div class="p-6 rounded-3xl bg-[#111115] border border-zinc-800 space-y-4">
+        <h3 class="font-bold font-orbitron text-white text-base">Medal & Trofi Kejohanan</h3>
+        <p class="text-xs text-zinc-400">Pingat besi custom logo dengan reben lanyard rasmi warna kejohanan.</p>
+        <div class="text-red-400 font-bold font-mono text-sm">Bermula RM 6.50 / unit</div>
+      </div>
+    </div>
+
+    <div class="text-center pt-4">
+      <a href="https://wa.me/60165861530?text=Halo%20Admin%20NIA,%20saya%20ingin%20membuat%20tempahan%20custom%20baju%20kejohanan." target="_blank" class="inline-block px-8 py-3.5 rounded-xl bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-bold text-xs shadow-lg">
+        Tempah Custom Baju Melalui WhatsApp &rarr;
+      </a>
+    </div>
+  </section>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: ADMIN MASTER LOGIN & FORGOT PASSWORD              -->
+  <!-- ======================================================== -->
+  <div id="admin-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/85 backdrop-blur-sm">
+    <div class="rounded-3xl bg-[#121216] border border-zinc-800 p-6 sm:p-8 max-w-md w-full space-y-5 shadow-2xl">
+      <div class="flex justify-between items-center border-b border-zinc-800 pb-3">
+        <div class="flex items-center gap-2">
+          <span class="w-3 h-3 rounded-full bg-red-600"></span>
+          <h3 class="text-base font-bold font-orbitron text-white" id="admin-modal-title">Log Masuk Superadmin</h3>
+        </div>
+        <button onclick="closeAdminModal()" class="text-zinc-400 hover:text-white font-bold text-lg">&times;</button>
+      </div>
+
+      <!-- Login View -->
+      <div id="admin-login-view" class="space-y-4 text-xs">
+        <form onsubmit="handleMasterLogin(event)" class="space-y-3" autocomplete="off">
+          <div>
+            <label class="font-bold text-zinc-300 block mb-1">Nama Pengguna / Emel</label>
+            <input type="text" id="login-username" required autocomplete="off" placeholder="Masukkan Emel Superadmin / Username" class="w-full px-4 py-3 rounded-xl bg-zinc-950 border border-zinc-800 text-white focus:outline-none focus:border-red-500">
+          </div>
+          <div>
+            <div class="flex justify-between items-center mb-1">
+              <label class="font-bold text-zinc-300">Kata Laluan (Password)</label>
+              <button type="button" onclick="openForgotPassDirect()" class="text-[11px] text-red-400 hover:text-red-300 hover:underline">Lupa Kata Laluan?</button>
+            </div>
+            <input type="password" id="login-password" required autocomplete="new-password" placeholder="••••••••" class="w-full px-4 py-3 rounded-xl bg-zinc-950 border border-zinc-800 text-white focus:outline-none focus:border-red-500">
+          </div>
+
+          <div id="login-error-msg" class="hidden text-xs text-red-400 bg-red-950/60 p-2.5 rounded-xl border border-red-800 text-center font-bold">
+            Maklumat log masuk tidak tepat.
+          </div>
+
+          <button type="submit" class="w-full py-3.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold shadow-lg transition">
+            Log Masuk
+          </button>
+        </form>
+      </div>
+
+      <!-- Logged In Dashboard View -->
+      <div id="admin-dashboard-view" class="hidden space-y-4 text-xs">
+        <div class="p-4 rounded-2xl bg-zinc-950 border border-zinc-800 space-y-1">
+          <div class="text-zinc-400 font-bold uppercase text-[10px]">PENGGUNA AKTIF:</div>
+          <div class="text-white font-bold text-sm" id="logged-admin-name">Superadmin Psycotime</div>
+          <div class="text-red-400 font-mono text-[11px]" id="logged-admin-role">SUPERADMIN</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <a href="/sports-management/" class="py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white text-center font-bold">
+            Portal Sukan
+          </a>
+          <a href="/et-schedule/" class="py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white text-center font-bold">
+            Jadual ET
+          </a>
+          <a href="/et-results/" class="py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white text-center font-bold">
+            Result Live
+          </a>
+          <a href="/training-management/dashboard.html" class="py-2.5 rounded-xl bg-cyan-950 border border-cyan-700 text-cyan-300 hover:bg-cyan-900 text-center font-bold">
+            Training Portal
+          </a>
+        </div>
+
+        <button onclick="handleAdminLogout()" class="w-full py-2.5 rounded-xl bg-red-950 text-red-400 hover:bg-red-900 font-bold">
+          Log Keluar Pentadbir
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MODAL: FORGOT PASSWORD SUPERADMIN -->
+  <div id="home-forgot-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/85 backdrop-blur-sm">
+    <div class="rounded-3xl bg-[#121216] border border-zinc-800 p-6 sm:p-8 max-w-md w-full space-y-4 shadow-2xl">
+      <div class="flex justify-between items-center border-b border-zinc-800 pb-3">
+        <h3 class="text-base font-bold font-orbitron text-white">Lupa Kata Laluan Pentadbir</h3>
+        <button onclick="closeForgotPassDirect()" class="text-zinc-400 hover:text-white font-bold">&times;</button>
+      </div>
+
+      <p class="text-xs text-zinc-400">
+        Masukkan emel Superadmin anda (<strong class="text-zinc-200">saliparjipun.atukoi@gmail.com</strong>) untuk memulihkan akses anda.
+      </p>
+
+      <form onsubmit="handleDirectForgotPass(event)" class="space-y-3 text-xs">
+        <div>
+          <label class="font-bold text-zinc-300 block mb-1">Emel Rasmi</label>
+          <input type="email" id="direct-forgot-email" required value="saliparjipun.atukoi@gmail.com" class="w-full px-3 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-white">
+        </div>
+
+        <div id="direct-forgot-step" class="hidden space-y-3 pt-2 border-t border-zinc-800">
+          <div>
+            <label class="font-bold text-emerald-400 block mb-1">Kod Pengesahan</label>
+            <input type="text" id="direct-forgot-code" class="w-full px-3 py-2.5 rounded-xl bg-zinc-950 border border-emerald-700 text-emerald-300 font-mono font-bold">
+          </div>
+          <div>
+            <label class="font-bold text-zinc-300 block mb-1">Kata Laluan Baharu</label>
+            <input type="password" id="direct-forgot-pass" placeholder="••••••••" class="w-full px-3 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 text-white">
+          </div>
+        </div>
+
+        <button type="submit" id="btn-direct-forgot-act" class="w-full py-3 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold shadow">
+          Hantar Kod Pemulihan
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-[#0b0b0e] border-t border-zinc-800 py-10 text-xs text-zinc-500">
+    <div class="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-8">
+      <div class="space-y-3">
+        <div class="font-orbitron font-black text-white text-base">PSYCO<span class="text-red-500">TIME</span> PRO</div>
+        <p class="text-zinc-400 leading-relaxed">Penyedia sistem Electronic Timing & Photofinish rasmi, janaan kad manual teknikal, penganjuran sukan dan kelengkapan balapan.</p>
+      </div>
+      <div>
+        <h4 class="font-bold text-white uppercase mb-3">Portal Pantas</h4>
+        <ul class="space-y-2 text-zinc-400">
+          <li><a href="/training-management/" class="text-cyan-400 hover:text-white font-bold">Training App (APK Android)</a></li>
+          <li><a href="/sports-management/" class="hover:text-white">Pengurusan Sukan</a></li>
+          <li><a href="/et-schedule/" class="hover:text-white">Jadual Sewaan ET</a></li>
+          <li><a href="/et-results/" class="hover:text-white">Keputusan Live</a></li>
+          <li><a href="/kedai-produk/" class="hover:text-white">Kedai Produk</a></li>
+          <li><a href="/gallery/" class="hover:text-white">Galeri Foto</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-bold text-white uppercase mb-3">Hubungi Superadmin</h4>
+        <ul class="space-y-2 text-zinc-400 font-mono">
+          <li>Emel: saliparjipun.atukoi@gmail.com</li>
+          <li>WhatsApp: +6016-5861530</li>
+          <li>Lokasi: Sabah / Seluruh Malaysia</li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-bold text-white uppercase mb-3">Eksport & Data</h4>
+        <div class="space-y-2">
+          <button onclick="exportAllCSV()" class="w-full py-2 rounded-xl bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 text-zinc-300 font-bold text-left px-3">
+            📥 Eksport Ringkasan CSV
+          </button>
+          <button onclick="window.print()" class="w-full py-2 rounded-xl bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 text-zinc-300 font-bold text-left px-3">
+            🖨️ Cetak Halaman Utama (PDF)
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="max-w-7xl mx-auto px-4 text-center border-t border-zinc-800/80 mt-8 pt-6">
+      <p>&copy; 2026 Psyco Time X Pro. Hak Cipta Terpelihara. Dikendalikan bersama Superadmin Nia.</p>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script>
+    // State
+    let adminAuth = JSON.parse(localStorage.getItem('psyco_admin_auth') || '{"isAuth": false, "role": "", "name": ""}');
+    let isDarkMode = true;
+    let isEnglish = false;
+
+    // Default Slides
+    const defaultSlides = [
+      {
+        id: 's-1',
+        badge: 'PAKEJ SEWAAN ET 2026',
+        title: 'FinishLynx Photo-Finish Certified',
+        subtitle: 'Ketepatan Jitu 1/1000 Saat Untuk Sukan Anda',
+        img: 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?q=80&w=1600&auto=format&fit=crop',
+        cta: 'Sewa ET System',
+        page: 'et-rental'
+      },
+      {
+        id: 's-2',
+        badge: 'PORTAL SUKAN DIGITAL',
+        title: 'Pengurusan Kejohanan Dari Scratch',
+        subtitle: 'Pendaftaran Atlet, Kad Balapan/Padang & 10 Sub-User',
+        img: 'https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?q=80&w=1600&auto=format&fit=crop',
+        cta: 'Buka Portal Sukan',
+        page: 'sports-management'
+      },
+      {
+        id: 's-3',
+        badge: 'LIVE PHOTO-FINISH',
+        title: 'Keputusan Acara Live Real-Time',
+        subtitle: 'Keputusan Terbuka Awam & AI Capture Dokumen',
+        img: 'https://images.unsplash.com/photo-1517649763962-0c623266ddc0?q=80&w=1600&auto=format&fit=crop',
+        cta: 'Lihat Result Live',
+        page: 'et-results'
+      }
+    ];
+
+    let slides = JSON.parse(localStorage.getItem('psyco_slides') || JSON.stringify(defaultSlides));
+
+    function renderCarousel() {
+      const box = document.getElementById('carousel-box');
+      box.innerHTML = '';
+
+      slides.forEach((s, idx) => {
+        const slideEl = document.createElement('div');
+        slideEl.id = 'slide-' + idx;
+        slideEl.className = `carousel-slide absolute inset-0 ${idx === 0 ? 'active' : ''} flex-col justify-end p-8 sm:p-12 text-white bg-cover bg-center`;
+        slideEl.style.backgroundImage = `linear-gradient(to top, rgba(9,9,11,0.95) 15%, rgba(9,9,11,0.4) 60%, rgba(9,9,11,0.2) 100%), url('${s.img}')`;
+
+        slideEl.innerHTML = `
+          <div class="relative z-10 max-w-2xl space-y-3">
+            <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-red-600 text-white shadow">${s.badge}</span>
+            <h2 class="text-2xl sm:text-4xl font-black font-orbitron">${s.title}</h2>
+            <p class="text-xs sm:text-sm text-zinc-300 font-medium">${s.subtitle}</p>
+            <div class="pt-2">
+              <button onclick="handleSlideCta('${s.page}')" class="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold shadow-lg transition">
+                ${s.cta} &rarr;
+              </button>
+            </div>
+          </div>
+        `;
+        box.appendChild(slideEl);
+      });
+
+      // Dots
+      const dotsBox = document.createElement('div');
+      dotsBox.className = 'absolute bottom-6 right-8 flex gap-2 z-20';
+      slides.forEach((_, idx) => {
+        dotsBox.innerHTML += `
+          <button onclick="setSlide(${idx})" id="dot-${idx}" class="h-2 ${idx === 0 ? 'w-6 bg-red-500' : 'w-2 bg-zinc-600'} rounded-full transition-all"></button>
+        `;
+      });
+      box.appendChild(dotsBox);
+    }
+
+    let currentSlide = 0;
+    function showSlide(index) {
+      slides.forEach((_, idx) => {
+        const s = document.getElementById('slide-' + idx);
+        const d = document.getElementById('dot-' + idx);
+        if (s && d) {
+          s.classList.toggle('active', idx === index);
+          d.className = `h-2 ${idx === index ? 'w-6 bg-red-500' : 'w-2 bg-zinc-600'} rounded-full transition-all`;
+        }
+      });
+    }
+    function setSlide(index) { currentSlide = index; showSlide(currentSlide); }
+    setInterval(() => { currentSlide = (currentSlide + 1) % slides.length; showSlide(currentSlide); }, 5500);
+
+    function handleSlideCta(target) {
+      if (target === 'sports-management') window.location.href = '/sports-management/';
+      else if (target === 'et-results') window.location.href = '/et-results/';
+      else if (target === 'et-rental') navigateTo('et-rental');
+      else navigateTo(target);
+    }
+
+    // Pages Router
+    const pages = ['home', 'et-rental', 'merchandise'];
+    function navigateTo(pId) {
+      pages.forEach(p => {
+        const el = document.getElementById('page-' + p);
+        if (el) el.classList.toggle('active', p === pId);
+        const btn = document.getElementById('nav-' + p);
+        if (btn) {
+          if (p === pId) {
+            btn.className = 'px-3.5 py-2 rounded-xl text-white bg-zinc-800 border border-red-500/40';
+          } else {
+            btn.className = 'px-3.5 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-zinc-800/60 transition';
+          }
+        }
+      });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // ==========================================
+    // RENDER BILLBOARD: KEJOHANAN DIDAFTARKAN
+    // ==========================================
+    function renderHomeTournaments() {
+      const container = document.getElementById('home-tournaments-grid');
+      const defaultTours = [
+        {
+          name: 'KEJOHANAN OLAHRAGA MSS SK KEBAGU KALI KE-28',
+          level: 'MSSD / Sekolah',
+          venue: 'Kompleks Sukan UMS Kota Kinabalu',
+          date_start: '2026-05-12',
+          date_end: '2026-05-14',
+          organizer: 'Unit Kokurikulum SK Kebagu',
+          status: 'Pendaftaran Dibuka'
+        },
+        {
+          name: 'KEJOHANAN BALAPAN & PADANG MSSD TONGOD 2026',
+          level: 'MSSD',
+          venue: 'Kompleks Sukan Tongod, Sabah',
+          date_start: '2026-06-02',
+          date_end: '2026-06-04',
+          organizer: 'PPD Tongod',
+          status: 'Pendaftaran Dibuka'
+        },
+        {
+          name: 'TIME TRIAL PECUT TERBUKA SABAH 2026',
+          level: 'Terbuka & Kelab',
+          venue: 'Stadium Likas Kota Kinabalu',
+          date_start: '2026-07-18',
+          date_end: '2026-07-18',
+          organizer: 'Psyco Time X Pro Timing Services',
+          status: 'Dibuka (Slot Terhad)'
+        }
+      ];
+
+      const tours = JSON.parse(localStorage.getItem('psyco_tournaments') || JSON.stringify(defaultTours));
+      container.innerHTML = '';
+
+      tours.slice(0, 6).forEach(t => {
+        container.innerHTML += `
+          <div class="rounded-3xl bg-[#111115] border border-zinc-800 p-6 flex flex-col justify-between hover:border-red-600/60 transition shadow-xl group">
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="px-2.5 py-0.5 rounded text-[10px] font-bold uppercase bg-red-950 text-red-400 border border-red-800">
+                  ${t.level || 'Kejohanan'}
+                </span>
+                <span class="text-[10px] text-emerald-400 font-bold bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800">
+                  ${t.status || 'Aktif'}
+                </span>
+              </div>
+              <h3 class="text-base font-bold font-orbitron text-white group-hover:text-red-400 transition-colors line-clamp-2">
+                ${t.name}
+              </h3>
+              <div class="space-y-1 text-xs text-zinc-400">
+                <div>📅 <strong>Tarikh:</strong> ${t.date_start} ${t.date_end && t.date_end !== t.date_start ? 'hingga ' + t.date_end : ''}</div>
+                <div>📍 <strong>Venue:</strong> ${t.venue}</div>
+                <div>👤 <strong>Penganjur:</strong> ${t.organizer}</div>
+              </div>
+            </div>
+
+            <div class="pt-5 mt-4 border-t border-zinc-800 flex gap-2">
+              <a href="/sports-management/" class="flex-1 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs text-center shadow">
+                Daftar Pasukan & Atlet
+              </a>
+              <a href="/et-results/" class="py-2 px-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-bold text-xs text-center">
+                Jadual & Result
+              </a>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    // ==========================================
+    // RENDER PAPAN JADUAL ET RENTAL KESELURUHAN
+    // ==========================================
+    function renderHomeSchedules() {
+      const tbody = document.getElementById('home-schedule-tbody');
+      const mobileCards = document.getElementById('home-schedule-mobile-cards');
+      const defaultSched = [
+        { startDate: '2026-03-27', endDate: '2026-03-27', title: 'PARA SUKMA TIME TRIAL', venue: 'Stadium Penampang', package: 'Time Trial / Saringan (RM450/hari)', organizer: 'Para Sukma Sabah', status: 'SELESAI (COMPLETED)' },
+        { startDate: '2026-03-28', endDate: '2026-03-30', title: '2nd TAMOC', venue: 'Stadium Likas', package: 'Professional FinishLynx World Athletics (RM1,500/hari)', organizer: 'TAMOC', status: 'SELESAI (COMPLETED)' },
+        { startDate: '2026-04-04', endDate: '2026-04-05', title: 'GKS', venue: 'Stadium Penampang', package: 'Sukan Sekolah Menengah (RM850/hari)', organizer: 'GKS', status: 'SELESAI (COMPLETED)' },
+        { startDate: '2026-04-08', endDate: '2026-04-09', title: 'Sukan Sekolah SMK Pangiran Omar', venue: 'Stadium Sipitang', package: 'Sukan Sekolah Menengah (RM850/hari)', organizer: 'SMK Pangiran Omar', status: 'SELESAI (COMPLETED)' },
+        { startDate: '2026-04-19', endDate: '2026-04-23', title: 'MSSD LAHAD DATU', venue: 'Stadium Lahad Datu', package: 'Professional FinishLynx World Athletics (RM1,500/hari)', organizer: 'MSSD Lahad Datu', status: 'SELESAI (COMPLETED)' },
+        { startDate: '2026-05-14', endDate: '2026-05-14', title: 'SUKAN SEKOLAH SK KEBAGU', venue: 'Kompleks Sukan UMS', package: 'Sukan Sekolah Menengah (RM850/hari)', organizer: 'SK Kebagu', status: 'SELESAI (COMPLETED)' },
+        { startDate: '2026-05-20', endDate: '2026-05-21', title: 'Sukan Zon Selatan KB', venue: 'Kompleks Sukan Kota Belud', package: 'Sukan Sekolah Menengah (RM850/hari)', organizer: 'Zon Selatan Kota Belud', status: 'SELESAI (COMPLETED)' },
+        { startDate: '2026-06-09', endDate: '2026-06-12', title: 'MSSD TAMBUNAN', venue: 'Kompleks Sukan Tambunan', package: 'Professional FinishLynx World Athletics (RM1,500/hari)', organizer: 'MSSD Tambunan', status: 'DISAHKAN (CONFIRMED)' },
+        { startDate: '2026-07-04', endDate: '2026-07-05', title: 'TENOM CLOSE', venue: 'Kompleks Sukan Tenom', package: 'Pakej Khas Kejohanan Jemputan', organizer: 'Tenom Athletics', status: 'DISAHKAN (CONFIRMED)' },
+        { startDate: '2026-07-05', endDate: '2026-07-05', title: 'PARA SUKMA TIME TRIAL (Siri 2)', venue: 'Kompleks Penampang', package: 'Time Trial / Saringan (RM450/hari)', organizer: 'Para Sukma Sabah', status: 'DISAHKAN (CONFIRMED)' },
+        { startDate: '2026-07-07', endDate: '2026-07-09', title: 'KOPK MSSD', venue: 'Stadium UMS', package: 'Professional FinishLynx World Athletics (RM1,500/hari)', organizer: 'KOPK MSSD', status: 'DISAHKAN (CONFIRMED)' },
+        { startDate: '2026-07-25', endDate: '2026-07-26', title: 'TYJAC', venue: 'Stadium UMS', package: 'Pakej Khas Kejohanan Jemputan', organizer: 'TYJAC', status: 'DISAHKAN (CONFIRMED)' },
+        { startDate: '2026-08-28', endDate: '2026-08-28', title: 'SK ST THERESA INOBONG', venue: 'Kompleks Penampang', package: 'Sukan Sekolah Menengah (RM850/hari)', organizer: 'SK St Theresa Inobong', status: 'SELESAI (COMPLETED)' },
+        { startDate: '2026-08-29', endDate: '2026-08-30', title: 'MSSRIZ', venue: 'Pusat Sukan UMS', package: 'Professional FinishLynx World Athletics (RM1,500/hari)', organizer: 'MSSRIZ', status: 'SELESAI (COMPLETED)' },
+        { startDate: '2026-10-20', endDate: '2026-10-21', title: 'SJKC YUE MIN PENAMPANG', venue: 'Kompleks Penampang', package: 'Sukan Sekolah Menengah (RM850/hari)', organizer: 'SJKC Yue Min Penampang', status: 'DISAHKAN (CONFIRMED)' },
+        { startDate: '2026-10-24', endDate: '2026-10-25', title: 'FADC', venue: 'Kompleks Keningau', package: 'Pakej Khas Kejohanan Jemputan', organizer: 'FADC', status: 'DISAHKAN (CONFIRMED)' },
+        { startDate: '2026-10-25', endDate: '2026-10-25', title: 'MINDET', venue: 'Kompleks Likas', package: 'Time Trial / Saringan (RM450/hari)', organizer: 'MINDET', status: 'DISAHKAN (CONFIRMED)' }
+      ];
+
+      let schedules = defaultSched;
+      const cached = localStorage.getItem('psyco_et_schedules');
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            schedules = parsed;
+          }
+        } catch(e) {}
+      }
+
+      if (tbody) tbody.innerHTML = '';
+      if (mobileCards) mobileCards.innerHTML = '';
+
+      schedules.forEach(s => {
+        const isConfirmed = s.status.includes('CONFIRMED') || s.status.includes('DISAHKAN');
+        const isCompleted = s.status.includes('COMPLETED') || s.status.includes('SELESAI');
+
+        const statusBadge = isCompleted
+          ? '<span class="px-2.5 py-0.5 rounded text-[10px] font-bold bg-zinc-800 text-zinc-300 border border-zinc-700">SELESAI</span>'
+          : isConfirmed
+          ? '<span class="px-2.5 py-0.5 rounded text-[10px] font-bold bg-emerald-950 text-emerald-400 border border-emerald-800">DISAHKAN</span>'
+          : '<span class="px-2.5 py-0.5 rounded text-[10px] font-bold bg-amber-950 text-amber-400 border border-amber-800">TENTATIF</span>';
+
+        if (tbody) {
+          tbody.innerHTML += `
+            <tr class="hover:bg-zinc-900/50 transition border-b border-zinc-800/60">
+              <td class="py-3 px-4 font-mono font-bold text-white whitespace-nowrap">
+                ${s.startDate}
+                ${s.endDate && s.endDate !== s.startDate ? '<span class="text-[10px] text-zinc-400 block font-normal">hingga ' + s.endDate + '</span>' : ''}
+              </td>
+              <td class="py-3 px-4">
+                <div class="font-bold text-white">${s.title}</div>
+                <div class="text-[11px] text-zinc-400">📍 ${s.venue}</div>
+              </td>
+              <td class="py-3 px-4 text-red-400 font-bold">${s.package || 'Electronic Timing FinishLynx'}</td>
+              <td class="py-3 px-4 text-zinc-300">${s.organizer || '-'}</td>
+              <td class="py-3 px-4 whitespace-nowrap">
+                ${statusBadge}
+              </td>
+              <td class="py-3 px-4 text-right whitespace-nowrap">
+                <a href="https://wa.me/60165861530?text=Halo%20Admin,%20saya%20ingin%20bertanya%20mengenai%20tempahan%20sewaan%20ET%20bagi%20acara%20${encodeURIComponent(s.title)}." target="_blank" class="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-red-600 text-white font-bold text-[11px] transition">
+                  Tanya Tarikh
+                </a>
+              </td>
+            </tr>
+          `;
+        }
+
+        if (mobileCards) {
+          mobileCards.innerHTML += `
+            <div class="p-4 rounded-2xl bg-[#131317] border border-zinc-800 space-y-2.5 shadow-md">
+              <div class="flex justify-between items-start gap-2">
+                <div>
+                  <span class="inline-block px-2 py-0.5 rounded bg-red-950 text-red-300 border border-red-800 text-[10px] font-mono font-bold">
+                    📅 ${s.startDate} ${s.endDate && s.endDate !== s.startDate ? '→ ' + s.endDate : ''}
+                  </span>
+                  <h4 class="font-bold text-white text-sm pt-1">${s.title}</h4>
+                </div>
+                <div>${statusBadge}</div>
+              </div>
+
+              <div class="text-xs text-zinc-400 space-y-1 bg-black/40 p-2.5 rounded-xl border border-zinc-900">
+                <div>📍 <strong>Venue:</strong> ${s.venue}</div>
+                <div>📦 <strong>Pakej:</strong> <span class="text-red-400 font-medium">${s.package}</span></div>
+                <div>👤 <strong>Penganjur:</strong> ${s.organizer || '-'}</div>
+              </div>
+
+              <div class="pt-1 border-t border-zinc-800/80">
+                <a href="https://wa.me/60165861530?text=Halo%20Admin,%20saya%20ingin%20bertanya%20mengenai%20tempahan%20sewaan%20ET%20bagi%20acara%20${encodeURIComponent(s.title)}." target="_blank" class="block w-full py-2 rounded-xl bg-zinc-800 hover:bg-red-600 text-white font-bold text-xs text-center transition">
+                  Tempah Tarikh Melalui WhatsApp &rarr;
+                </a>
+              </div>
+            </div>
+          `;
+        }
+      });
+    }
+
+    // ==========================================
+    // RENDER GALERI PREVIEW
+    // ==========================================
+    function renderHomeGallery() {
+      const container = document.getElementById('home-gallery-preview');
+      const albumListContainer = document.getElementById('home-albums-list');
+      
+      const defaultAlbums = [
+        {
+          id: 'alb-2026-001',
+          title: 'Kejohanan Olahraga MSS SK Kebagu Kali Ke-28',
+          cat: 'Balapan',
+          date: '12 Mei 2026',
+          venue: 'Kompleks Sukan UMS Kota Kinabalu',
+          coverUrl: 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?q=80&w=600&auto=format&fit=crop',
+          photos: [
+            'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?q=80&w=600&auto=format&fit=crop',
+            'https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?q=80&w=600&auto=format&fit=crop',
+            'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?q=80&w=600&auto=format&fit=crop'
+          ]
+        },
+        {
+          id: 'alb-2026-002',
+          title: 'MSSD Tongod Track & Field Championship 2026',
+          cat: 'Electronic Timing',
+          date: '02 Jun 2026',
+          venue: 'Kompleks Sukan Tongod, Sabah',
+          coverUrl: 'https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?q=80&w=600&auto=format&fit=crop',
+          photos: [
+            'https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?q=80&w=600&auto=format&fit=crop',
+            'https://images.unsplash.com/photo-1517649763962-0c623266ddc0?q=80&w=600&auto=format&fit=crop'
+          ]
+        },
+        {
+          id: 'alb-2026-003',
+          title: 'Acara Padang Lontar Peluru & Lompat Jauh MSS',
+          cat: 'Padang',
+          date: '13 Mei 2026',
+          venue: 'Padang Kompleks Sukan UMS',
+          coverUrl: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?q=80&w=600&auto=format&fit=crop',
+          photos: [
+            'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?q=80&w=600&auto=format&fit=crop',
+            'https://images.unsplash.com/photo-1574680096145-d05b474e2155?q=80&w=600&auto=format&fit=crop'
+          ]
+        }
+      ];
+
+      let allAlbums = JSON.parse(localStorage.getItem('psyco_photo_albums') || 'null') || defaultAlbums;
+
+      fetch('/gallery/upload.php?action=list')
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.success && Array.isArray(data.albums) && data.albums.length > 0) {
+            localStorage.setItem('psyco_photo_albums', JSON.stringify(data.albums));
+          }
+        })
+        .catch(() => {});
+
+      let allPhotosPool = [];
+      allAlbums.forEach(alb => {
+        if (alb.photos && alb.photos.length) {
+          alb.photos.forEach(pUrl => {
+            allPhotosPool.push({
+              imageUrl: pUrl,
+              albumTitle: alb.title,
+              albumId: alb.id,
+              date: alb.date,
+              venue: alb.venue,
+              cat: alb.cat
+            });
+          });
+        } else if (alb.coverUrl) {
+          allPhotosPool.push({
+            imageUrl: alb.coverUrl,
+            albumTitle: alb.title,
+            albumId: alb.id,
+            date: alb.date,
+            venue: alb.venue,
+            cat: alb.cat
+          });
+        }
+      });
+
+      const shuffled = [...allPhotosPool].sort(() => 0.5 - Math.random());
+      const randomTwo = shuffled.slice(0, 2);
+
+      container.innerHTML = '';
+      randomTwo.forEach(p => {
+        container.innerHTML += `
+          <div class="rounded-3xl bg-[#111115] border border-zinc-800 overflow-hidden shadow-xl group hover:border-red-600/60 transition flex flex-col justify-between">
+            <div class="h-48 overflow-hidden bg-black relative cursor-pointer" onclick="window.location.href='/gallery/?album=${p.albumId}'">
+              <img src="${p.imageUrl}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+              <span class="absolute top-2.5 left-2.5 px-2 py-0.5 rounded bg-black/80 text-[10px] font-bold text-red-400 uppercase border border-zinc-700">
+                ${p.cat}
+              </span>
+              <span class="absolute bottom-2.5 right-2.5 px-2 py-0.5 rounded bg-black/85 text-[10px] font-mono text-zinc-300">
+                ${p.date}
+              </span>
+            </div>
+            <div class="p-4 space-y-2">
+              <h4 class="font-bold text-white text-xs line-clamp-1 group-hover:text-red-400 transition-colors cursor-pointer" onclick="window.location.href='/gallery/?album=${p.albumId}'">
+                ${p.albumTitle}
+              </h4>
+              <p class="text-[11px] text-zinc-400 line-clamp-1">📍 ${p.venue}</p>
+              <div class="pt-2 border-t border-zinc-800/80 flex justify-between items-center text-xs">
+                <a href="/gallery/?album=${p.albumId}" class="text-[11px] text-red-400 font-bold hover:underline flex items-center gap-1">
+                  Lihat Full Album &rarr;
+                </a>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+
+      if (albumListContainer) {
+        albumListContainer.innerHTML = '';
+        document.getElementById('home-total-albums-count').innerText = `${allAlbums.length} Album`;
+
+        allAlbums.forEach(alb => {
+          const count = alb.photos ? alb.photos.length : 0;
+          albumListContainer.innerHTML += `
+            <a href="/gallery/?album=${alb.id}" class="p-3 rounded-2xl bg-[#111115] hover:bg-zinc-900 border border-zinc-800 hover:border-red-700/60 flex items-center justify-between gap-3 group transition block">
+              <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-xl overflow-hidden bg-black border border-zinc-700 shrink-0">
+                  <img src="${alb.coverUrl}" class="w-full h-full object-cover group-hover:scale-105 transition-transform">
+                </div>
+                <div>
+                  <h5 class="text-xs font-bold text-white group-hover:text-red-400 transition-colors line-clamp-1">${alb.title}</h5>
+                  <div class="text-[10px] text-zinc-400 font-mono mt-0.5">📅 ${alb.date} • ${alb.cat}</div>
+                </div>
+              </div>
+              <div class="text-right shrink-0">
+                <span class="px-2 py-0.5 rounded bg-zinc-800 text-[10px] font-mono font-bold text-zinc-300">
+                  ${count} Foto
+                </span>
+              </div>
+            </a>
+          `;
+        });
+      }
+    }
+
+    // ==========================================
+    // RENDER PRODUK PILIHAN RAWAK
+    // ==========================================
+    function renderHomeRandomProducts() {
+      const container = document.getElementById('home-random-products');
+      const sampleProds = [
+        { name: 'FinishLynx Starting Sensor Gun', cat: 'Electronic Timing', price: 1850, img: 'https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?q=80&w=600&auto=format&fit=crop' },
+        { name: 'Professional Aluminium Starting Block', cat: 'Balapan', price: 380, img: 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?q=80&w=600&auto=format&fit=crop' },
+        { name: 'Set Baton Aluminium 8 Warna', cat: 'Balapan', price: 120, img: 'https://images.unsplash.com/photo-1517649763962-0c623266ddc0?q=80&w=600&auto=format&fit=crop' },
+        { name: 'Spike Shoes Pro Sprint 100m-400m', cat: 'Kasut & Spikes', price: 290, img: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=600&auto=format&fit=crop' }
+      ];
+
+      container.innerHTML = '';
+      sampleProds.forEach(p => {
+        container.innerHTML += `
+          <div class="rounded-2xl bg-[#111115] border border-zinc-800 overflow-hidden flex flex-col justify-between group hover:border-red-600/50 transition">
+            <div class="h-40 overflow-hidden bg-black relative">
+              <img src="${p.img}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+              <span class="absolute top-2.5 left-2.5 px-2 py-0.5 rounded bg-black/85 text-[10px] font-bold text-red-400 uppercase">${p.cat}</span>
+            </div>
+            <div class="p-4 space-y-3">
+              <div>
+                <h4 class="text-xs font-bold text-white group-hover:text-red-400 line-clamp-1">${p.name}</h4>
+                <div class="font-orbitron font-black text-red-500 text-sm mt-1">RM ${p.price.toFixed(2)}</div>
+              </div>
+              <div class="grid grid-cols-2 gap-2 pt-2 border-t border-zinc-800">
+                <a href="/kedai-produk/" class="py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold text-[10px] text-center">Kedai</a>
+                <a href="https://wa.me/60165861530?text=Halo%20Admin,%20saya%20berminat%20dengan%20${encodeURIComponent(p.name)}." target="_blank" class="py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[10px] text-center">Order WA</a>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    // ==========================================
+    // ADMIN AUTHENTICATION
+    // ==========================================
+    function updateAdminUI() {
+      const btnLabel = document.getElementById('admin-btn-label');
+      const loginView = document.getElementById('admin-login-view');
+      const dashView = document.getElementById('admin-dashboard-view');
+
+      if (adminAuth.isAuth) {
+        btnLabel.innerText = adminAuth.name || 'Superadmin';
+        document.getElementById('logged-admin-name').innerText = adminAuth.name;
+        document.getElementById('logged-admin-role').innerText = adminAuth.role.toUpperCase();
+        loginView.classList.add('hidden');
+        dashView.classList.remove('hidden');
+      } else {
+        btnLabel.innerText = 'Superadmin';
+        loginView.classList.remove('hidden');
+        dashView.classList.add('hidden');
+      }
+    }
+
+    function openAdminModal() {
+      document.getElementById('admin-modal').classList.remove('hidden');
+      document.getElementById('admin-modal').classList.add('flex');
+      updateAdminUI();
+    }
+    function closeAdminModal() {
+      document.getElementById('admin-modal').classList.add('hidden');
+      document.getElementById('admin-modal').classList.remove('flex');
+    }
+
+    function handleMasterLogin(e) {
+      e.preventDefault();
+      const u = document.getElementById('login-username').value.trim().toLowerCase();
+      const p = document.getElementById('login-password').value.trim();
+      const err = document.getElementById('login-error-msg');
+
+      const currentNexaPass = localStorage.getItem('psyco_nexa_password') || 'Nexa@1234';
+      if (u === 'nexa') {
+        if (p === currentNexaPass || p === 'Nexa@1234') {
+          adminAuth = { isAuth: true, role: 'admin_sports', name: 'Admin Nexa (Sukan & ET)' };
+          const hasChanged = localStorage.getItem('psyco_nexa_has_changed_password') === 'true';
+          const sportsUser = {
+            role: 'admin_sports',
+            username: 'Nexa',
+            name: 'Admin Nexa',
+            email: 'nexa@psycotime.my',
+            tournament: 'Semua Kejohanan',
+            mustChangePassword: !hasChanged
+          };
+          localStorage.setItem('psyco_sports_user', JSON.stringify(sportsUser));
+        } else {
+          err.innerText = 'Kata laluan akaun Admin Nexa tidak tepat.';
+          err.classList.remove('hidden');
+          return;
+        }
+      } else if ((u === 'saliparjipun.atukoi@gmail.com' || u === 'superadmin') && 
+          (p === 'psyco2026' || p === 'superadmin' || p === 'saliparjipun2026' || p === 'admin')) {
+        adminAuth = { isAuth: true, role: 'superadmin', name: 'Superadmin Nia' };
+      } else if ((u === 'admin' && p === 'psyco123') || (u === 'admin' && p === 'admin') || (u === 'nia' && p === 'nia123')) {
+        adminAuth = { isAuth: true, role: 'admin', name: 'Admin Bertugas' };
+      } else {
+        err.innerText = 'Maklumat log masuk tidak tepat.';
+        err.classList.remove('hidden');
+        return;
+      }
+
+      localStorage.setItem('psyco_admin_auth', JSON.stringify(adminAuth));
+      err.classList.add('hidden');
+      updateAdminUI();
+      alert('Log masuk berjaya! Anda kini mempunyai akses pentadbir penuh.');
+    }
+
+    function handleAdminLogout() {
+      adminAuth = { isAuth: false, role: '', name: '' };
+      localStorage.removeItem('psyco_admin_auth');
+      updateAdminUI();
+    }
+
+    function openForgotPassDirect() {
+      closeAdminModal();
+      document.getElementById('home-forgot-modal').classList.remove('hidden');
+      document.getElementById('home-forgot-modal').classList.add('flex');
+    }
+    function closeForgotPassDirect() {
+      document.getElementById('home-forgot-modal').classList.add('hidden');
+      document.getElementById('home-forgot-modal').classList.remove('flex');
+    }
+
+    function handleDirectForgotPass(e) {
+      e.preventDefault();
+      const email = document.getElementById('direct-forgot-email').value.trim();
+      const step = document.getElementById('direct-forgot-step');
+      const btn = document.getElementById('btn-direct-forgot-act');
+
+      if (step.classList.contains('hidden')) {
+        const code = Math.floor(100000 + Math.random() * 900000);
+        document.getElementById('direct-forgot-code').value = code;
+        step.classList.remove('hidden');
+        btn.innerText = 'Sahkan & Tukar Kata Laluan';
+        alert(`Kod keselamatan pemulihan telah dihantar ke emel: ${email}\nKod Pengesahan: ${code}`);
+      } else {
+        const newPass = document.getElementById('direct-forgot-pass').value.trim();
+        if (newPass.length < 5) {
+          alert('Kata laluan baharu mestilah sekurang-kurangnya 5 aksara.');
+          return;
+        }
+        alert(`Kata laluan Superadmin (${email}) telah berjaya dikemaskini!\nSila log masuk dengan kata laluan baharu.`);
+        closeForgotPassDirect();
+        openAdminModal();
+      }
+    }
+
+    // Toggle Dark Mode
+    function toggleDarkMode() {
+      isDarkMode = !isDarkMode;
+      document.documentElement.classList.toggle('dark', isDarkMode);
+      document.documentElement.classList.toggle('light', !isDarkMode);
+      document.getElementById('btn-darkmode').innerText = isDarkMode ? '🌙' : '☀️';
+    }
+
+    // Toggle Language
+    function toggleLanguage() {
+      isEnglish = !isEnglish;
+      document.getElementById('btn-lang').innerText = isEnglish ? 'EN | BM' : 'BM | EN';
+      document.getElementById('nav-lbl-home').innerText = isEnglish ? 'Home' : 'Utama';
+      document.getElementById('txt-nav-motto').innerText = isEnglish ? 'Track & Field • Electronic Timing System' : 'Sukan Balapan & Padang • Electronic Timing';
+      document.getElementById('txt-top-cert').innerText = isEnglish 
+        ? 'Official Electronic Timing System • World Athletics Certified • Starting at RM450/day'
+        : 'Sistem Electronic Timing (ET) Rasmi • FinishLynx World Athletics Certified • Bermula RM450/hari';
+    }
+
+    // Web Push Notification & In-App Toast
+    function enablePushNotifications() {
+      if ('Notification' in window) {
+        Notification.requestPermission().then(permission => {
+          if (permission === 'granted') {
+            alert('Notifikasi push telah diaktifkan! Anda akan menerima kemaskini keputusan live serta-merta.');
+          }
+        });
+      }
+      triggerSamplePushToast();
+    }
+
+    function triggerSamplePushToast() {
+      const toast = document.getElementById('home-push-toast');
+      toast.classList.remove('hidden');
+      setTimeout(() => { toast.classList.add('hidden'); }, 7000);
+    }
+
+    // Real-time Visitor simulation
+    setInterval(() => {
+      const randomCount = Math.floor(18 + Math.random() * 14);
+      const badge = document.getElementById('live-visitor-badge');
+      const stat = document.getElementById('stat-active-visitors');
+      if (badge) badge.innerText = `${randomCount} Pelawat Aktif`;
+      if (stat) stat.innerText = randomCount;
+    }, 4500);
+
+    // CSV Export
+    function exportAllCSV() {
+      let csv = "data:text/csv;charset=utf-8,\uFEFF";
+      csv += "Modul,Status,Penerangan\r\n";
+      csv += "Training Management APK,Aktif,Sistem masa dwi-kamera dan rekod PB atlet\r\n";
+      csv += "Sports Management,Aktif,Portal penganjuran kejohanan dan kad teknikal\r\n";
+      csv += "ET Rental,Aktif,Sistem photo-finish bermula RM450 per hari\r\n";
+      csv += "ET Results Live,Aktif,Keputusan langsung FinishLynx\r\n";
+      csv += "Kedai Produk,Aktif,Peralatan balapan & padang standard World Athletics\r\n";
+
+      const uri = encodeURI(csv);
+      const link = document.createElement("a");
+      link.setAttribute("href", uri);
+      link.setAttribute("download", "psyco_portal_overview.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // Live Auto-Sync
+    window.onPsycoDataUpdate = function(channel) {
+      renderHomeTournaments();
+      renderHomeSchedules();
+      renderHomeGallery();
+      renderHomeRandomProducts();
+    };
+
+    fetch('/et-schedule/api.php')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data) && data.length > 0) {
+          const local = localStorage.getItem('psyco_et_schedules');
+          if (!local) {
+            localStorage.setItem('psyco_et_schedules', JSON.stringify(data));
+            renderHomeSchedules();
+          }
+        }
+      })
+      .catch(() => {});
+
+    // Init All
+    renderCarousel();
+    renderHomeTournaments();
+    renderHomeSchedules();
+    renderHomeGallery();
+    renderHomeRandomProducts();
+    updateAdminUI();
+  </script>
+</body>
+</html>

@@ -169,16 +169,35 @@ fun TimingSystemScreen(
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                // The Big Digits
-                Text(
-                    text = formattedTime,
-                    fontSize = 58.sp,
-                    fontFamily = FontFamily.Monospace,
-                    fontWeight = FontWeight.Black,
-                    color = if (isTimerRunning) SpeedAmber else Color.White,
-                    letterSpacing = 2.sp,
-                    textAlign = TextAlign.Center
-                )
+                // One-Row Scaled High-Precision Digital Electronic Stopwatch Display
+                Surface(
+                    color = Color.Black,
+                    shape = RoundedCornerShape(12.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, if (isTimerRunning) FinishLineRed else SilverBorder.copy(alpha = 0.4f)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp, vertical = 12.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = formattedTime,
+                            fontSize = 32.sp,
+                            maxLines = 1,
+                            softWrap = false,
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = FontWeight.Black,
+                            color = if (isTimerRunning) FinishLineRed else Color.White,
+                            letterSpacing = 1.sp,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
 
                 Text(
                     text = if (camMode == 1) "CAM 1 TIMING GATE HOST • KELAJUAN RAKAMAN 120 FPS" else "CAM 2 FINISHER GATE • AI SLIT SCAN TORSO DETECTOR",
