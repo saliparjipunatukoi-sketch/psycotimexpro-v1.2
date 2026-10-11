@@ -46,8 +46,9 @@ fun DashboardScreen(
     onNavigateToAthletes: () -> Unit,
     onNavigateToReplays: () -> Unit,
     onOpenAddAthlete: () -> Unit,
-    onOpenKadTeknikal: () -> Unit,
+    onOpenWebsite: () -> Unit,
     onOpenWebSync: () -> Unit,
+    onLogout: () -> Unit,
     onSelectAthlete: (AthleteEntity) -> Unit,
     onUpdateClubLogo: (logoUri: String) -> Unit,
     modifier: Modifier = Modifier
@@ -159,6 +160,22 @@ fun DashboardScreen(
                             )
                         }
                     }
+
+                    // Logout quick action button
+                    IconButton(
+                        onClick = onLogout,
+                        modifier = Modifier
+                            .background(FinishLineRed.copy(alpha = 0.15f), RoundedCornerShape(10.dp))
+                            .border(1.dp, FinishLineRed.copy(alpha = 0.4f), RoundedCornerShape(10.dp))
+                            .size(38.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.ExitToApp,
+                            contentDescription = "Log Keluar",
+                            tint = FinishLineRed,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                 }
             }
         }
@@ -230,10 +247,10 @@ fun DashboardScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         ActionPill(
-                            title = "Kad Teknikal",
-                            icon = Icons.Default.Description,
-                            color = SpeedAmber,
-                            onClick = onOpenKadTeknikal,
+                            title = "Website Rasmi",
+                            icon = Icons.Default.Language,
+                            color = FinishLineRed,
+                            onClick = onOpenWebsite,
                             modifier = Modifier.weight(1f)
                         )
                         ActionPill(

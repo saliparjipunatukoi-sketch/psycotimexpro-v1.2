@@ -39,7 +39,7 @@ fun SettingsScreen(
     onSwitchUser: (email: String, name: String) -> Unit,
     onUpdateClubInfo: (name: String, logoUri: String?, coachName: String, phone: String, photoUri: String?) -> Unit,
     onOpenWebSync: () -> Unit,
-    onOpenKadTeknikal: () -> Unit,
+    onLogout: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var clubNameInput by remember(clubProfile) { mutableStateOf(clubProfile.clubName) }
@@ -163,6 +163,19 @@ fun SettingsScreen(
                     ) {
                         Text("Coach Tetamu", color = if (!isSuperAdmin) Color.Black else Color.White, fontSize = 11.sp)
                     }
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Button(
+                    onClick = onLogout,
+                    colors = ButtonDefaults.buttonColors(containerColor = FinishLineRed),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth().testTag("logout_settings_button")
+                ) {
+                    Icon(Icons.Default.ExitToApp, contentDescription = null, tint = Color.White)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Log Keluar Akaun (Logout)", fontWeight = FontWeight.Black, color = Color.White, fontSize = 13.sp)
                 }
             }
         }
@@ -371,17 +384,6 @@ fun SettingsScreen(
                     Icon(Icons.Default.CloudSync, contentDescription = null)
                     Spacer(modifier = Modifier.width(6.dp))
                     Text("Pengurusan Sync Portal Web", fontWeight = FontWeight.Bold)
-                }
-
-                OutlinedButton(
-                    onClick = onOpenKadTeknikal,
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = LaserOrange),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, LaserOrange),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(Icons.Default.Print, contentDescription = null)
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text("Jana Kad Balapan / Kad Padang Manual", fontWeight = FontWeight.Bold)
                 }
             }
         }

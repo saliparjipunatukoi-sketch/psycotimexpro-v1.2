@@ -1,5 +1,7 @@
 package com.example
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -27,7 +29,6 @@ import com.example.ui.dialogs.*
 import com.example.ui.screens.*
 import com.example.ui.theme.*
 import com.example.viewmodel.MainViewModel
-import java.io.File
 
 enum class ScreenTab(val title: String, val icon: androidx.compose.ui.graphics.vector.ImageVector) {
     DASHBOARD("Utama", Icons.Default.Dashboard),
@@ -52,15 +53,26 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             MyApplicationTheme {
+                val isLoggedIn by viewModel.isLoggedIn.collectAsStateWithLifecycle()
                 var showSplash by remember { mutableStateOf(true) }
                 var currentTab by remember { mutableStateOf(ScreenTab.DASHBOARD) }
+                var showLogoutConfirmDialog by remember { mutableStateOf(false) }
 
                 if (showSplash) {
                     SplashScreen(
                         onDismissSplash = { showSplash = false }
                     )
+                } else if (!isLoggedIn) {
+                    // MUST LOGIN FIRST: Does NOT enter Superadmin automatically
+                    AuthScreen(
+                        onLoginSuccess = { email, name, club, isSuper ->
+                            viewModel.login(email, name, club, isSuper)
+                            currentTab = ScreenTab.DASHBOARD
+                            Toast.makeText(this@MainActivity, "Selamat kembali, $name!", Toast.LENGTH_SHORT).show()
+                        }
+                    )
                 } else {
-                    // State collection
+                    // State collection for logged-in user
                     val clubProfile by viewModel.clubProfile.collectAsStateWithLifecycle()
                     val athletes by viewModel.allAthletes.collectAsStateWithLifecycle()
                     val races by viewModel.allRaces.collectAsStateWithLifecycle()
@@ -88,7 +100,6 @@ class MainActivity : ComponentActivity() {
                     val showAddSubUserDialog by viewModel.showAddSubUserDialog.collectAsStateWithLifecycle()
                     val showQrPairDialog by viewModel.showQrPairDialog.collectAsStateWithLifecycle()
                     val showWebSyncDialog by viewModel.showWebSyncDialog.collectAsStateWithLifecycle()
-                    val showKadTeknikalDialog by viewModel.showKadTeknikalDialog.collectAsStateWithLifecycle()
                     val selectedAthleteDetail by viewModel.selectedAthleteDetail.collectAsStateWithLifecycle()
                     val syncStatus by viewModel.syncStatus.collectAsStateWithLifecycle()
                     val isSyncing by viewModel.isSyncing.collectAsStateWithLifecycle()
@@ -99,287 +110,346 @@ class MainActivity : ComponentActivity() {
                     }
 
                     Scaffold(
-                    topBar = {
-                        TopAppBar(
-                            title = {
-                                Column {
-                                    Text(
-                                        text = "Psyco Time X Pro",
-                                        fontWeight = FontWeight.Black,
-                                        fontSize = 18.sp,
-                                        color = Color.White
-                                    )
-                                    Text(
-                                        text = "Electronic Timing & Sports Management",
-                                        fontSize = 10.sp,
-                                        color = ElectricCyanGlow
-                                    )
-                                }
-                            },
-                            actions = {
-                                IconButton(onClick = { viewModel.setShowWebSyncDialog(true) }) {
-                                    Icon(
-                                        Icons.Default.CloudSync,
-                                        contentDescription = "Sync Web",
-                                        tint = ElectricCyan
-                                    )
-                                }
-                                IconButton(onClick = { currentTab = ScreenTab.SETTINGS }) {
-                                    Icon(
-                                        Icons.Default.Settings,
-                                        contentDescription = "Tetapan",
-                                        tint = if (currentTab == ScreenTab.SETTINGS) LaserOrange else Color.White
-                                    )
-                                }
-                            },
-                            colors = TopAppBarDefaults.topAppBarColors(
-                                containerColor = StadiumSurface
-                            )
-                        )
-                    },
-                    bottomBar = {
-                        NavigationBar(
-                            containerColor = StadiumSurface,
-                            modifier = Modifier.testTag("main_bottom_nav")
-                        ) {
-                            ScreenTab.values().filter { it != ScreenTab.SETTINGS }.forEach { tab ->
-                                NavigationBarItem(
-                                    selected = currentTab == tab,
-                                    onClick = { currentTab = tab },
-                                    icon = {
-                                        Icon(
-                                            tab.icon,
-                                            contentDescription = tab.title,
-                                            tint = if (currentTab == tab) FinishLineRed else SilverMetallic
-                                        )
-                                    },
-                                    label = {
+                        topBar = {
+                            TopAppBar(
+                                title = {
+                                    Column {
                                         Text(
-                                            tab.title,
-                                            fontSize = 9.sp,
-                                            fontWeight = if (currentTab == tab) FontWeight.Bold else FontWeight.Normal,
-                                            color = if (currentTab == tab) Color.White else SilverMetallic
+                                            text = "Psyco Time X Pro",
+                                            fontWeight = FontWeight.Black,
+                                            fontSize = 18.sp,
+                                            color = Color.White
                                         )
-                                    },
-                                    colors = NavigationBarItemDefaults.colors(
-                                        indicatorColor = StadiumSurfaceVariant
+                                        Text(
+                                            text = if (isSuperAdmin) "Superadmin: $currentUserName" else "Coach: $currentUserName",
+                                            fontSize = 10.sp,
+                                            color = if (isSuperAdmin) FinishLineRed else SilverMetallic
+                                        )
+                                    }
+                                },
+                                actions = {
+                                    IconButton(onClick = { viewModel.setShowWebSyncDialog(true) }) {
+                                        Icon(
+                                            Icons.Default.CloudSync,
+                                            contentDescription = "Sync Web",
+                                            tint = Color.White
+                                        )
+                                    }
+                                    IconButton(onClick = { currentTab = ScreenTab.SETTINGS }) {
+                                        Icon(
+                                            Icons.Default.Settings,
+                                            contentDescription = "Tetapan",
+                                            tint = if (currentTab == ScreenTab.SETTINGS) FinishLineRed else Color.White
+                                        )
+                                    }
+                                    // CLEAR LOGOUT BUTTON IN TOP APP BAR
+                                    IconButton(
+                                        onClick = { showLogoutConfirmDialog = true },
+                                        modifier = Modifier.testTag("top_bar_logout_button")
+                                    ) {
+                                        Icon(
+                                            Icons.Default.ExitToApp,
+                                            contentDescription = "Log Keluar",
+                                            tint = FinishLineRed
+                                        )
+                                    }
+                                },
+                                colors = TopAppBarDefaults.topAppBarColors(
+                                    containerColor = StadiumSurface
+                                )
+                            )
+                        },
+                        bottomBar = {
+                            NavigationBar(
+                                containerColor = StadiumSurface,
+                                modifier = Modifier.testTag("bottom_navigation_bar")
+                            ) {
+                                val tabs = listOf(
+                                    ScreenTab.DASHBOARD,
+                                    ScreenTab.TIMING,
+                                    ScreenTab.REPLAY,
+                                    ScreenTab.ATHLETES,
+                                    ScreenTab.FEES,
+                                    ScreenTab.SUBUSERS,
+                                    ScreenTab.WEB_PORTAL
+                                )
+                                tabs.forEach { tab ->
+                                    val selected = currentTab == tab
+                                    NavigationBarItem(
+                                        selected = selected,
+                                        onClick = { currentTab = tab },
+                                        icon = {
+                                            Icon(
+                                                imageVector = tab.icon,
+                                                contentDescription = tab.title,
+                                                tint = if (selected) FinishLineRed else SilverBorder
+                                            )
+                                        },
+                                        label = {
+                                            Text(
+                                                text = tab.title,
+                                                fontSize = 9.sp,
+                                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                                                color = if (selected) FinishLineRed else SilverBorder
+                                            )
+                                        },
+                                        colors = NavigationBarItemDefaults.colors(
+                                            indicatorColor = FinishLineRed.copy(alpha = 0.2f)
+                                        )
                                     )
+                                }
+                            }
+                        },
+                        containerColor = TrackDarkNavy
+                    ) { innerPadding ->
+                        Box(modifier = Modifier.padding(innerPadding)) {
+                            when (currentTab) {
+                                ScreenTab.DASHBOARD -> DashboardScreen(
+                                    clubProfile = clubProfile,
+                                    athletes = athletes,
+                                    races = races,
+                                    currentUserEmail = currentUserEmail,
+                                    isSuperAdmin = isSuperAdmin,
+                                    onNavigateToTiming = { currentTab = ScreenTab.TIMING },
+                                    onNavigateToAthletes = { currentTab = ScreenTab.ATHLETES },
+                                    onNavigateToReplays = { currentTab = ScreenTab.REPLAY },
+                                    onOpenAddAthlete = { currentTab = ScreenTab.REGISTER_ATHLETE },
+                                    onOpenWebsite = {
+                                        try {
+                                            val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.psycotimexpro.my"))
+                                            startActivity(browserIntent)
+                                        } catch (_: Exception) {
+                                            Toast.makeText(this@MainActivity, "Membuka www.psycotimexpro.my", Toast.LENGTH_SHORT).show()
+                                        }
+                                    },
+                                    onOpenWebSync = { viewModel.setShowWebSyncDialog(true) },
+                                    onLogout = { showLogoutConfirmDialog = true },
+                                    onSelectAthlete = { viewModel.selectAthlete(it) },
+                                    onUpdateClubLogo = { uri ->
+                                        viewModel.updateClubInfo(
+                                            clubProfile.clubName,
+                                            uri,
+                                            clubProfile.coachName,
+                                            clubProfile.coachPhone,
+                                            clubProfile.coachPhotoUri
+                                        )
+                                    }
+                                )
+
+                                ScreenTab.TIMING -> TimingSystemScreen(
+                                    camMode = camMode,
+                                    isTimerRunning = isTimerRunning,
+                                    elapsedMillis = elapsedMillis,
+                                    isAudioGunEnabled = isAudioGunEnabled,
+                                    isMovementDetected = isMovementDetected,
+                                    motionEnergy = motionEnergy,
+                                    latestAiAnalysis = latestAiAnalysis,
+                                    onSetCamMode = { viewModel.setCamMode(it) },
+                                    onToggleAudioGun = { viewModel.toggleAudioGun(it) },
+                                    onStartTimer = { viewModel.startTimer() },
+                                    onStopTimer = { viewModel.stopTimer() },
+                                    onResetTimer = { viewModel.resetTimer() },
+                                    onTriggerMotion = { hasMotion, energy ->
+                                        viewModel.setMotionDetection(hasMotion, energy)
+                                    },
+                                    onOpenQrPair = { viewModel.setShowQrPairDialog(true) }
+                                )
+
+                                ScreenTab.REPLAY -> ReplayScreen(
+                                    races = races,
+                                    currentUserEmail = currentUserEmail,
+                                    isSuperAdmin = isSuperAdmin,
+                                    onCapturePhotoFinish = { race, ms, isCam2 ->
+                                        viewModel.capturePhotoFinish(race, ms, isCam2)
+                                    },
+                                    onDownloadVideo = { race, isCam2 ->
+                                        viewModel.downloadVideoToPhone(race, isCam2)
+                                    },
+                                    onDeleteRace = { race ->
+                                        viewModel.deleteRace(race)
+                                        Toast.makeText(this@MainActivity, "Rekod race '${race.title}' berjaya dipadam.", Toast.LENGTH_SHORT).show()
+                                    }
+                                )
+
+                                ScreenTab.ATHLETES -> AthleteListScreen(
+                                    athletes = athletes,
+                                    onOpenAddAthlete = { currentTab = ScreenTab.REGISTER_ATHLETE },
+                                    onSelectAthlete = { viewModel.selectAthlete(it) },
+                                    onDeleteAthlete = {
+                                        viewModel.deleteAthlete(it)
+                                        Toast.makeText(this@MainActivity, "Atlit '${it.name}' dipadam.", Toast.LENGTH_SHORT).show()
+                                    }
+                                )
+
+                                ScreenTab.REGISTER_ATHLETE -> RegisterAthleteScreen(
+                                    onSaveAthlete = { newAthlete ->
+                                        viewModel.addAthlete(newAthlete)
+                                        currentTab = ScreenTab.ATHLETES
+                                        Toast.makeText(this@MainActivity, "Atlit '${newAthlete.name}' berjaya didaftarkan & diselaraskan ke web!", Toast.LENGTH_SHORT).show()
+                                    },
+                                    onNavigateBack = { currentTab = ScreenTab.DASHBOARD }
+                                )
+
+                                ScreenTab.FEES -> FeeManagementScreen(
+                                    fees = fees,
+                                    athletes = athletes,
+                                    onAddFee = { fee -> viewModel.addFee(fee) },
+                                    onUpdateFee = { fee -> viewModel.updateFee(fee) }
+                                )
+
+                                ScreenTab.SUBUSERS -> SubUserScreen(
+                                    subUsers = subUsers,
+                                    currentUserEmail = currentUserEmail,
+                                    isSuperAdmin = isSuperAdmin,
+                                    onOpenAddSubUser = { viewModel.setShowAddSubUserDialog(true) },
+                                    onDeleteSubUser = {
+                                        viewModel.deleteSubUser(it)
+                                    }
+                                )
+
+                                ScreenTab.WEB_PORTAL -> WebPortalScreen(
+                                    initialUrl = "https://www.psycotimexpro.my",
+                                    onNavigateBack = { currentTab = ScreenTab.DASHBOARD }
+                                )
+
+                                ScreenTab.SETTINGS -> SettingsScreen(
+                                    clubProfile = clubProfile,
+                                    currentUserEmail = currentUserEmail,
+                                    currentUserName = currentUserName,
+                                    isSuperAdmin = isSuperAdmin,
+                                    deviceStorageDirs = viewModel.storageManager.ensureDirectoriesExist(),
+                                    onSwitchUser = { email, name -> viewModel.switchUser(email, name) },
+                                    onUpdateClubInfo = { name, logo, coach, phone, photo ->
+                                        viewModel.updateClubInfo(name, logo, coach, phone, photo)
+                                    },
+                                    onOpenWebSync = { viewModel.setShowWebSyncDialog(true) },
+                                    onLogout = { showLogoutConfirmDialog = true }
                                 )
                             }
                         }
-                    },
-                    containerColor = TrackDarkNavy
-                ) { innerPadding ->
-                    Box(modifier = Modifier.padding(innerPadding)) {
-                        when (currentTab) {
-                            ScreenTab.DASHBOARD -> DashboardScreen(
-                                clubProfile = clubProfile,
-                                athletes = athletes,
-                                races = races,
-                                currentUserEmail = currentUserEmail,
-                                isSuperAdmin = isSuperAdmin,
-                                onNavigateToTiming = { currentTab = ScreenTab.TIMING },
-                                onNavigateToAthletes = { currentTab = ScreenTab.ATHLETES },
-                                onNavigateToReplays = { currentTab = ScreenTab.REPLAY },
-                                onOpenAddAthlete = { viewModel.setShowAddAthleteDialog(true) },
-                                onOpenKadTeknikal = { viewModel.setShowKadTeknikalDialog(true) },
-                                onOpenWebSync = { viewModel.setShowWebSyncDialog(true) },
-                                onSelectAthlete = { viewModel.selectAthlete(it) },
-                                onUpdateClubLogo = { uri ->
-                                    viewModel.updateClubInfo(
-                                        clubProfile.clubName,
-                                        uri,
-                                        clubProfile.coachName,
-                                        clubProfile.coachPhone,
-                                        clubProfile.coachPhotoUri
-                                    )
-                                }
-                            )
-
-                            ScreenTab.TIMING -> TimingSystemScreen(
-                                camMode = camMode,
-                                isTimerRunning = isTimerRunning,
-                                elapsedMillis = elapsedMillis,
-                                isAudioGunEnabled = isAudioGunEnabled,
-                                isMovementDetected = isMovementDetected,
-                                motionEnergy = motionEnergy,
-                                latestAiAnalysis = latestAiAnalysis,
-                                onSetCamMode = { viewModel.setCamMode(it) },
-                                onToggleAudioGun = { viewModel.toggleAudioGun(it) },
-                                onStartTimer = { viewModel.startTimer() },
-                                onStopTimer = { viewModel.stopTimer() },
-                                onResetTimer = { viewModel.resetTimer() },
-                                onTriggerMotion = { hasMotion, energy ->
-                                    viewModel.setMotionDetection(hasMotion, energy)
-                                },
-                                onOpenQrPair = { viewModel.setShowQrPairDialog(true) }
-                            )
-
-                            ScreenTab.REPLAY -> ReplayScreen(
-                                races = races,
-                                currentUserEmail = currentUserEmail,
-                                isSuperAdmin = isSuperAdmin,
-                                onCapturePhotoFinish = { race, frameMs, isCam2 ->
-                                    viewModel.capturePhotoFinish(race, frameMs, isCam2)
-                                    Toast.makeText(this@MainActivity, "Photo Finish disimpan ke telefon!", Toast.LENGTH_SHORT).show()
-                                },
-                                onDownloadVideo = { race, isCam2 ->
-                                    viewModel.downloadVideoToPhone(race, isCam2)
-                                    Toast.makeText(this@MainActivity, "Video dimuat turun ke folder /PsycoTimeXPro/Videos/", Toast.LENGTH_SHORT).show()
-                                }
-                            )
-
-                            ScreenTab.ATHLETES -> AthleteListScreen(
-                                athletes = athletes,
-                                onOpenAddAthlete = { currentTab = ScreenTab.REGISTER_ATHLETE },
-                                onSelectAthlete = { viewModel.selectAthlete(it) },
-                                onDeleteAthlete = { viewModel.deleteAthlete(it) }
-                            )
-
-                            ScreenTab.REGISTER_ATHLETE -> RegisterAthleteScreen(
-                                onSaveAthlete = { newAthlete ->
-                                    viewModel.addAthlete(newAthlete)
-                                    currentTab = ScreenTab.ATHLETES
-                                    Toast.makeText(this@MainActivity, "Atlit '${newAthlete.name}' berjaya didaftarkan & disinkronkan ke Web Portal!", Toast.LENGTH_SHORT).show()
-                                },
-                                onNavigateBack = {
-                                    currentTab = ScreenTab.ATHLETES
-                                }
-                            )
-
-                            ScreenTab.FEES -> FeeManagementScreen(
-                                fees = fees,
-                                athletes = athletes,
-                                onAddFee = { viewModel.addFee(it) },
-                                onUpdateFee = { viewModel.addFee(it) }
-                            )
-
-                            ScreenTab.SUBUSERS -> SubUserScreen(
-                                subUsers = subUsers,
-                                currentUserEmail = currentUserEmail,
-                                isSuperAdmin = isSuperAdmin,
-                                onOpenAddSubUser = { viewModel.setShowAddSubUserDialog(true) },
-                                onDeleteSubUser = { viewModel.deleteSubUser(it) }
-                            )
-
-                            ScreenTab.WEB_PORTAL -> WebPortalScreen(
-                                initialUrl = "https://www.psycotimexpro.my",
-                                onNavigateBack = { currentTab = ScreenTab.DASHBOARD }
-                            )
-
-                            ScreenTab.SETTINGS -> SettingsScreen(
-                                clubProfile = clubProfile,
-                                currentUserEmail = currentUserEmail,
-                                currentUserName = currentUserName,
-                                isSuperAdmin = isSuperAdmin,
-                                deviceStorageDirs = viewModel.storageManager.ensureDirectoriesExist(),
-                                onSwitchUser = { email, name -> viewModel.switchUser(email, name) },
-                                onUpdateClubInfo = { name, logo, coach, phone, photo ->
-                                    viewModel.updateClubInfo(name, logo, coach, phone, photo)
-                                },
-                                onOpenWebSync = { viewModel.setShowWebSyncDialog(true) },
-                                onOpenKadTeknikal = { viewModel.setShowKadTeknikalDialog(true) }
-                            )
-                        }
                     }
-                }
 
-                // DIALOGS
-                if (showSaveRaceDialog) {
-                    SaveRaceDialog(
-                        suggestedTitle = suggestedRaceTitle,
-                        elapsedMillis = elapsedMillis,
-                        athletes = athletes,
-                        onDismiss = { viewModel.dismissSaveRaceDialog() },
-                        onSave = { title, event, athleteName, athleteId, lane, wind, notes ->
-                            viewModel.saveRace(title, event, athleteName, athleteId, lane, wind, notes)
-                            Toast.makeText(this@MainActivity, "Race '$title' disimpan!", Toast.LENGTH_SHORT).show()
-                        }
-                    )
-                }
+                    // DIALOGS
+                    if (showSaveRaceDialog) {
+                        SaveRaceDialog(
+                            suggestedTitle = suggestedRaceTitle,
+                            elapsedMillis = elapsedMillis,
+                            athletes = athletes,
+                            onDismiss = { viewModel.dismissSaveRaceDialog() },
+                            onSave = { title, event, athleteName, athleteId, lane, wind, notes ->
+                                viewModel.saveRace(title, event, athleteName, athleteId, lane, wind, notes)
+                                Toast.makeText(this@MainActivity, "Race '$title' disimpan!", Toast.LENGTH_SHORT).show()
+                            }
+                        )
+                    }
 
-                if (showAddAthleteDialog) {
-                    AddAthleteDialog(
-                        onDismiss = { viewModel.setShowAddAthleteDialog(false) },
-                        onSaveAthlete = { athlete ->
-                            viewModel.addAthlete(athlete)
-                            Toast.makeText(this@MainActivity, "Atlit '${athlete.name}' didaftarkan!", Toast.LENGTH_SHORT).show()
-                        }
-                    )
-                }
+                    if (showAddAthleteDialog) {
+                        AddAthleteDialog(
+                            onDismiss = { viewModel.setShowAddAthleteDialog(false) },
+                            onSaveAthlete = { athlete ->
+                                viewModel.addAthlete(athlete)
+                                Toast.makeText(this@MainActivity, "Atlit '${athlete.name}' didaftarkan!", Toast.LENGTH_SHORT).show()
+                            }
+                        )
+                    }
 
-                if (showAddSubUserDialog) {
-                    AddSubUserDialog(
-                        currentSubUserCount = subUsers.size,
-                        onDismiss = { viewModel.setShowAddSubUserDialog(false) },
-                        onAddSubUser = { username, fullName, role, pin ->
-                            viewModel.addSubUser(username, fullName, role, pin)
-                            Toast.makeText(this@MainActivity, "Sub-user '$username' didaftarkan!", Toast.LENGTH_SHORT).show()
-                        }
-                    )
-                }
+                    if (showAddSubUserDialog) {
+                        AddSubUserDialog(
+                            currentSubUserCount = subUsers.size,
+                            onDismiss = { viewModel.setShowAddSubUserDialog(false) },
+                            onAddSubUser = { username, fullName, role, pin ->
+                                viewModel.addSubUser(username, fullName, role, pin)
+                                Toast.makeText(this@MainActivity, "Sub-user '$username' didaftarkan!", Toast.LENGTH_SHORT).show()
+                            }
+                        )
+                    }
 
-                if (showQrPairDialog) {
-                    QrPairDialog(
-                        sessionPayload = "PSYCO_CAM2_PAIR:${System.currentTimeMillis()}:GATE2",
-                        onDismiss = { viewModel.setShowQrPairDialog(false) },
-                        onSwitchToCam2Mode = { viewModel.setCamMode(2) }
-                    )
-                }
+                    if (showQrPairDialog) {
+                        QrPairDialog(
+                            sessionPayload = "PSYCO_CAM2_PAIR:${System.currentTimeMillis()}:GATE2",
+                            onDismiss = { viewModel.setShowQrPairDialog(false) },
+                            onSwitchToCam2Mode = { viewModel.setCamMode(2) }
+                        )
+                    }
 
-                if (showWebSyncDialog) {
-                    WebSyncDialog(
-                        currentEndpoint = viewModel.webSyncManager.getEndpoint(),
-                        athletesCount = athletes.size,
-                        racesCount = races.size,
-                        lastSyncTimestamp = viewModel.webSyncManager.lastSyncTimestamp,
-                        isSyncing = isSyncing,
-                        syncResult = syncStatus,
-                        onDismiss = { viewModel.setShowWebSyncDialog(false) },
-                        onTriggerSync = { viewModel.syncWithWeb() }
-                    )
-                }
+                    if (showWebSyncDialog) {
+                        WebSyncDialog(
+                            currentEndpoint = viewModel.webSyncManager.getEndpoint(),
+                            athletesCount = athletes.size,
+                            racesCount = races.size,
+                            lastSyncTimestamp = viewModel.webSyncManager.lastSyncTimestamp,
+                            isSyncing = isSyncing,
+                            syncResult = syncStatus,
+                            onDismiss = { viewModel.setShowWebSyncDialog(false) },
+                            onTriggerSync = { viewModel.syncWithWeb() }
+                        )
+                    }
 
-                if (showKadTeknikalDialog) {
-                    KadTeknikalDialog(
-                        athletes = athletes,
-                        onDismiss = { viewModel.setShowKadTeknikalDialog(false) },
-                        onSaveKadToStorage = { type, content ->
-                            val file = File(viewModel.storageManager.appBaseDir, "KadTeknikal/Kad_${type}_${System.currentTimeMillis()}.txt")
-                            file.parentFile?.mkdirs()
-                            file.writeText(content)
-                            file.absolutePath
-                        }
-                    )
-                }
-
-                selectedAthleteDetail?.let { athlete ->
-                    AthleteDetailDialog(
-                        athlete = athlete,
-                        achievements = achievements,
-                        performanceMetrics = performanceMetrics,
-                        onDismiss = { viewModel.selectAthlete(null) },
-                        onDeleteAthlete = {
-                            viewModel.deleteAthlete(athlete)
-                            Toast.makeText(this@MainActivity, "Atlit dipadam.", Toast.LENGTH_SHORT).show()
-                        },
-                        onAddAchievement = { tournament, event, medal, record ->
-                            viewModel.addAchievement(
-                                AchievementEntity(
-                                    athleteId = athlete.id,
-                                    athleteName = athlete.name,
-                                    tournamentName = tournament,
-                                    eventName = event,
-                                    medal = medal,
-                                    resultRecord = record,
-                                    yearOrDate = "2026"
+                    selectedAthleteDetail?.let { athlete ->
+                        AthleteDetailDialog(
+                            athlete = athlete,
+                            achievements = achievements,
+                            performanceMetrics = performanceMetrics,
+                            onDismiss = { viewModel.selectAthlete(null) },
+                            onDeleteAthlete = {
+                                viewModel.deleteAthlete(athlete)
+                                Toast.makeText(this@MainActivity, "Atlit dipadam.", Toast.LENGTH_SHORT).show()
+                            },
+                            onAddAchievement = { tournament, event, medal, record ->
+                                viewModel.addAchievement(
+                                    AchievementEntity(
+                                        athleteId = athlete.id,
+                                        athleteName = athlete.name,
+                                        tournamentName = tournament,
+                                        eventName = event,
+                                        medal = medal,
+                                        resultRecord = record,
+                                        yearOrDate = "2026"
+                                    )
                                 )
-                            )
-                        }
-                    )
+                            }
+                        )
+                    }
+
+                    // LOGOUT CONFIRMATION DIALOG
+                    if (showLogoutConfirmDialog) {
+                        AlertDialog(
+                            onDismissRequest = { showLogoutConfirmDialog = false },
+                            title = {
+                                Text(
+                                    text = "Log Keluar Akaun?",
+                                    fontWeight = FontWeight.Black,
+                                    color = Color.White
+                                )
+                            },
+                            text = {
+                                Text(
+                                    text = "Adakah anda pasti mahu log keluar daripada akaun '$currentUserEmail'? Anda perlu log masuk semula untuk mengakses sistem.",
+                                    color = TextSecondary,
+                                    fontSize = 13.sp
+                                )
+                            },
+                            confirmButton = {
+                                Button(
+                                    onClick = {
+                                        showLogoutConfirmDialog = false
+                                        viewModel.logout()
+                                        Toast.makeText(this@MainActivity, "Log keluar berjaya.", Toast.LENGTH_SHORT).show()
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = FinishLineRed)
+                                ) {
+                                    Text("Log Keluar", color = Color.White, fontWeight = FontWeight.Bold)
+                                }
+                            },
+                            dismissButton = {
+                                TextButton(onClick = { showLogoutConfirmDialog = false }) {
+                                    Text("Batal", color = SilverMetallic)
+                                }
+                            }
+                        )
+                    }
                 }
             }
         }
     }
-}
 }

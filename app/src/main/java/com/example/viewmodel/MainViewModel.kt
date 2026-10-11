@@ -21,13 +21,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     // Current User & Authentication
     val superAdminEmail = "saliparjipun.atukoi@gmail.com"
-    private val _currentUserEmail = MutableStateFlow(superAdminEmail)
+    private val _isLoggedIn = MutableStateFlow(false)
+    val isLoggedIn: StateFlow<Boolean> = _isLoggedIn.asStateFlow()
+
+    private val _currentUserEmail = MutableStateFlow("")
     val currentUserEmail: StateFlow<String> = _currentUserEmail.asStateFlow()
 
-    private val _currentUserName = MutableStateFlow("Coach Salipar Jipun (Superadmin)")
+    private val _currentUserName = MutableStateFlow("")
     val currentUserName: StateFlow<String> = _currentUserName.asStateFlow()
 
-    private val _isSuperAdmin = MutableStateFlow(true)
+    private val _isSuperAdmin = MutableStateFlow(false)
     val isSuperAdmin: StateFlow<Boolean> = _isSuperAdmin.asStateFlow()
 
     // Club Profile
@@ -82,9 +85,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _showWebSyncDialog = MutableStateFlow(false)
     val showWebSyncDialog: StateFlow<Boolean> = _showWebSyncDialog.asStateFlow()
 
-    private val _showKadTeknikalDialog = MutableStateFlow(false)
-    val showKadTeknikalDialog: StateFlow<Boolean> = _showKadTeknikalDialog.asStateFlow()
-
     private val _selectedAthleteDetail = MutableStateFlow<AthleteEntity?>(null)
     val selectedAthleteDetail: StateFlow<AthleteEntity?> = _selectedAthleteDetail.asStateFlow()
 
@@ -135,6 +135,25 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             repository.seedSampleDataIfEmpty()
         }
+    }
+
+    fun login(email: String, name: String, club: String, isSuper: Boolean) {
+        _currentUserEmail.value = email
+        _currentUserName.value = name
+        _isSuperAdmin.value = isSuper
+        _clubProfile.value = _clubProfile.value.copy(
+            clubName = if (club.isNotBlank()) club else _clubProfile.value.clubName,
+            coachName = name,
+            coachEmail = email
+        )
+        _isLoggedIn.value = true
+    }
+
+    fun logout() {
+        _isLoggedIn.value = false
+        _currentUserEmail.value = ""
+        _currentUserName.value = ""
+        _isSuperAdmin.value = false
     }
 
     fun switchUser(email: String, name: String) {
@@ -379,6 +398,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun updateFee(fee: FeeRecordEntity) {
+        viewModelScope.launch {
+            repository.updateFee(fee)
+        }
+    }
+
     fun addAchievement(achievement: AchievementEntity) {
         viewModelScope.launch {
             repository.insertAchievement(achievement)
@@ -405,8 +430,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _showWebSyncDialog.value = show
     }
 
-    fun setShowKadTeknikalDialog(show: Boolean) {
-        _showKadTeknikalDialog.value = show
+    fun deleteRace(race: RaceRecordEntity) {
+        viewModelScope.launch {
+            repository.deleteRace(race)
+            // Delete associated video / photo files if existing
+            race.cam1VideoUri?.let { uri ->
+                try { java.io.File(uri).delete() } catch (_: Exception) {}
+            }
+            race.cam2VideoUri?.let { uri ->
+                try { java.io.File(uri).delete() } catch (_: Exception) {}
+            }
+            race.photoFinishUri?.let { uri ->
+                try { java.io.File(uri).delete() } catch (_: Exception) {}
+            }
+        }
     }
 
     fun capturePhotoFinish(race: RaceRecordEntity, currentFrameMs: Long, isCam2: Boolean) {

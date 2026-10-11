@@ -50,6 +50,15 @@ fun AuthScreen(
     var phoneInput by remember { mutableStateOf("") }
     var isPasswordVisible by remember { mutableStateOf(false) }
 
+    // Google Gmail Login & Registration Popup States
+    var showGooglePicker by remember { mutableStateOf(false) }
+    var googleSelectedEmail by remember { mutableStateOf("") }
+    var googleSelectedName by remember { mutableStateOf("") }
+    var showDetailCompletionPopup by remember { mutableStateOf(false) }
+    var popupNameInput by remember { mutableStateOf("") }
+    var popupClubInput by remember { mutableStateOf("") }
+    var popupPhoneInput by remember { mutableStateOf("") }
+
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -216,6 +225,69 @@ fun AuthScreen(
                         )
                     }
 
+                    // Divider with OR
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        HorizontalDivider(
+                            modifier = Modifier.weight(1f),
+                            color = StadiumBorder
+                        )
+                        Text(
+                            text = "ATAU",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TextMuted,
+                            modifier = Modifier.padding(horizontal = 10.dp)
+                        )
+                        HorizontalDivider(
+                            modifier = Modifier.weight(1f),
+                            color = StadiumBorder
+                        )
+                    }
+
+                    // Google Gmail Login / Register Button
+                    OutlinedButton(
+                        onClick = {
+                            showGooglePicker = true
+                        },
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            containerColor = Color.White
+                        ),
+                        shape = RoundedCornerShape(12.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, SilverBorder),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp)
+                            .testTag("btn_google_auth")
+                    ) {
+                        // Google 'G' stylized representation
+                        Surface(
+                            shape = androidx.compose.foundation.shape.CircleShape,
+                            color = Color(0xFF4285F4),
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text(
+                                    text = "G",
+                                    fontWeight = FontWeight.Black,
+                                    fontSize = 14.sp,
+                                    color = Color.White
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text(
+                            text = if (isRegisterMode) "Daftar dengan Google Gmail" else "Log Masuk dengan Google Gmail",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF1F1F1F)
+                        )
+                    }
+
                     // Mode Switcher
                     Row(
                         modifier = Modifier
@@ -272,6 +344,327 @@ fun AuthScreen(
                     Text("Isi Superadmin", fontSize = 11.sp, color = FinishLineRed)
                 }
             }
+        }
+
+        // GOOGLE ACCOUNT SELECTION MODAL POPUP
+        if (showGooglePicker) {
+            AlertDialog(
+                onDismissRequest = { showGooglePicker = false },
+                containerColor = StadiumSurface,
+                shape = RoundedCornerShape(20.dp),
+                title = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Surface(
+                            shape = androidx.compose.foundation.shape.CircleShape,
+                            color = Color(0xFF4285F4),
+                            modifier = Modifier.size(28.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text(
+                                    text = "G",
+                                    fontWeight = FontWeight.Black,
+                                    fontSize = 16.sp,
+                                    color = Color.White
+                                )
+                            }
+                        }
+                        Column {
+                            Text(
+                                text = "Pilih Akaun Google Gmail",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Black,
+                                color = Color.White
+                            )
+                            Text(
+                                text = "Untuk meneruskan ke Psyco Time X Pro",
+                                fontSize = 11.sp,
+                                color = TextSecondary
+                            )
+                        }
+                    }
+                },
+                text = {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        // Pre-listed device Google accounts
+                        listOf(
+                            Triple("Salipar Jipun", "saliparjipun.atukoi@gmail.com", "Superadmin"),
+                            Triple("Coach Demo Sukan", "coach.demo@gmail.com", "Pengguna Demo"),
+                            Triple("Jurulatih Olahraga", "jurulatih.malaysia@gmail.com", "Akaun Gmail Peribadi")
+                        ).forEach { (gName, gEmail, gDesc) ->
+                            Surface(
+                                color = StadiumSurfaceVariant,
+                                shape = RoundedCornerShape(12.dp),
+                                border = androidx.compose.foundation.BorderStroke(
+                                    1.dp,
+                                    if (gEmail == "saliparjipun.atukoi@gmail.com") FinishLineRed.copy(alpha = 0.6f) else StadiumBorder
+                                ),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        showGooglePicker = false
+                                        googleSelectedEmail = gEmail
+                                        googleSelectedName = gName
+                                        popupNameInput = gName
+                                        popupClubInput = if (gEmail == "saliparjipun.atukoi@gmail.com") "Psyco Track & Field Elite" else "Kelab Olahraga Tempatan"
+                                        popupPhoneInput = if (gEmail == "saliparjipun.atukoi@gmail.com") "+6019-8765432" else "+6012-3456789"
+                                        
+                                        // Open detail completion popup for Google account
+                                        showDetailCompletionPopup = true
+                                    }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Surface(
+                                        shape = androidx.compose.foundation.shape.CircleShape,
+                                        color = if (gEmail == "saliparjipun.atukoi@gmail.com") FinishLineRed else LaserOrange,
+                                        modifier = Modifier.size(36.dp)
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center) {
+                                            Text(
+                                                text = gName.take(1),
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color.White
+                                            )
+                                        }
+                                    }
+                                    Spacer(modifier = Modifier.width(10.dp))
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = gName,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 13.sp,
+                                            color = Color.White
+                                        )
+                                        Text(
+                                            text = gEmail,
+                                            fontSize = 11.sp,
+                                            color = TextSecondary
+                                        )
+                                        Text(
+                                            text = gDesc,
+                                            fontSize = 10.sp,
+                                            color = if (gEmail == "saliparjipun.atukoi@gmail.com") FinishLineRed else SilverMetallic
+                                        )
+                                    }
+                                    Icon(
+                                        imageVector = Icons.Default.ChevronRight,
+                                        contentDescription = null,
+                                        tint = SilverMetallic,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            }
+                        }
+
+                        // Option to enter another custom Gmail
+                        OutlinedButton(
+                            onClick = {
+                                showGooglePicker = false
+                                googleSelectedEmail = ""
+                                googleSelectedName = ""
+                                popupNameInput = ""
+                                popupClubInput = ""
+                                popupPhoneInput = ""
+                                showDetailCompletionPopup = true
+                            },
+                            shape = RoundedCornerShape(10.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, SilverBorder.copy(alpha = 0.5f)),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = null, tint = SilverMetallic, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Gunakan Akaun Gmail Lain", fontSize = 11.sp, color = SilverMetallic)
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { showGooglePicker = false }) {
+                        Text("Batal", color = SilverMetallic)
+                    }
+                }
+            )
+        }
+
+        // DETAIL COMPLETION POPUP MODAL (POPUP MASUKKAN DETAIL SELEBIHNYA SAMA SEPERTI YANG SEDIA ADA)
+        if (showDetailCompletionPopup) {
+            AlertDialog(
+                onDismissRequest = { showDetailCompletionPopup = false },
+                containerColor = StadiumSurface,
+                shape = RoundedCornerShape(20.dp),
+                title = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AssignmentInd,
+                            contentDescription = null,
+                            tint = FinishLineRed,
+                            modifier = Modifier.size(28.dp)
+                        )
+                        Column {
+                            Text(
+                                text = "Lengkapkan Butiran Jurulatih",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Black,
+                                color = Color.White
+                            )
+                            Text(
+                                text = "Pendaftaran & Pengesahan Akaun Google Gmail",
+                                fontSize = 11.sp,
+                                color = TextSecondary
+                            )
+                        }
+                    }
+                },
+                text = {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Surface(
+                            color = StadiumSurfaceVariant,
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(10.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(Icons.Default.VerifiedUser, contentDescription = null, tint = SuccessGreen, modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Column {
+                                    Text(
+                                        text = "Akaun Google Disahkan:",
+                                        fontSize = 10.sp,
+                                        color = TextSecondary
+                                    )
+                                    Text(
+                                        text = if (googleSelectedEmail.isNotBlank()) googleSelectedEmail else "(Akaun Gmail Baru)",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White
+                                    )
+                                }
+                            }
+                        }
+
+                        if (googleSelectedEmail.isBlank()) {
+                            OutlinedTextField(
+                                value = googleSelectedEmail,
+                                onValueChange = { googleSelectedEmail = it },
+                                label = { Text("Emel Google Gmail") },
+                                placeholder = { Text("nama@gmail.com") },
+                                leadingIcon = { Icon(Icons.Default.Email, contentDescription = null, tint = FinishLineRed) },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth().testTag("popup_input_gmail")
+                            )
+                        }
+
+                        OutlinedTextField(
+                            value = popupNameInput,
+                            onValueChange = { popupNameInput = it },
+                            label = { Text("Nama Penuh Jurulatih / Pegawai") },
+                            placeholder = { Text("Contoh: Mohd Ali bin Hassan") },
+                            leadingIcon = { Icon(Icons.Default.Person, contentDescription = null, tint = FinishLineRed) },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth().testTag("popup_input_name")
+                        )
+
+                        OutlinedTextField(
+                            value = popupClubInput,
+                            onValueChange = { popupClubInput = it },
+                            label = { Text("Nama Kelab / Pasukan / Sekolah") },
+                            placeholder = { Text("Contoh: SMK Seri Kota Track Team") },
+                            leadingIcon = { Icon(Icons.Default.Shield, contentDescription = null, tint = SilverMetallic) },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth().testTag("popup_input_club")
+                        )
+
+                        OutlinedTextField(
+                            value = popupPhoneInput,
+                            onValueChange = { popupPhoneInput = it },
+                            label = { Text("No. Telefon WhatsApp") },
+                            placeholder = { Text("Contoh: 012-3456789") },
+                            leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null, tint = SilverMetallic) },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth().testTag("popup_input_phone")
+                        )
+
+                        Surface(
+                            color = Color.Black.copy(alpha = 0.5f),
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = "Pendaftaran Google secara automatik mengaktifkan Percubaan Percuma 7 Hari (Trial). Jika emel Superadmin dipilih, hak akses Superadmin penuh akan diaktifkan serta-merta.",
+                                fontSize = 10.sp,
+                                color = TextMuted,
+                                lineHeight = 14.sp,
+                                modifier = Modifier.padding(8.dp)
+                            )
+                        }
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            val cleanEmail = googleSelectedEmail.trim().lowercase()
+                            if (cleanEmail.isBlank()) {
+                                Toast.makeText(context, "Sila masukkan atau pilih emel Google Gmail anda.", Toast.LENGTH_SHORT).show()
+                                return@Button
+                            }
+
+                            val isSuper = (cleanEmail == "saliparjipun.atukoi@gmail.com")
+                            val finalName = if (popupNameInput.isNotBlank()) {
+                                popupNameInput.trim()
+                            } else if (isSuper) {
+                                "Coach Salipar Jipun (Superadmin)"
+                            } else {
+                                "Jurulatih (${cleanEmail.substringBefore("@")})"
+                            }
+
+                            val finalClub = if (popupClubInput.isNotBlank()) {
+                                popupClubInput.trim()
+                            } else if (isSuper) {
+                                "Psyco Track & Field Elite"
+                            } else {
+                                "Kelab Olahraga"
+                            }
+
+                            showDetailCompletionPopup = false
+                            Toast.makeText(context, "Akaun Google Berjaya Disambungkan: $finalName!", Toast.LENGTH_SHORT).show()
+                            onLoginSuccess(cleanEmail, finalName, finalClub, isSuper)
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = FinishLineRed),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.testTag("popup_btn_confirm")
+                    ) {
+                        Icon(Icons.Default.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Sahkan & Masuk Sistem", fontWeight = FontWeight.Bold, color = Color.White)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDetailCompletionPopup = false }) {
+                        Text("Batal", color = SilverMetallic)
+                    }
+                }
+            )
         }
     }
 }

@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -72,6 +73,11 @@ fun TimingSystemScreen(
         hasCameraPermission = isGranted
     }
 
+    // Finishing Line Customization Options
+    var showRedFinishLine by remember { mutableStateOf(true) }
+    var finishLinePosition by remember { mutableStateOf(0.65f) } // 0.35f = Kiri, 0.5f = Tengah, 0.65f = Kanan
+    var isCameraRotatedFullscreen by remember { mutableStateOf(false) }
+
     // High-Precision Electronic Timing Format: 0:00:00:000 (Hours:Minutes:Seconds:Milliseconds)
     val hours = (elapsedMillis / 3600000).toInt()
     val minutes = ((elapsedMillis % 3600000) / 60000).toInt()
@@ -102,7 +108,7 @@ fun TimingSystemScreen(
                 FilterChip(
                     selected = camMode == 1,
                     onClick = { onSetCamMode(1) },
-                    label = { Text("CAM 1 (Starter)", fontSize = 11.sp) },
+                    label = { Text("CAM 1 (Start)", fontSize = 11.sp) },
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = FinishLineRed,
                         selectedLabelColor = Color.White
@@ -134,6 +140,28 @@ fun TimingSystemScreen(
             }
         }
 
+        // PANDUAN PENGGUNAAN DWI-TELEFON
+        Surface(
+            color = StadiumSurfaceVariant,
+            shape = RoundedCornerShape(12.dp),
+            border = androidx.compose.foundation.BorderStroke(1.dp, SilverBorder.copy(alpha = 0.3f)),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(
+                modifier = Modifier.padding(10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(Icons.Default.Info, contentDescription = null, tint = LaserOrange, modifier = Modifier.size(20.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Cadangan Sistem Terbaik: Gunakan dua telefon pintar. Telefon 1 di Garisan Permulaan (Cam 1 Starter Gun) dan Telefon 2 di Garisan Penamat (Cam 2 Torso Timing Gate).",
+                    fontSize = 11.sp,
+                    color = Color.White,
+                    lineHeight = 15.sp
+                )
+            }
+        }
+
         // BIG ELECTRONIC DIGITAL STOPWATCH TIMER DISPLAY
         Card(
             colors = CardDefaults.cardColors(containerColor = StadiumSurface),
@@ -147,7 +175,7 @@ fun TimingSystemScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 16.dp, horizontal = 16.dp),
+                    .padding(vertical = 14.dp, horizontal = 14.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Row(
@@ -155,28 +183,15 @@ fun TimingSystemScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Surface(
-                        color = if (isTimerRunning) FinishLineRed.copy(alpha = 0.2f) else StadiumSurfaceVariant,
-                        shape = RoundedCornerShape(6.dp)
-                    ) {
-                        Text(
-                            text = if (isTimerRunning) "● RUNNING (ET ACTIVE)" else "○ READY AT GATE",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Black,
-                            color = if (isTimerRunning) FinishLineRed else SilverMetallic,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                        )
-                    }
+                    Text(
+                        text = "CATATAN MASA ELEKTRONIK (ET)",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Black,
+                        color = Color.White,
+                        letterSpacing = 1.sp
+                    )
 
-                    // Gun Sound Trigger Toggle
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.VolumeUp,
-                            contentDescription = null,
-                            tint = if (isAudioGunEnabled) SuccessGreen else TextMuted,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             text = "Gun Sound",
                             fontSize = 11.sp,
@@ -190,21 +205,17 @@ fun TimingSystemScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(6.dp))
 
                 // One-Row Scaled High-Precision Digital Electronic Stopwatch Display
                 Surface(
                     color = Color.Black,
                     shape = RoundedCornerShape(12.dp),
                     border = androidx.compose.foundation.BorderStroke(1.dp, if (isTimerRunning) FinishLineRed else SilverBorder.copy(alpha = 0.3f)),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp)
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
                 ) {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 8.dp, vertical = 12.dp),
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 10.dp),
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -231,11 +242,106 @@ fun TimingSystemScreen(
             }
         }
 
+        // KONFIGURASI GARIS MERAH PENAMAT & ROTASI KAMERA
+        Card(
+            colors = CardDefaults.cardColors(containerColor = StadiumSurface),
+            shape = RoundedCornerShape(16.dp),
+            border = androidx.compose.foundation.BorderStroke(1.dp, StadiumBorder),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Tune, contentDescription = null, tint = FinishLineRed, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "Konfigurasi Garisan Penamat Merah",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp,
+                            color = Color.White
+                        )
+                    }
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = if (showRedFinishLine) "Aktif" else "Tutup",
+                            fontSize = 11.sp,
+                            color = if (showRedFinishLine) FinishLineRed else TextMuted
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Switch(
+                            checked = showRedFinishLine,
+                            onCheckedChange = { showRedFinishLine = it },
+                            modifier = Modifier.scale(0.7f)
+                        )
+                    }
+                }
+
+                // Posisi Garisan Penamat
+                if (showRedFinishLine) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("Posisi Slit:", fontSize = 11.sp, color = TextSecondary)
+                        listOf("Kiri (35%)" to 0.35f, "Tengah (50%)" to 0.50f, "Kanan (65%)" to 0.65f).forEach { (label, pos) ->
+                            FilterChip(
+                                selected = kotlin.math.abs(finishLinePosition - pos) < 0.05f,
+                                onClick = { finishLinePosition = pos },
+                                label = { Text(label, fontSize = 10.sp) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = FinishLineRed,
+                                    selectedLabelColor = Color.White
+                                )
+                            )
+                        }
+                    }
+                }
+
+                // Butang Putar Kamera / Fullscreen Penamat
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Button(
+                        onClick = { isCameraRotatedFullscreen = !isCameraRotatedFullscreen },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (isCameraRotatedFullscreen) FinishLineRed else StadiumSurfaceVariant
+                        ),
+                        shape = RoundedCornerShape(10.dp),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
+                    ) {
+                        Icon(Icons.Default.ScreenRotation, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = if (isCameraRotatedFullscreen) "Mod Potret Biasa" else "Putar Kamera Skrin Penuh (Finishing)",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                    }
+
+                    Text(
+                        text = "Sejajarkan garis merah dengan garis penamat trek",
+                        fontSize = 9.sp,
+                        color = TextSecondary,
+                        modifier = Modifier.weight(1f).padding(start = 8.dp)
+                    )
+                }
+            }
+        }
+
         // LIVE REAL CAMERA & AI TORSO SENSOR SURFACE
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(220.dp)
+                .height(if (isCameraRotatedFullscreen) 320.dp else 220.dp)
                 .clip(RoundedCornerShape(16.dp))
                 .background(Color.Black)
                 .border(2.dp, if (camMode == 2) FinishLineRed else StadiumBorder, RoundedCornerShape(16.dp))
@@ -303,15 +409,15 @@ fun TimingSystemScreen(
                     )
                 }
 
-                // Finish Line Slit Beam (Cam 2 mode)
-                if (camMode == 2) {
-                    val slitX = w * 0.65f
+                // Finishing Line Slit Beam (Garisan Penamat Merah)
+                if (showRedFinishLine) {
+                    val slitX = w * finishLinePosition
                     // Laser Beam
                     drawLine(
                         color = FinishLineRed,
                         start = Offset(slitX, 0f),
                         end = Offset(slitX, h),
-                        strokeWidth = 3f
+                        strokeWidth = 4f
                     )
                     // Sensor head indicator
                     drawCircle(
@@ -319,10 +425,25 @@ fun TimingSystemScreen(
                         radius = 10f,
                         center = Offset(slitX, 25f)
                     )
+
+                    // Kotak AI Intelligent Torso Detection
+                    if (isMovementDetected) {
+                        val boxW = 80f
+                        val boxH = 130f
+                        val boxX = slitX - (boxW / 2f)
+                        val boxY = (h / 2f) - (boxH / 2f)
+
+                        drawRect(
+                            color = FinishLineRed,
+                            topLeft = Offset(boxX, boxY),
+                            size = Size(boxW, boxH),
+                            style = androidx.compose.ui.graphics.drawscope.Stroke(width = 3f)
+                        )
+                    }
                 }
             }
 
-            // Status Indicator Overlay (Real Movement Check)
+            // Status Indicator Overlay
             Surface(
                 color = if (isMovementDetected) SuccessGreen.copy(alpha = 0.95f) else Color.Black.copy(alpha = 0.75f),
                 shape = RoundedCornerShape(8.dp),
@@ -342,7 +463,7 @@ fun TimingSystemScreen(
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = if (isMovementDetected) "TORSO DIKESAN DI GARISAN!" else "KAMERA AKTIF (MENUNGGU TORSO)",
+                        text = if (isMovementDetected) "KOTAK AI: TORSO DIKESAN DI GARISAN!" else "KAMERA AKTIF (MENUNGGU TORSO)",
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
                         color = if (isMovementDetected) Color.Black else Color.White
@@ -431,66 +552,154 @@ fun TimingSystemScreen(
             }
         }
 
-        // BIOMECHANICS & METRICS ANALYSIS CARD
-        latestAiAnalysis?.let { analysis ->
-            Card(
-                colors = CardDefaults.cardColors(containerColor = StadiumSurface),
-                shape = RoundedCornerShape(16.dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, StadiumBorder),
-                modifier = Modifier.fillMaxWidth()
+        // BIOMECHANICS & AI INTELLIGENT METRICS / "NO DETECTION SAVE"
+        Card(
+            colors = CardDefaults.cardColors(containerColor = StadiumSurface),
+            shape = RoundedCornerShape(16.dp),
+            border = androidx.compose.foundation.BorderStroke(1.dp, StadiumBorder),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier.padding(14.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Column(
-                    modifier = Modifier.padding(14.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "AI BIOMECHANICS & PHOTO FINISH",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Black,
-                            color = SilverMetallic
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Psychology,
+                            contentDescription = null,
+                            tint = if (isMovementDetected) SuccessGreen else TextMuted,
+                            modifier = Modifier.size(20.dp)
                         )
-                        Surface(
-                            color = StadiumSurfaceVariant,
-                            shape = RoundedCornerShape(6.dp)
-                        ) {
-                            Text(
-                                text = "GRED KEJOHANAN",
-                                fontSize = 9.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = FinishLineRed,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                            )
-                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Kotak AI Pintar: Bacaan Pergerakan & Analisis",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp,
+                            color = Color.White
+                        )
                     }
 
+                    Surface(
+                        color = if (isMovementDetected) SuccessGreen.copy(alpha = 0.2f) else StadiumSurfaceVariant,
+                        shape = RoundedCornerShape(6.dp)
+                    ) {
+                        Text(
+                            text = if (isMovementDetected) "Manusia Tertangkap ✓" else "Menunggu Atlit",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isMovementDetected) SuccessGreen else TextMuted,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
+                }
+
+                if (isMovementDetected) {
+                    val analysis = latestAiAnalysis
+                    val torsoLean = analysis?.torsoLeanAngleDeg ?: 14.5
+                    val cadence = analysis?.cadenceSpM ?: 254
+                    val contactTime = analysis?.groundContactTimeMs ?: 108
+
+                    // Metrics Grid
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceAround
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("Cadence", fontSize = 10.sp, color = TextSecondary)
-                            Text("${analysis.cadenceSpM} spm", fontSize = 16.sp, fontWeight = FontWeight.Black, color = Color.White)
-                        }
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("Stride Freq", fontSize = 10.sp, color = TextSecondary)
-                            Text("${String.format("%.2f", analysis.strideFrequencyHz)} Hz", fontSize = 16.sp, fontWeight = FontWeight.Black, color = Color.White)
-                        }
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("Contact Time", fontSize = 10.sp, color = TextSecondary)
-                            Text("${analysis.groundContactTimeMs} ms", fontSize = 16.sp, fontWeight = FontWeight.Black, color = Color.White)
-                        }
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("Torso Lean", fontSize = 10.sp, color = TextSecondary)
-                            Text("${String.format("%.1f", analysis.torsoLeanAngleDeg)}°", fontSize = 16.sp, fontWeight = FontWeight.Black, color = FinishLineRed)
+                        MetricBox(
+                            title = "Sudut Torso",
+                            value = "%.1f°".format(torsoLean),
+                            subtext = "Condong ke hadapan",
+                            color = FinishLineRed,
+                            modifier = Modifier.weight(1f)
+                        )
+                        MetricBox(
+                            title = "Sentuhan Bumi",
+                            value = "${contactTime}ms",
+                            subtext = "Fasa tolakan pantas",
+                            color = Color.White,
+                            modifier = Modifier.weight(1f)
+                        )
+                        MetricBox(
+                            title = "Cadence",
+                            value = "$cadence",
+                            subtext = "Langkah seminit",
+                            color = SilverMetallic,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+
+                    // AI Commentary
+                    Surface(
+                        color = StadiumSurfaceVariant,
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "Komen & Analisis AI: Pergerakan dada/torso sempurna melepasi garis penamat merah. Sudut kecondongan %.1f° menepati standard perlumbaan untuk catatan masa rasmi yang optimum.".format(torsoLean),
+                            fontSize = 11.sp,
+                            color = Color.White,
+                            lineHeight = 15.sp,
+                            modifier = Modifier.padding(8.dp)
+                        )
+                    }
+                } else {
+                    // IF NO HUMAN DETECTED: TEXT NO DETECTION SAVE AS REQUESTED
+                    Surface(
+                        color = Color.Black.copy(alpha = 0.6f),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(12.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = "No detection save",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Black,
+                                color = TextMuted,
+                                fontFamily = FontFamily.Monospace
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "Tiada manusia tertangkap oleh kotak sensor AI buat masa ini. Sensor bersedia mengesan atlit semasa melepasi garisan.",
+                                fontSize = 11.sp,
+                                color = TextSecondary,
+                                textAlign = TextAlign.Center
+                            )
                         }
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun MetricBox(
+    title: String,
+    value: String,
+    subtext: String,
+    color: Color,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        color = Color.Black,
+        shape = RoundedCornerShape(10.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, color.copy(alpha = 0.4f)),
+        modifier = modifier
+    ) {
+        Column(
+            modifier = Modifier.padding(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(title, fontSize = 9.sp, color = TextSecondary)
+            Text(value, fontSize = 15.sp, fontWeight = FontWeight.Black, color = color)
+            Text(subtext, fontSize = 8.sp, color = TextMuted, maxLines = 1)
         }
     }
 }

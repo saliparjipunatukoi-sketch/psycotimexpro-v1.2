@@ -57,8 +57,7 @@ class StorageManager(private val context: Context) {
             videosDir,
             racesDir,
             photoFinishDir,
-            exportsDir,
-            File(appBaseDir, "KadTeknikal")
+            exportsDir
         )
         dirs.forEach { if (!it.exists()) it.mkdirs() }
         return dirs.map { it.absolutePath }

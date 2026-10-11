@@ -14,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -21,6 +22,9 @@ import androidx.compose.ui.unit.sp
 import com.example.data.model.RaceRecordEntity
 import com.example.ui.components.PhotoFinishViewer
 import com.example.ui.theme.*
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun ReplayScreen(
@@ -29,15 +33,15 @@ fun ReplayScreen(
     isSuperAdmin: Boolean,
     onCapturePhotoFinish: (race: RaceRecordEntity, frameMs: Long, isCam2: Boolean) -> Unit,
     onDownloadVideo: (race: RaceRecordEntity, isCam2: Boolean) -> Unit,
+    onDeleteRace: (race: RaceRecordEntity) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var selectedRace by remember { mutableStateOf<RaceRecordEntity?>(races.firstOrNull()) }
+    // User must click on a list item to show the video player (does not show monitor immediately)
+    var selectedRace by remember { mutableStateOf<RaceRecordEntity?>(null) }
+    var raceToDelete by remember { mutableStateOf<RaceRecordEntity?>(null) }
 
-    // Synchronize selection if list changes
-    LaunchedEffect(races) {
-        if (selectedRace == null && races.isNotEmpty()) {
-            selectedRace = races.first()
-        }
+    val dateFormat = remember {
+        SimpleDateFormat("dd-MM-yyyy, hh:mm a", Locale.getDefault())
     }
 
     LazyColumn(
@@ -48,7 +52,7 @@ fun ReplayScreen(
         contentPadding = PaddingValues(top = 16.dp, bottom = 90.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        // HEADER & FILTER STATUS (Items 4 & 5)
+        // HEADER & FILTER STATUS
         item {
             Column {
                 Row(
@@ -63,24 +67,24 @@ fun ReplayScreen(
                         color = Color.White
                     )
                     Surface(
-                        color = if (isSuperAdmin) LaserOrange.copy(alpha = 0.2f) else ElectricCyan.copy(alpha = 0.2f),
+                        color = if (isSuperAdmin) FinishLineRed.copy(alpha = 0.2f) else SilverBorder.copy(alpha = 0.2f),
                         shape = RoundedCornerShape(6.dp)
                     ) {
                         Text(
-                            text = if (isSuperAdmin) "SEMUA VIDEO (SUPERADMIN)" else "VIDEO PASUKAN SENDIRI",
+                            text = if (isSuperAdmin) "SEMUA VIDEO (SUPERADMIN)" else "PASUKAN SENDIRI",
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
-                            color = if (isSuperAdmin) LaserOrange else ElectricCyan,
+                            color = if (isSuperAdmin) FinishLineRed else Color.White,
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                         )
                     }
                 }
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = if (isSuperAdmin) {
-                        "Akses Superadmin: Melihat semua rekod ET kelab dan urusetia."
+                    text = if (selectedRace != null) {
+                        "Menayangkan video: ${selectedRace?.title} - ${selectedRace?.athleteName}. Tekan 'Kembali ke Senarai' untuk memilih race lain."
                     } else {
-                        "Hanya video di bawah akaun $currentUserEmail dan sub-user berdaftar yang dipaparkan."
+                        "Pilih mana-mana rekod perlumbaan di bawah untuk memaparkan video Cam 1 & Cam 2 dan analisis torso."
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = TextSecondary
@@ -88,173 +92,232 @@ fun ReplayScreen(
             }
         }
 
-        // PRO VIDEO PLAYER & FRAME-BY-FRAME PHOTO FINISH (Items 8 & 13)
-        item {
-            if (selectedRace != null) {
-                PhotoFinishViewer(
-                    race = selectedRace!!,
-                    onCapturePhotoFinish = { frameMs, isCam2 ->
-                        onCapturePhotoFinish(selectedRace!!, frameMs, isCam2)
-                    },
-                    onDownloadToPhone = { isCam2 ->
-                        onDownloadVideo(selectedRace!!, isCam2)
-                    }
-                )
-            } else {
-                Surface(
-                    color = StadiumSurface,
-                    shape = RoundedCornerShape(16.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Box(modifier = Modifier.padding(32.dp), contentAlignment = Alignment.Center) {
-                        Text(
-                            text = "Tiada rakaman race dipilih atau belum ada race yang disimpan.",
-                            color = TextSecondary,
-                            fontSize = 13.sp
-                        )
-                    }
-                }
-            }
-        }
-
-        // SECTION: SENARAI RACE RECORDED (Item 6)
-        item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Senarai Rakaman Selesai (${races.size})",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-                Text(
-                    text = "Pilih untuk tonton semula",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = TextSecondary
-                )
-            }
-        }
-
-        if (races.isEmpty()) {
+        // IF RACE IS SELECTED: SHOW VIDEO PLAYER
+        if (selectedRace != null) {
             item {
-                Surface(
-                    color = StadiumSurface,
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(
-                        modifier = Modifier.padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(
+                        onClick = { selectedRace = null },
+                        colors = ButtonDefaults.buttonColors(containerColor = StadiumSurfaceVariant),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        Icon(Icons.Default.VideocamOff, contentDescription = null, tint = TextMuted, modifier = Modifier.size(40.dp))
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text("Tiada rakaman race lagi.", color = Color.White, fontWeight = FontWeight.Bold)
-                        Text("Jalankan ujian masa di Tab ET Timing untuk merekodkan Race 1, Race 2...", color = TextSecondary, fontSize = 12.sp)
+                        Icon(Icons.Default.ArrowBack, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("← Tutup Pemain & Kembali ke Senarai", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 12.sp)
                     }
+
+                    PhotoFinishViewer(
+                        race = selectedRace!!,
+                        onCapturePhotoFinish = { frameMs, isCam2 ->
+                            onCapturePhotoFinish(selectedRace!!, frameMs, isCam2)
+                        },
+                        onDownloadToPhone = { isCam2 ->
+                            onDownloadVideo(selectedRace!!, isCam2)
+                        },
+                        onDelete = {
+                            val target = selectedRace!!
+                            selectedRace = null
+                            onDeleteRace(target)
+                        },
+                        onClose = {
+                            selectedRace = null
+                        }
+                    )
                 }
             }
         } else {
-            items(races) { race ->
-                val isSelected = selectedRace?.id == race.id
-                RaceHistoryCard(
-                    race = race,
-                    isSelected = isSelected,
-                    onClick = { selectedRace = race }
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun RaceHistoryCard(
-    race: RaceRecordEntity,
-    isSelected: Boolean,
-    onClick: () -> Unit
-) {
-    Card(
-        colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) StadiumSurfaceVariant else StadiumSurface
-        ),
-        shape = RoundedCornerShape(14.dp),
-        border = androidx.compose.foundation.BorderStroke(
-            1.5.dp,
-            if (isSelected) LaserOrange else StadiumBorder
-        ),
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .testTag("race_item_${race.id}")
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(14.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Camera Footage Badge
-            Surface(
-                color = if (isSelected) LaserOrange else ElectricCyan.copy(alpha = 0.2f),
-                shape = RoundedCornerShape(10.dp),
-                modifier = Modifier.size(44.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = Icons.Default.SlowMotionVideo,
-                        contentDescription = null,
-                        tint = if (isSelected) Color.Black else ElectricCyan,
-                        modifier = Modifier.size(24.dp)
+            // IF NO RACE SELECTED: SHOW THE CLEAN LIST OF RACES ONLY
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Senarai Rakaman Selesai (${races.size})",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                    Text(
+                        text = "Pilih untuk tonton video",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = TextSecondary
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.width(12.dp))
+            if (races.isEmpty()) {
+                item {
+                    Surface(
+                        color = StadiumSurface,
+                        shape = RoundedCornerShape(14.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(32.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Icon(Icons.Default.VideocamOff, contentDescription = null, tint = TextMuted, modifier = Modifier.size(44.dp))
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Text("Tiada rakaman race lagi.", color = Color.White, fontWeight = FontWeight.Bold)
+                            Text("Jalankan ujian masa di Tab ET Timing untuk merekodkan Race 1, Race 2...", color = TextSecondary, fontSize = 12.sp)
+                        }
+                    }
+                }
+            } else {
+                items(races) { race ->
+                    val dateStr = try {
+                        dateFormat.format(Date(race.createdAt))
+                    } catch (_: Exception) {
+                        "20-10-2026, 10:00 AM"
+                    }
 
-            // Race Title & Details (Item 6)
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = race.title,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = "${race.athleteName} • ${race.eventName} • Lorong ${race.lane}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = TextSecondary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Cam 1 ✓", fontSize = 10.sp, color = ElectricCyan, fontWeight = FontWeight.Bold)
-                    Text(" • ", fontSize = 10.sp, color = TextMuted)
-                    Text("Cam 2 Torso ✓", fontSize = 10.sp, color = LaserOrange, fontWeight = FontWeight.Bold)
-                    Text(" • ", fontSize = 10.sp, color = TextMuted)
-                    Text("Photo Finish ✓", fontSize = 10.sp, color = SpeedAmber, fontWeight = FontWeight.Bold)
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = StadiumSurface),
+                        shape = RoundedCornerShape(14.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, StadiumBorder),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { selectedRace = race }
+                            .testTag("race_item_${race.id}")
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(14.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                // Contoh: Race 1 - Mohd Ali ( 20-10-2026, 10:30 AM )
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Text(
+                                        text = "${race.title} - ${race.athleteName}",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Black,
+                                        color = Color.White
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.height(3.dp))
+
+                                Text(
+                                    text = "Tarikh & Masa: $dateStr",
+                                    fontSize = 11.sp,
+                                    color = SilverMetallic
+                                )
+
+                                Text(
+                                    text = "${race.eventName} • Lorong ${race.lane} • Angin: ${race.windReading}",
+                                    fontSize = 11.sp,
+                                    color = TextSecondary
+                                )
+
+                                Spacer(modifier = Modifier.height(6.dp))
+
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Surface(
+                                        color = Color.Black,
+                                        shape = RoundedCornerShape(6.dp),
+                                        border = androidx.compose.foundation.BorderStroke(1.dp, FinishLineRed)
+                                    ) {
+                                        Text(
+                                            text = race.formattedTime,
+                                            fontFamily = FontFamily.Monospace,
+                                            fontWeight = FontWeight.Black,
+                                            fontSize = 13.sp,
+                                            color = FinishLineRed,
+                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                        )
+                                    }
+
+                                    Surface(
+                                        color = if (race.hasMotionDetected) SuccessGreen.copy(alpha = 0.2f) else TextMuted.copy(alpha = 0.2f),
+                                        shape = RoundedCornerShape(6.dp)
+                                    ) {
+                                        Text(
+                                            text = if (race.hasMotionDetected) "Torso Dikesan ✓" else "No Detection",
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = if (race.hasMotionDetected) SuccessGreen else TextMuted,
+                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                        )
+                                    }
+                                }
+                            }
+
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                // Butang Tonton Video
+                                Button(
+                                    onClick = { selectedRace = race },
+                                    colors = ButtonDefaults.buttonColors(containerColor = FinishLineRed),
+                                    shape = RoundedCornerShape(10.dp),
+                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+                                ) {
+                                    Icon(Icons.Default.PlayArrow, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("Tonton Video", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                }
+
+                                // Butang Padam Video (Delete to reduce file storage)
+                                IconButton(
+                                    onClick = { raceToDelete = race },
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .background(Color(0xFF7F1D1D).copy(alpha = 0.3f), RoundedCornerShape(8.dp))
+                                ) {
+                                    Icon(
+                                        Icons.Default.Delete,
+                                        contentDescription = "Padam Rekod",
+                                        tint = FinishLineRed,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             }
-
-            // Recorded Official Time Badge
-            Surface(
-                color = Color.Black.copy(alpha = 0.4f),
-                shape = RoundedCornerShape(8.dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, if (isSelected) LaserOrange else ElectricCyan)
-            ) {
-                Text(
-                    text = race.formattedTime,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Black,
-                    color = SpeedAmber,
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
-                )
-            }
         }
+    }
+
+    // DIALOG PENGESAHAN PADAM REKOD RACE
+    if (raceToDelete != null) {
+        AlertDialog(
+            onDismissRequest = { raceToDelete = null },
+            title = {
+                Text(
+                    text = "Padam Rekod & Video?",
+                    fontWeight = FontWeight.Black,
+                    color = Color.White
+                )
+            },
+            text = {
+                Text(
+                    text = "Adakah anda pasti mahu memadam rakaman '${raceToDelete?.title} - ${raceToDelete?.athleteName}'? Tindakan ini akan mengosongkan storan telefon anda.",
+                    color = TextSecondary,
+                    fontSize = 13.sp
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val target = raceToDelete!!
+                        raceToDelete = null
+                        onDeleteRace(target)
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = FinishLineRed)
+                ) {
+                    Text("Padam Sekarang", color = Color.White, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { raceToDelete = null }) {
+                    Text("Batal", color = SilverMetallic)
+                }
+            }
+        )
     }
 }
