@@ -244,23 +244,28 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         athleteId: Long?,
         lane: Int,
         wind: String,
-        notes: String
+        notes: String,
+        targetFolder: java.io.File? = null
     ) {
         val timeMs = _elapsedMillis.value
         viewModelScope.launch {
-            // Create video files in device storage with overlays
+            // Create video files in device storage with overlays & custom folder support
             val (cam1Uri, cam2Uri) = storageManager.createRaceVideoPackage(
                 raceTitle = title,
                 recordedTimeFormatted = String.format("%.2f s", timeMs / 1000.0),
-                athleteName = athleteName
+                athleteName = athleteName,
+                targetFolder = targetFolder
             )
 
-            // Auto-generate photo finish capture
+            // Capture real live camera frame if available, else realistic tartan track finish scan
+            val liveBmp = com.example.ui.components.CameraFrameHolder.latestLiveFrameBitmap
             val photoFinishUri = storageManager.savePhotoFinishImage(
                 raceTitle = title,
                 athleteName = athleteName,
                 timeFormatted = String.format("%.2f s", timeMs / 1000.0),
-                isCam2Torso = true
+                isCam2Torso = true,
+                realCameraFrame = liveBmp,
+                targetFolder = targetFolder
             )
 
             val analysis = _latestAiAnalysis.value

@@ -335,10 +335,12 @@ class MainActivity : ComponentActivity() {
                             suggestedTitle = suggestedRaceTitle,
                             elapsedMillis = elapsedMillis,
                             athletes = athletes,
+                            availableFolders = viewModel.storageManager.getAvailableStorageFolders(),
+                            onCreateFolder = { name -> viewModel.storageManager.createCustomFolder(name) },
                             onDismiss = { viewModel.dismissSaveRaceDialog() },
-                            onSave = { title, event, athleteName, athleteId, lane, wind, notes ->
-                                viewModel.saveRace(title, event, athleteName, athleteId, lane, wind, notes)
-                                Toast.makeText(this@MainActivity, "Race '$title' disimpan!", Toast.LENGTH_SHORT).show()
+                            onSave = { title, event, athleteName, athleteId, lane, wind, notes, folder ->
+                                viewModel.saveRace(title, event, athleteName, athleteId, lane, wind, notes, folder)
+                                Toast.makeText(this@MainActivity, "Race '$title' disimpan ke folder '${folder?.name ?: "Videos"}'!", Toast.LENGTH_SHORT).show()
                             }
                         )
                     }

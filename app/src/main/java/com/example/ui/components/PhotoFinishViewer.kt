@@ -439,7 +439,7 @@ fun PhotoFinishViewer(
                 OutlinedButton(
                     onClick = {
                         onDownloadToPhone(selectedCam == 2)
-                        snackbarMessage = "Fail disimpan ke /PsycoTimeXPro/Videos/"
+                        snackbarMessage = "Fail disimpan ke Storan Peranti (/PsycoTimeXPro/Videos/ & Galeri)!"
                     },
                     shape = RoundedCornerShape(10.dp),
                     border = androidx.compose.foundation.BorderStroke(1.dp, SilverBorder),
@@ -447,7 +447,7 @@ fun PhotoFinishViewer(
                 ) {
                     Icon(Icons.Default.Download, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color.White)
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Download", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text("Simpan Folder", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
                 }
 
                 if (onDelete != null) {

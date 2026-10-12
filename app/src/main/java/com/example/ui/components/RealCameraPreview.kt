@@ -19,6 +19,12 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import java.nio.ByteBuffer
 import java.util.concurrent.Executors
 
+// Global holder for the latest live camera frame captured from real camera sensor
+object CameraFrameHolder {
+    @Volatile
+    var latestLiveFrameBitmap: Bitmap? = null
+}
+
 /**
  * Real CameraX Live Preview with Optical Motion / Torso Gate Analyzer.
  * Automatically checks frame-by-frame luminance differences.
@@ -28,6 +34,7 @@ import java.util.concurrent.Executors
 fun RealCameraPreview(
     isSlitActive: Boolean,
     onMotionDetected: (hasMotion: Boolean, energy: Float) -> Unit,
+    onFrameCaptured: ((Bitmap) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -89,6 +96,13 @@ fun RealCameraPreview(
                         }
                         previousLumaSum = currentAvg
                     }
+
+                    // Capture bitmap periodically or when motion happens so user gets the actual camera frame
+                    try {
+                        val bmp = imageProxy.toBitmap()
+                        CameraFrameHolder.latestLiveFrameBitmap = bmp
+                        onFrameCaptured?.invoke(bmp)
+                    } catch (_: Exception) {}
 
                     imageProxy.close()
                 }
