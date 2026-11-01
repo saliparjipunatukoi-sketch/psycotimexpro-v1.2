@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Jurulatih & Admin | Psyco Time X Pro Training Management</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Teko:wght@500;700&family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
     <script>
@@ -31,6 +32,23 @@
             }
         }
     </script>
+    <style>
+        .d3-chart-tooltip {
+            position: absolute;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.15s ease;
+            z-index: 100;
+        }
+        .grid-line {
+            stroke: #1e293b;
+            stroke-opacity: 0.7;
+            stroke-dasharray: 2, 2;
+        }
+        .trend-line {
+            stroke-dasharray: 5, 5;
+        }
+    </style>
 </head>
 <body class="bg-track text-gray-100 font-sans antialiased min-h-screen flex flex-col">
 
@@ -145,25 +163,260 @@
 
         </div>
 
-        <!-- TABS NAV: ATLIT BERDAFTAR, REKOD RACE, & PENGURUSAN ADMIN -->
+        <!-- TABS NAV: TREND D3.JS, ATLIT BERDAFTAR, REKOD RACE, & PENGURUSAN ADMIN -->
         <div class="space-y-6">
-            <div class="flex border-b border-gray-800 space-x-8 text-sm font-bold">
-                <button onclick="switchTab('athletes')" id="tabBtnAthletes" class="pb-3 border-b-2 border-cyanAccent text-cyanAccent flex items-center gap-2">
+            <div class="flex border-b border-gray-800 space-x-4 sm:space-x-8 text-xs sm:text-sm font-bold overflow-x-auto">
+                <button onclick="switchTab('trends')" id="tabBtnTrends" class="pb-3 border-b-2 border-cyanAccent text-cyanAccent flex items-center gap-2 whitespace-nowrap font-black">
+                    <i class="fa-solid fa-chart-line text-cyanAccent"></i>
+                    <span>Trend Prestasi D3.js</span>
+                    <span class="px-1.5 py-0.5 rounded text-[10px] bg-cyanAccent/20 text-cyanAccent font-black">AI &amp; D3</span>
+                </button>
+                <button onclick="switchTab('athletes')" id="tabBtnAthletes" class="pb-3 border-b-2 border-transparent text-gray-400 hover:text-white flex items-center gap-2 whitespace-nowrap">
                     <i class="fa-solid fa-users"></i>
-                    <span>Senarai Atlit & Rekod PB</span>
+                    <span>Senarai Atlit &amp; Rekod PB</span>
                 </button>
-                <button onclick="switchTab('races')" id="tabBtnRaces" class="pb-3 border-b-2 border-transparent text-gray-400 hover:text-white flex items-center gap-2">
+                <button onclick="switchTab('races')" id="tabBtnRaces" class="pb-3 border-b-2 border-transparent text-gray-400 hover:text-white flex items-center gap-2 whitespace-nowrap">
                     <i class="fa-solid fa-stopwatch"></i>
-                    <span>Keputusan Race & Video ET</span>
+                    <span>Keputusan Race &amp; Video ET</span>
                 </button>
-                <button onclick="switchTab('users')" id="tabBtnUsers" class="pb-3 border-b-2 border-transparent text-gray-400 hover:text-white flex items-center gap-2">
+                <button onclick="switchTab('users')" id="tabBtnUsers" class="pb-3 border-b-2 border-transparent text-gray-400 hover:text-white flex items-center gap-2 whitespace-nowrap">
                     <i class="fa-solid fa-user-gear"></i>
-                    <span>Pengurusan User & Langganan (Admin)</span>
+                    <span>Pengurusan User &amp; Langganan (Admin)</span>
                 </button>
             </div>
 
+            <!-- TAB 0: TREND PRESTASI ATLIT (D3.JS) -->
+            <div id="tabTrends" class="space-y-6">
+                <!-- Control & Filter Toolbar -->
+                <div class="p-6 rounded-3xl bg-surface border border-gray-800 space-y-4">
+                    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                        <div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="px-2.5 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-cyanAccent/10 text-cyanAccent border border-cyanAccent/30">
+                                    <i class="fa-solid fa-chart-line"></i> D3.js Engine
+                                </span>
+                                <span class="px-2.5 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-orangeLaser/10 text-orangeLaser border border-orangeLaser/30">
+                                    <i class="fa-solid fa-bolt"></i> Sports Science
+                                </span>
+                            </div>
+                            <h3 class="text-xl sm:text-2xl font-bold text-white font-teko uppercase tracking-wide">
+                                Analisis Trend Prestasi &amp; Konsistensi Atlit
+                            </h3>
+                            <p class="text-xs text-gray-400">
+                                Visualisasi interaktif D3.js: Penilaian peningkatan masa kronologi (Improvement Over Time), kestabilan merentasi pelbagai acara (Consistency Across Events), dan korelasi cadence/stride biomekanik daripada data masa ET tersimpan.
+                            </p>
+                        </div>
+
+                        <!-- Action buttons -->
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <button onclick="downloadChartSvg()" class="px-3.5 py-2 rounded-xl bg-surfaceLight hover:bg-gray-700 text-gray-200 text-xs font-bold border border-gray-700 transition flex items-center gap-1.5 shadow">
+                                <i class="fa-solid fa-download text-cyanAccent"></i> Muat Turun Graf (SVG)
+                            </button>
+                            <button onclick="window.print()" class="px-3.5 py-2 rounded-xl bg-surfaceLight hover:bg-gray-700 text-gray-200 text-xs font-bold border border-gray-700 transition flex items-center gap-1.5 shadow">
+                                <i class="fa-solid fa-print text-orangeLaser"></i> Cetak Laporan
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Filter Controls -->
+                    <div class="pt-4 border-t border-gray-800/80 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+                        <div class="flex flex-wrap items-center gap-3">
+                            <div>
+                                <label class="text-[11px] font-bold text-gray-400 block mb-1">Pilih Atlit:</label>
+                                <select id="trendAthleteSelect" onchange="onTrendFilterChange()" class="bg-trackDark border border-gray-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyanAccent min-w-[200px]">
+                                    <option value="all">Semua Atlit (Perbandingan Skuad)</option>
+                                    <!-- Populated dynamically -->
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="text-[11px] font-bold text-gray-400 block mb-1">Pilih Acara:</label>
+                                <select id="trendEventSelect" onchange="onTrendFilterChange()" class="bg-trackDark border border-gray-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyanAccent min-w-[150px]">
+                                    <option value="all">Semua Acara</option>
+                                    <option value="100m Sprint">100m Sprint</option>
+                                    <option value="200m Sprint">200m Sprint</option>
+                                    <option value="400m">400m</option>
+                                    <option value="60m Dash">60m Dash</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Visualization Mode Pills -->
+                        <div>
+                            <label class="text-[11px] font-bold text-gray-400 block mb-1">Mod Paparan D3.js:</label>
+                            <div class="inline-flex rounded-xl bg-trackDark p-1 border border-gray-800">
+                                <button id="btnModeTrend" onclick="setTrendViewMode('trend')" class="px-3 py-1.5 rounded-lg text-xs font-extrabold transition bg-cyanAccent text-black shadow">
+                                    <i class="fa-solid fa-arrow-trend-up"></i> Kemajuan Masa
+                                </button>
+                                <button id="btnModeConsistency" onclick="setTrendViewMode('consistency')" class="px-3 py-1.5 rounded-lg text-xs font-bold text-gray-400 hover:text-white transition">
+                                    <i class="fa-solid fa-bullseye"></i> Konsistensi Acara
+                                </button>
+                                <button id="btnModeBiomechanics" onclick="setTrendViewMode('biomechanics')" class="px-3 py-1.5 rounded-lg text-xs font-bold text-gray-400 hover:text-white transition">
+                                    <i class="fa-solid fa-person-running"></i> Cadence &amp; GCT
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5 KEY PERFORMANCE INDICATORS (KPIS) -->
+                <div class="grid grid-cols-2 lg:grid-cols-5 gap-4" id="trendKpiCards">
+                    <!-- KPI 1: Personal Best -->
+                    <div class="p-4 rounded-2xl bg-surface border border-gray-800 space-y-1">
+                        <span class="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Catatan Terbaik (PB)</span>
+                        <div class="flex items-baseline gap-1.5">
+                            <span id="kpiPbValue" class="font-teko text-3xl font-black text-cyanAccent">10.42</span>
+                            <span class="text-xs text-gray-400 font-mono">s</span>
+                        </div>
+                        <p id="kpiPbSubtext" class="text-[10px] text-gray-500 truncate">27 Okt 2026 &bull; 100m</p>
+                    </div>
+
+                    <!-- KPI 2: Total Improvement Delta -->
+                    <div class="p-4 rounded-2xl bg-surface border border-gray-800 space-y-1">
+                        <span class="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Kadar Kemajuan (&Delta;t)</span>
+                        <div class="flex items-baseline gap-1.5">
+                            <span id="kpiImprovementValue" class="font-teko text-3xl font-black text-successGreen">-0.36</span>
+                            <span class="text-xs text-gray-400 font-mono">s</span>
+                        </div>
+                        <p id="kpiImprovementSubtext" class="text-[10px] text-successGreen font-bold truncate">&darr; 3.34% Lebih Pantas</p>
+                    </div>
+
+                    <!-- KPI 3: Consistency Score & CV -->
+                    <div class="p-4 rounded-2xl bg-surface border border-gray-800 space-y-1">
+                        <span class="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Indeks Konsistensi</span>
+                        <div class="flex items-baseline gap-1.5">
+                            <span id="kpiConsistencyValue" class="font-teko text-3xl font-black text-orangeLaser">98.8%</span>
+                        </div>
+                        <p id="kpiConsistencySubtext" class="text-[10px] text-orangeLaser font-bold truncate">CV 1.2% (Konsistensi Tinggi)</p>
+                    </div>
+
+                    <!-- KPI 4: Cadence & GCT Average -->
+                    <div class="p-4 rounded-2xl bg-surface border border-gray-800 space-y-1">
+                        <span class="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Purata Biomekanik</span>
+                        <div class="flex items-baseline gap-1.5">
+                            <span id="kpiCadenceValue" class="font-teko text-3xl font-black text-speedAmber">251</span>
+                            <span class="text-xs text-gray-400 font-mono">spm</span>
+                        </div>
+                        <p id="kpiCadenceSubtext" class="text-[10px] text-gray-400 truncate">GCT: 114 ms &bull; Torso 13.8&deg;</p>
+                    </div>
+
+                    <!-- KPI 5: Sample Size -->
+                    <div class="p-4 rounded-2xl bg-surface border border-gray-800 space-y-1 col-span-2 lg:col-span-1">
+                        <span class="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Sesi Ujian Tersimpan</span>
+                        <div class="flex items-baseline gap-1.5">
+                            <span id="kpiTotalTrials" class="font-teko text-3xl font-black text-white">6</span>
+                            <span class="text-xs text-gray-400 font-mono">Larian</span>
+                        </div>
+                        <p id="kpiTotalTrialsSubtext" class="text-[10px] text-cyanAccent font-semibold truncate">Data Jam ET Elektronik</p>
+                    </div>
+                </div>
+
+                <!-- D3.JS INTERACTIVE CHART CONTAINER -->
+                <div class="p-6 rounded-3xl bg-surface border border-gray-800 space-y-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div class="flex items-center gap-2">
+                            <div class="w-3 h-3 rounded-full bg-cyanAccent animate-pulse"></div>
+                            <h4 id="chartTitle" class="text-sm font-bold text-white uppercase tracking-wider">
+                                Trend Kemajuan Masa Kronologi (Regression &amp; Improvement Trajectory)
+                            </h4>
+                        </div>
+                        <div class="flex items-center gap-4 text-[11px] text-gray-400">
+                            <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-cyanAccent inline-block"></span> Masa Rasmi (s)</span>
+                            <span class="flex items-center gap-1.5"><span class="w-3 h-0.5 border-b-2 border-dashed border-orangeLaser inline-block"></span> Garis Tren (Regression)</span>
+                            <span class="flex items-center gap-1.5"><span class="w-3 h-0.5 border-b-2 border-dotted border-yellow-400 inline-block"></span> Rekod PB</span>
+                        </div>
+                    </div>
+
+                    <!-- Chart Box -->
+                    <div id="d3TrendsContainer" class="relative w-full overflow-hidden bg-trackDark rounded-2xl border border-gray-800/80 p-2 sm:p-4 min-h-[440px]">
+                        <svg id="d3TrendsSvg" class="w-full h-[400px]"></svg>
+                        <!-- Dynamic Tooltip -->
+                        <div id="d3Tooltip" class="d3-chart-tooltip bg-surface/95 backdrop-blur-md border border-cyanAccent/50 rounded-xl p-3 shadow-2xl text-xs max-w-xs text-white"></div>
+                    </div>
+
+                    <div class="text-[11px] text-gray-500 flex items-center justify-between pt-1">
+                        <span><i class="fa-solid fa-circle-info text-cyanAccent"></i> Gerakkan tetikus / sentuh titik larian untuk melihat perincian masa, angin, cadence, dan photo finish.</span>
+                        <span class="font-mono text-cyanAccent">D3.js v7 Core Engine</span>
+                    </div>
+                </div>
+
+                <!-- COACHING SCIENCE ANALYSIS & NARRATIVE RECOMMENDATION -->
+                <div class="p-6 rounded-3xl bg-gradient-to-br from-surface to-trackDark border border-cyanAccent/30 space-y-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-cyanAccent/10 border border-cyanAccent/30 flex items-center justify-center text-cyanAccent text-lg">
+                            <i class="fa-solid fa-brain"></i>
+                        </div>
+                        <div>
+                            <h4 class="text-base font-bold text-white">Laporan Sains Sukan &amp; Ulasan Prestasi Jurulatih</h4>
+                            <p class="text-xs text-gray-400">Dihasilkan secara automatik berdasarkan bacaan data masa dan penderiaan gerakan ET.</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+                        <div class="p-4 rounded-2xl bg-surfaceLight/60 border border-gray-800 space-y-2">
+                            <span class="text-[10px] font-black uppercase text-cyanAccent flex items-center gap-1.5">
+                                <i class="fa-solid fa-arrow-trend-up"></i> Trajektori Kemajuan Masa
+                            </span>
+                            <p id="analysisTrendNarrative" class="text-xs text-gray-300 leading-relaxed">
+                                Atlet menunjukkan trajektori penurunan masa yang kukuh sebanyak <strong>-0.36s</strong> merentasi ujian rasmi, menandakan kesan positif latihan fasa pecutan blok permulaan.
+                            </p>
+                        </div>
+
+                        <div class="p-4 rounded-2xl bg-surfaceLight/60 border border-gray-800 space-y-2">
+                            <span class="text-[10px] font-black uppercase text-orangeLaser flex items-center gap-1.5">
+                                <i class="fa-solid fa-bullseye"></i> Kestabilan &amp; Konsistensi Acara
+                            </span>
+                            <p id="analysisConsistencyNarrative" class="text-xs text-gray-300 leading-relaxed">
+                                Indeks konsistensi <strong>98.8%</strong> (CV 1.2%) membuktikan atlet memiliki kawalan pacing yang stabil pada fasa 60m-100m tanpa kehilangan frekuensi langkah yang ketara.
+                            </p>
+                        </div>
+
+                        <div class="p-4 rounded-2xl bg-surfaceLight/60 border border-gray-800 space-y-2">
+                            <span class="text-[10px] font-black uppercase text-successGreen flex items-center gap-1.5">
+                                <i class="fa-solid fa-shoe-prints"></i> Cadangan Sains Sukan &amp; Cadence
+                            </span>
+                            <p id="analysisBiomechanicsNarrative" class="text-xs text-gray-300 leading-relaxed">
+                                Masa sentuhan bumi (GCT) berkurang dari 124ms ke 107ms dengan sudut torso 15.0&deg; di garisan penamat laser, memberikan kelebihan tolakan optimum di garisan penamat.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- HISTORICAL TIMING SESSIONS TABLE -->
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h4 class="text-base font-bold text-white">Log Kronologi Ujian Masa Tersimpan</h4>
+                            <p class="text-xs text-gray-400">Jadual terperinci semua rekod masa elektronik yang dimasukkan ke dalam graf D3.js.</p>
+                        </div>
+                        <span id="trialsTableCount" class="text-xs font-mono text-cyanAccent font-bold">6 Sesi Dikesan</span>
+                    </div>
+
+                    <div class="overflow-x-auto rounded-2xl border border-gray-800 bg-surface">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-trackDark text-gray-400 uppercase font-bold border-b border-gray-800">
+                                <tr>
+                                    <th class="p-4">Tarikh &amp; Jam</th>
+                                    <th class="p-4">Tajuk Ujian Larian</th>
+                                    <th class="p-4">Acara</th>
+                                    <th class="p-4">Masa Rasmi (s)</th>
+                                    <th class="p-4">Beza Masa (&Delta;t)</th>
+                                    <th class="p-4">Angin / Lorong</th>
+                                    <th class="p-4">Cadence (spm)</th>
+                                    <th class="p-4">GCT (ms)</th>
+                                    <th class="p-4 text-right">Photo Finish</th>
+                                </tr>
+                            </thead>
+                            <tbody id="trendTrialsTableBody" class="divide-y divide-gray-800">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
             <!-- TAB 1: SENARAI ATLIT & PB -->
-            <div id="tabAthletes" class="space-y-4">
+            <div id="tabAthletes" class="space-y-4 hidden">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
                         <h3 class="text-lg font-bold text-white">Senarai Atlit Terselaras dari APK</h3>
@@ -396,46 +649,70 @@
             window.location.href = 'index.html';
         }
 
+        let currentTrendViewMode = 'trend';
+
         function switchTab(tab) {
+            document.getElementById('tabTrends').classList.add('hidden');
             document.getElementById('tabAthletes').classList.add('hidden');
             document.getElementById('tabRaces').classList.add('hidden');
             document.getElementById('tabUsers').classList.add('hidden');
 
-            document.getElementById('tabBtnAthletes').className = 'pb-3 border-b-2 border-transparent text-gray-400 hover:text-white flex items-center gap-2';
-            document.getElementById('tabBtnRaces').className = 'pb-3 border-b-2 border-transparent text-gray-400 hover:text-white flex items-center gap-2';
-            document.getElementById('tabBtnUsers').className = 'pb-3 border-b-2 border-transparent text-gray-400 hover:text-white flex items-center gap-2';
+            document.getElementById('tabBtnTrends').className = 'pb-3 border-b-2 border-transparent text-gray-400 hover:text-white flex items-center gap-2 whitespace-nowrap font-bold';
+            document.getElementById('tabBtnAthletes').className = 'pb-3 border-b-2 border-transparent text-gray-400 hover:text-white flex items-center gap-2 whitespace-nowrap font-bold';
+            document.getElementById('tabBtnRaces').className = 'pb-3 border-b-2 border-transparent text-gray-400 hover:text-white flex items-center gap-2 whitespace-nowrap font-bold';
+            document.getElementById('tabBtnUsers').className = 'pb-3 border-b-2 border-transparent text-gray-400 hover:text-white flex items-center gap-2 whitespace-nowrap font-bold';
 
-            if (tab === 'athletes') {
+            if (tab === 'trends') {
+                document.getElementById('tabTrends').classList.remove('hidden');
+                document.getElementById('tabBtnTrends').className = 'pb-3 border-b-2 border-cyanAccent text-cyanAccent flex items-center gap-2 whitespace-nowrap font-black';
+                renderD3TrendsChart();
+            } else if (tab === 'athletes') {
                 document.getElementById('tabAthletes').classList.remove('hidden');
-                document.getElementById('tabBtnAthletes').className = 'pb-3 border-b-2 border-cyanAccent text-cyanAccent flex items-center gap-2';
+                document.getElementById('tabBtnAthletes').className = 'pb-3 border-b-2 border-cyanAccent text-cyanAccent flex items-center gap-2 whitespace-nowrap font-bold';
             } else if (tab === 'races') {
                 document.getElementById('tabRaces').classList.remove('hidden');
-                document.getElementById('tabBtnRaces').className = 'pb-3 border-b-2 border-orangeLaser text-orangeLaser flex items-center gap-2';
+                document.getElementById('tabBtnRaces').className = 'pb-3 border-b-2 border-orangeLaser text-orangeLaser flex items-center gap-2 whitespace-nowrap font-bold';
             } else if (tab === 'users') {
                 document.getElementById('tabUsers').classList.remove('hidden');
-                document.getElementById('tabBtnUsers').className = 'pb-3 border-b-2 border-yellow-400 text-yellow-400 flex items-center gap-2';
+                document.getElementById('tabBtnUsers').className = 'pb-3 border-b-2 border-yellow-400 text-yellow-400 flex items-center gap-2 whitespace-nowrap font-bold';
             }
         }
 
         function loadDashboardData() {
             fetch('api/data.php?email=' + encodeURIComponent(currentUserEmail))
-                .then(res => res.json())
+                .then(res => {
+                    if (!res.ok) throw new Error('API HTTP ' + res.status);
+                    return res.json();
+                })
                 .then(data => {
                     allAthletesData = data.athletes || [];
                     allRacesData = data.races || [];
                     allUsersData = data.users || [];
-
-                    // Render Athletes Count
-                    document.getElementById('athletesCount').innerText = allAthletesData.length;
-                    document.getElementById('racesCount').innerText = allRacesData.length + ' Larian';
-
-                    renderAthletesTable(allAthletesData);
-                    renderRacesGrid(allRacesData);
-                    renderUsersTable(allUsersData);
+                    initDashboardViews();
                 })
                 .catch(err => {
-                    console.error('Error fetching data:', err);
+                    console.warn('API fetch warning, loading local JSON data files:', err);
+                    Promise.all([
+                        fetch('data/athletes.json').then(r => r.json()).catch(() => []),
+                        fetch('data/races.json').then(r => r.json()).catch(() => [])
+                    ]).then(([athletes, races]) => {
+                        allAthletesData = athletes || [];
+                        allRacesData = races || [];
+                        initDashboardViews();
+                    });
                 });
+        }
+
+        function initDashboardViews() {
+            // Render Athletes Count
+            document.getElementById('athletesCount').innerText = allAthletesData.length;
+            document.getElementById('racesCount').innerText = allRacesData.length + ' Larian';
+
+            populateAthleteDropdown();
+            renderAthletesTable(allAthletesData);
+            renderRacesGrid(allRacesData);
+            renderUsersTable(allUsersData);
+            renderD3TrendsChart();
         }
 
         function renderAthletesTable(athletes) {
@@ -672,6 +949,812 @@
             loadDashboardData();
             alert('Data server berjaya disegarkan!');
         }
+
+        // ========================================================
+        // D3.JS ATHLETE PERFORMANCE TRENDS & CONSISTENCY ENGINE
+        // ========================================================
+
+        function populateAthleteDropdown() {
+            const select = document.getElementById('trendAthleteSelect');
+            if (!select) return;
+            const currentVal = select.value;
+
+            // Extract unique athlete names from athletes and races
+            const namesSet = new Set();
+            allAthletesData.forEach(a => { if (a.name) namesSet.add(a.name); });
+            allRacesData.forEach(r => { if (r.athleteName) namesSet.add(r.athleteName); });
+
+            const names = Array.from(namesSet).sort();
+            select.innerHTML = '<option value="all">Semua Atlit (Perbandingan Skuad)</option>' +
+                names.map(name => `<option value="${name}">${name}</option>`).join('');
+
+            if (currentVal && (currentVal === 'all' || namesSet.has(currentVal))) {
+                select.value = currentVal;
+            } else if (names.length > 0) {
+                // Default to first athlete for a focused personal trend view
+                select.value = names[0];
+            }
+        }
+
+        function setTrendViewMode(mode) {
+            currentTrendViewMode = mode;
+            const btnTrend = document.getElementById('btnModeTrend');
+            const btnCons = document.getElementById('btnModeConsistency');
+            const btnBio = document.getElementById('btnModeBiomechanics');
+            const titleEl = document.getElementById('chartTitle');
+
+            // Reset buttons style
+            [btnTrend, btnCons, btnBio].forEach(b => {
+                if (b) b.className = 'px-3 py-1.5 rounded-lg text-xs font-bold text-gray-400 hover:text-white transition';
+            });
+
+            if (mode === 'trend') {
+                if (btnTrend) btnTrend.className = 'px-3 py-1.5 rounded-lg text-xs font-extrabold transition bg-cyanAccent text-black shadow';
+                if (titleEl) titleEl.innerText = 'Trend Kemajuan Masa Kronologi (Regression & Improvement Trajectory)';
+            } else if (mode === 'consistency') {
+                if (btnCons) btnCons.className = 'px-3 py-1.5 rounded-lg text-xs font-extrabold transition bg-orangeLaser text-black shadow';
+                if (titleEl) titleEl.innerText = 'Analisis Konsistensi Acara & Kestabilan Pacing (Event Consistency & Variance)';
+            } else if (mode === 'biomechanics') {
+                if (btnBio) btnBio.className = 'px-3 py-1.5 rounded-lg text-xs font-extrabold transition bg-speedAmber text-black shadow';
+                if (titleEl) titleEl.innerText = 'Korelasi Sains Sukan: Cadence & GCT vs Catatan Masa (Gait Dynamics)';
+            }
+
+            renderD3TrendsChart();
+        }
+
+        function onTrendFilterChange() {
+            renderD3TrendsChart();
+        }
+
+        function downloadChartSvg() {
+            const svgEl = document.getElementById('d3TrendsSvg');
+            if (!svgEl) return;
+            const serializer = new XMLSerializer();
+            let source = serializer.serializeToString(svgEl);
+            if (!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)) {
+                source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
+            }
+            const blob = new Blob([source], { type: 'image/svg+xml;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `PsycoTimeXPro-PerformanceTrends-${Date.now()}.svg`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function renderD3TrendsChart() {
+            const svg = d3.select('#d3TrendsSvg');
+            const container = document.getElementById('d3TrendsContainer');
+            const tooltip = d3.select('#d3Tooltip');
+            if (!svg.node() || !container) return;
+
+            svg.selectAll('*').remove();
+            tooltip.style('opacity', 0);
+
+            const athleteFilter = document.getElementById('trendAthleteSelect')?.value || 'all';
+            const eventFilter = document.getElementById('trendEventSelect')?.value || 'all';
+
+            // Filter races dataset
+            let races = allRacesData.filter(r => {
+                const matchAthlete = (athleteFilter === 'all') || (r.athleteName === athleteFilter);
+                const matchEvent = (eventFilter === 'all') || (r.eventName === eventFilter);
+                return matchAthlete && matchEvent;
+            });
+
+            // Map and parse timing records
+            let parsedData = races.map((r, idx) => {
+                let sec = 0;
+                if (r.timeSeconds) {
+                    sec = parseFloat(r.timeSeconds);
+                } else if (r.recordedTimeMillis) {
+                    sec = r.recordedTimeMillis / 1000.0;
+                } else if (r.formattedTime) {
+                    const parts = r.formattedTime.split(':');
+                    sec = parseFloat(parts[parts.length - 1]) || 10.0;
+                } else {
+                    sec = 10.5;
+                }
+
+                const dStr = r.createdAt || r.syncedAt || '2026-10-01 08:00:00';
+                const dateObj = new Date(dStr.replace(' ', 'T'));
+
+                return {
+                    id: r.id || idx,
+                    title: r.title || `Race ${idx + 1}`,
+                    athleteName: r.athleteName || 'Atlit',
+                    eventName: r.eventName || '100m Sprint',
+                    seconds: sec,
+                    date: isNaN(dateObj.getTime()) ? new Date(2026, 9, idx + 1) : dateObj,
+                    dateFormatted: dStr.split(' ')[0],
+                    formattedTime: r.formattedTime || (sec.toFixed(3) + ' s'),
+                    wind: r.windReading || '+0.0 m/s',
+                    lane: r.lane || 4,
+                    cadence: parseInt(r.cadenceSpM || r.cadence || 245),
+                    strideHz: parseFloat(r.strideFrequencyHz || (r.cadence ? r.cadence / 60 : 4.1)),
+                    gct: parseInt(r.groundContactTimeMs || 115),
+                    torso: parseFloat(r.torsoLeanAngleDeg || 13.5),
+                    photoFinish: r.photoFinishUri || r.photoFinishUrl || ''
+                };
+            });
+
+            // Sort chronologically ascending
+            parsedData.sort((a, b) => a.date - b.date);
+
+            // Compute delta time vs previous session
+            parsedData.forEach((d, i) => {
+                if (i === 0) {
+                    d.delta = 0;
+                    d.deltaText = 'Penanda Awal';
+                } else {
+                    const diff = d.seconds - parsedData[i - 1].seconds;
+                    d.delta = diff;
+                    d.deltaText = (diff < 0 ? '▼ ' : '▲ +') + diff.toFixed(3) + ' s';
+                }
+            });
+
+            // Handle empty state
+            if (parsedData.length === 0) {
+                const boxWidth = container.clientWidth || 800;
+                svg.attr('viewBox', `0 0 ${boxWidth} 360`)
+                   .attr('width', '100%')
+                   .attr('height', 360);
+
+                svg.append('text')
+                    .attr('x', boxWidth / 2)
+                    .attr('y', 160)
+                    .attr('text-anchor', 'middle')
+                    .attr('fill', '#94a3b8')
+                    .attr('font-size', '14px')
+                    .attr('font-weight', 'bold')
+                    .text('Tiada rekod ujian masa larian ditemui untuk tapisan ini.');
+
+                svg.append('text')
+                    .attr('x', boxWidth / 2)
+                    .attr('y', 190)
+                    .attr('text-anchor', 'middle')
+                    .attr('fill', '#06b6d4')
+                    .attr('font-size', '12px')
+                    .text('Sila pilih atlit lain atau jalankan rakaman masa di Tab Timing ET APK.');
+
+                updateKpisAndNarratives([], athleteFilter, eventFilter);
+                renderTrendTrialsTable([]);
+                return;
+            }
+
+            // Update KPI and Narratives
+            updateKpisAndNarratives(parsedData, athleteFilter, eventFilter);
+            renderTrendTrialsTable(parsedData);
+
+            // SVG layout geometry
+            const containerWidth = container.clientWidth || 920;
+            const containerHeight = 390;
+            const margin = { top: 35, right: 35, bottom: 50, left: 65 };
+            const width = containerWidth - margin.left - margin.right;
+            const height = containerHeight - margin.top - margin.bottom;
+
+            svg.attr('viewBox', `0 0 ${containerWidth} ${containerHeight}`)
+               .attr('width', '100%')
+               .attr('height', containerHeight);
+
+            // Defs: Gradients and Filters
+            const defs = svg.append('defs');
+
+            const areaGradient = defs.append('linearGradient')
+                .attr('id', 'area-gradient')
+                .attr('x1', '0%').attr('y1', '0%')
+                .attr('x2', '0%').attr('y2', '100%');
+            areaGradient.append('stop').attr('offset', '0%').attr('stop-color', '#06B6D4').attr('stop-opacity', 0.35);
+            areaGradient.append('stop').attr('offset', '100%').attr('stop-color', '#06B6D4').attr('stop-opacity', 0.0);
+
+            const glowFilter = defs.append('filter').attr('id', 'glow');
+            glowFilter.append('feGaussianBlur').attr('stdDeviation', '3').attr('result', 'coloredBlur');
+            const feMerge = glowFilter.append('feMerge');
+            feMerge.append('feMergeNode').attr('in', 'coloredBlur');
+            feMerge.append('feMergeNode').attr('in', 'SourceGraphic');
+
+            const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+
+            // ROUTE RENDERER ACCORDING TO VIEW MODE
+            if (currentTrendViewMode === 'trend') {
+                renderModeTrend(g, parsedData, width, height, tooltip);
+            } else if (currentTrendViewMode === 'consistency') {
+                renderModeConsistency(g, parsedData, width, height, tooltip);
+            } else if (currentTrendViewMode === 'biomechanics') {
+                renderModeBiomechanics(g, parsedData, width, height, tooltip);
+            }
+        }
+
+        // -------------------------------------------------------------
+        // MODE 1: IMPROVEMENT OVER TIME (Trendline, Curve, PB guideline)
+        // -------------------------------------------------------------
+        function renderModeTrend(g, data, width, height, tooltip) {
+            // Scales
+            const minSec = d3.min(data, d => d.seconds);
+            const maxSec = d3.max(data, d => d.seconds);
+            const padding = (maxSec - minSec) * 0.15 || 0.3;
+
+            const x = d3.scaleTime()
+                .domain(d3.extent(data, d => d.date))
+                .range([0, width]);
+
+            // For sprint sports, lower time is faster (top of chart = faster or intuitive)
+            const y = d3.scaleLinear()
+                .domain([maxSec + padding, Math.max(0, minSec - padding)])
+                .range([height, 0]);
+
+            // Gridlines
+            g.append('g')
+                .attr('class', 'grid')
+                .call(d3.axisLeft(y).ticks(5).tickSize(-width).tickFormat(''))
+                .selectAll('line').attr('class', 'grid-line');
+
+            // X Axis
+            g.append('g')
+                .attr('transform', `translate(0,${height})`)
+                .call(d3.axisBottom(x).ticks(Math.min(data.length, 6)).tickFormat(d3.timeFormat('%d %b')))
+                .selectAll('text')
+                .attr('fill', '#94a3b8')
+                .attr('font-size', '11px')
+                .attr('font-family', 'Inter, sans-serif');
+
+            // Y Axis
+            g.append('g')
+                .call(d3.axisLeft(y).ticks(6).tickFormat(d => d.toFixed(2) + ' s'))
+                .selectAll('text')
+                .attr('fill', '#06b6d4')
+                .attr('font-size', '11px')
+                .attr('font-family', 'JetBrains Mono, monospace')
+                .attr('font-weight', 'bold');
+
+            // Y Axis Label
+            g.append('text')
+                .attr('transform', 'rotate(-90)')
+                .attr('y', -48)
+                .attr('x', -height / 2)
+                .attr('text-anchor', 'middle')
+                .attr('fill', '#94a3b8')
+                .attr('font-size', '10px')
+                .attr('font-weight', 'bold')
+                .attr('letter-spacing', '1px')
+                .text('MASA ELEKTRONIK (SAAT) [Lebih Pantas ↑]');
+
+            // Area fill under curve
+            const area = d3.area()
+                .curve(d3.curveMonotoneX)
+                .x(d => x(d.date))
+                .y0(height)
+                .y1(d => y(d.seconds));
+
+            g.append('path')
+                .datum(data)
+                .attr('fill', 'url(#area-gradient)')
+                .attr('d', area);
+
+            // Linear Regression Trendline (y = m*x + b)
+            if (data.length >= 2) {
+                const n = data.length;
+                let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+                data.forEach((d, i) => {
+                    sumX += i;
+                    sumY += d.seconds;
+                    sumXY += i * d.seconds;
+                    sumXX += i * i;
+                });
+                const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+                const intercept = (sumY - slope * sumX) / n;
+
+                const regData = [
+                    { xDate: data[0].date, ySec: intercept },
+                    { xDate: data[data.length - 1].date, ySec: slope * (n - 1) + intercept }
+                ];
+
+                const trendLine = d3.line()
+                    .x(d => x(d.xDate))
+                    .y(d => y(d.ySec));
+
+                g.append('path')
+                    .datum(regData)
+                    .attr('fill', 'none')
+                    .attr('stroke', '#F97316')
+                    .attr('stroke-width', 2.2)
+                    .attr('class', 'trend-line')
+                    .attr('d', trendLine);
+
+                // Trend badge label
+                const improvementPerTrial = slope;
+                const trendText = improvementPerTrial < 0 
+                    ? `Kemajuan: ${Math.abs(improvementPerTrial).toFixed(3)}s / sesi`
+                    : `Variasi: +${improvementPerTrial.toFixed(3)}s / sesi`;
+
+                g.append('text')
+                    .attr('x', width - 10)
+                    .attr('y', y(regData[1].ySec) - 10)
+                    .attr('text-anchor', 'end')
+                    .attr('fill', '#F97316')
+                    .attr('font-size', '10px')
+                    .attr('font-weight', 'bold')
+                    .attr('font-family', 'JetBrains Mono, monospace')
+                    .text(trendText);
+            }
+
+            // Horizontal PB Guideline
+            const bestTrial = data.reduce((best, cur) => cur.seconds < best.seconds ? cur : best, data[0]);
+            g.append('line')
+                .attr('x1', 0)
+                .attr('x2', width)
+                .attr('y1', y(bestTrial.seconds))
+                .attr('y2', y(bestTrial.seconds))
+                .attr('stroke', '#FBBF24')
+                .attr('stroke-width', 1.5)
+                .attr('stroke-dasharray', '4, 4')
+                .attr('opacity', 0.85);
+
+            g.append('text')
+                .attr('x', 10)
+                .attr('y', y(bestTrial.seconds) - 6)
+                .attr('fill', '#FBBF24')
+                .attr('font-size', '10px')
+                .attr('font-weight', 'black')
+                .attr('font-family', 'JetBrains Mono, monospace')
+                .text(`★ REKOD PB: ${bestTrial.seconds.toFixed(2)}s`);
+
+            // Primary Smooth Data Curve
+            const line = d3.line()
+                .curve(d3.curveMonotoneX)
+                .x(d => x(d.date))
+                .y(d => y(d.seconds));
+
+            g.append('path')
+                .datum(data)
+                .attr('fill', 'none')
+                .attr('stroke', '#06B6D4')
+                .attr('stroke-width', 3.5)
+                .attr('filter', 'url(#glow)')
+                .attr('d', line);
+
+            // Crosshair vertical line
+            const focusLine = g.append('line')
+                .attr('stroke', '#06B6D4')
+                .attr('stroke-width', 1)
+                .attr('stroke-dasharray', '3, 3')
+                .attr('y1', 0)
+                .attr('y2', height)
+                .style('opacity', 0);
+
+            // Data Points
+            const dots = g.selectAll('.dot')
+                .data(data)
+                .enter()
+                .append('circle')
+                .attr('class', 'dot')
+                .attr('cx', d => x(d.date))
+                .attr('cy', d => y(d.seconds))
+                .attr('r', d => (d === bestTrial) ? 8 : 6)
+                .attr('fill', d => (d === bestTrial) ? '#FBBF24' : '#06B6D4')
+                .attr('stroke', '#050811')
+                .attr('stroke-width', 2.5)
+                .attr('cursor', 'pointer')
+                .on('mouseenter', function (event, d) {
+                    d3.select(this)
+                        .transition().duration(150)
+                        .attr('r', 10)
+                        .attr('fill', '#F97316');
+
+                    focusLine
+                        .attr('x1', x(d.date))
+                        .attr('x2', x(d.date))
+                        .style('opacity', 0.7);
+
+                    tooltip.style('opacity', 1)
+                        .html(`
+                            <div class="space-y-1.5">
+                                <div class="flex items-center justify-between border-b border-gray-700 pb-1 gap-2">
+                                    <span class="font-bold text-white text-xs">${d.athleteName}</span>
+                                    <span class="font-mono text-[10px] text-gray-400">${d.dateFormatted}</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-gray-400 font-semibold">${d.eventName}</span>
+                                    <span class="font-mono font-black text-cyanAccent text-base">${d.formattedTime}</span>
+                                </div>
+                                <div class="text-[11px] grid grid-cols-2 gap-x-2 gap-y-0.5 text-gray-300">
+                                    <span>Kemajuan: <strong class="${d.delta < 0 ? 'text-successGreen' : 'text-orangeLaser'}">${d.deltaText}</strong></span>
+                                    <span>Angin: <strong>${d.wind}</strong></span>
+                                    <span>Cadence: <strong class="text-yellow-400">${d.cadence} spm</strong></span>
+                                    <span>GCT: <strong>${d.gct} ms</strong></span>
+                                    <span>Torso Slit: <strong>${d.torso}&deg;</strong></span>
+                                    <span>Lorong: <strong>${d.lane}</strong></span>
+                                </div>
+                                <p class="text-[10px] text-gray-400 italic pt-1">${d.title}</p>
+                            </div>
+                        `);
+                })
+                .on('mousemove', function (event) {
+                    const [mx, my] = d3.pointer(event, document.body);
+                    tooltip
+                        .style('left', (mx + 15) + 'px')
+                        .style('top', (my - 40) + 'px');
+                })
+                .on('mouseleave', function () {
+                    d3.select(this)
+                        .transition().duration(150)
+                        .attr('r', d => (d === bestTrial) ? 8 : 6)
+                        .attr('fill', d => (d === bestTrial) ? '#FBBF24' : '#06B6D4');
+
+                    focusLine.style('opacity', 0);
+                    tooltip.style('opacity', 0);
+                });
+        }
+
+        // -------------------------------------------------------------
+        // MODE 2: CONSISTENCY ACROSS EVENTS (Grouped Variances & CV)
+        // -------------------------------------------------------------
+        function renderModeConsistency(g, data, width, height, tooltip) {
+            // Group by event name
+            const grouped = d3.group(data, d => d.eventName);
+            const eventStats = Array.from(grouped, ([event, list]) => {
+                const times = list.map(d => d.seconds);
+                const mean = d3.mean(times);
+                const min = d3.min(times);
+                const max = d3.max(times);
+                const std = d3.deviation(times) || 0.05;
+                const cv = (std / mean) * 100;
+                const consistencyScore = Math.max(0, 100 - (cv * 2));
+                return {
+                    event: event,
+                    count: list.length,
+                    mean: mean,
+                    min: min,
+                    max: max,
+                    std: std,
+                    cv: cv,
+                    consistencyScore: consistencyScore,
+                    records: list
+                };
+            });
+
+            const x0 = d3.scaleBand()
+                .domain(eventStats.map(d => d.event))
+                .range([0, width])
+                .padding(0.35);
+
+            const maxTimeOverall = d3.max(eventStats, d => d.max) * 1.15;
+            const y = d3.scaleLinear()
+                .domain([0, maxTimeOverall])
+                .range([height, 0]);
+
+            // Grid
+            g.append('g')
+                .call(d3.axisLeft(y).ticks(6).tickSize(-width).tickFormat(''))
+                .selectAll('line').attr('class', 'grid-line');
+
+            // X Axis
+            g.append('g')
+                .attr('transform', `translate(0,${height})`)
+                .call(d3.axisBottom(x0))
+                .selectAll('text')
+                .attr('fill', '#ffffff')
+                .attr('font-size', '12px')
+                .attr('font-weight', 'bold');
+
+            // Y Axis
+            g.append('g')
+                .call(d3.axisLeft(y).ticks(6).tickFormat(d => d + ' s'))
+                .selectAll('text')
+                .attr('fill', '#06b6d4')
+                .attr('font-family', 'JetBrains Mono, monospace');
+
+            // Render Event Bars & Whisker Ranges
+            eventStats.forEach(es => {
+                const barWidth = x0.bandwidth();
+                const barX = x0(es.event);
+
+                // Mean Time Bar
+                g.append('rect')
+                    .attr('x', barX)
+                    .attr('y', y(es.mean))
+                    .attr('width', barWidth)
+                    .attr('height', height - y(es.mean))
+                    .attr('rx', 8)
+                    .attr('fill', '#111827')
+                    .attr('stroke', '#06B6D4')
+                    .attr('stroke-width', 2);
+
+                // Error Whisker Range (+/- 1 Std Dev)
+                const yTop = y(Math.min(es.max, es.mean + es.std));
+                const yBottom = y(Math.max(es.min, es.mean - es.std));
+
+                g.append('line')
+                    .attr('x1', barX + barWidth / 2)
+                    .attr('x2', barX + barWidth / 2)
+                    .attr('y1', yTop)
+                    .attr('y2', yBottom)
+                    .attr('stroke', '#F97316')
+                    .attr('stroke-width', 3);
+
+                g.append('line')
+                    .attr('x1', barX + barWidth / 2 - 12)
+                    .attr('x2', barX + barWidth / 2 + 12)
+                    .attr('y1', yTop)
+                    .attr('y2', yTop)
+                    .attr('stroke', '#F97316')
+                    .attr('stroke-width', 3);
+
+                g.append('line')
+                    .attr('x1', barX + barWidth / 2 - 12)
+                    .attr('x2', barX + barWidth / 2 + 12)
+                    .attr('y1', yBottom)
+                    .attr('y2', yBottom)
+                    .attr('stroke', '#F97316')
+                    .attr('stroke-width', 3);
+
+                // Individual Jittered Dots
+                es.records.forEach(r => {
+                    const jitter = (Math.random() - 0.5) * (barWidth * 0.4);
+                    g.append('circle')
+                        .attr('cx', barX + barWidth / 2 + jitter)
+                        .attr('cy', y(r.seconds))
+                        .attr('r', 5)
+                        .attr('fill', '#FBBF24')
+                        .attr('stroke', '#050811')
+                        .attr('stroke-width', 1.5)
+                        .attr('cursor', 'pointer')
+                        .on('mouseenter', function (event) {
+                            tooltip.style('opacity', 1).html(`
+                                <div class="space-y-1">
+                                    <p class="font-bold text-white">${r.athleteName} &bull; ${r.eventName}</p>
+                                    <p class="text-cyanAccent font-mono font-bold text-sm">Masa: ${r.formattedTime}</p>
+                                    <p class="text-gray-300 text-[10px]">${r.title} (${r.dateFormatted})</p>
+                                </div>
+                            `);
+                        })
+                        .on('mousemove', function (event) {
+                            const [mx, my] = d3.pointer(event, document.body);
+                            tooltip.style('left', (mx + 15) + 'px').style('top', (my - 30) + 'px');
+                        })
+                        .on('mouseleave', () => tooltip.style('opacity', 0));
+                });
+
+                // Top Badge: Consistency Rating
+                g.append('text')
+                    .attr('x', barX + barWidth / 2)
+                    .attr('y', y(es.mean) - 25)
+                    .attr('text-anchor', 'middle')
+                    .attr('fill', '#10B981')
+                    .attr('font-size', '11px')
+                    .attr('font-weight', 'black')
+                    .attr('font-family', 'JetBrains Mono, monospace')
+                    .text(`Konsistensi: ${es.consistencyScore.toFixed(1)}%`);
+
+                g.append('text')
+                    .attr('x', barX + barWidth / 2)
+                    .attr('y', y(es.mean) - 10)
+                    .attr('text-anchor', 'middle')
+                    .attr('fill', '#94a3b8')
+                    .attr('font-size', '10px')
+                    .text(`Purata: ${es.mean.toFixed(2)}s (±${es.std.toFixed(2)}s)`);
+            });
+        }
+
+        // -------------------------------------------------------------
+        // MODE 3: BIOMECHANICS & SPORTS SCIENCE (Cadence vs Finish Time)
+        // -------------------------------------------------------------
+        function renderModeBiomechanics(g, data, width, height, tooltip) {
+            const minCad = d3.min(data, d => d.cadence) - 10;
+            const maxCad = d3.max(data, d => d.cadence) + 10;
+            const minSec = d3.min(data, d => d.seconds) - 0.2;
+            const maxSec = d3.max(data, d => d.seconds) + 0.2;
+
+            const x = d3.scaleLinear().domain([minCad, maxCad]).range([0, width]);
+            const y = d3.scaleLinear().domain([maxSec, minSec]).range([height, 0]);
+
+            // Grid
+            g.append('g')
+                .call(d3.axisLeft(y).ticks(6).tickSize(-width).tickFormat(''))
+                .selectAll('line').attr('class', 'grid-line');
+
+            // X Axis
+            g.append('g')
+                .attr('transform', `translate(0,${height})`)
+                .call(d3.axisBottom(x).ticks(6).tickFormat(d => d + ' spm'))
+                .selectAll('text').attr('fill', '#FBBF24').attr('font-family', 'JetBrains Mono, monospace');
+
+            g.append('text')
+                .attr('x', width / 2)
+                .attr('y', height + 40)
+                .attr('text-anchor', 'middle')
+                .attr('fill', '#FBBF24')
+                .attr('font-size', '11px')
+                .attr('font-weight', 'bold')
+                .text('KADAR FREKUENSI LANGKAH / CADENCE (STEPS PER MINUTE)');
+
+            // Y Axis
+            g.append('g')
+                .call(d3.axisLeft(y).ticks(6).tickFormat(d => d.toFixed(2) + ' s'))
+                .selectAll('text').attr('fill', '#06b6d4').attr('font-family', 'JetBrains Mono, monospace');
+
+            // Scatter Bubbles
+            g.selectAll('.bio-bubble')
+                .data(data)
+                .enter()
+                .append('circle')
+                .attr('class', 'bio-bubble')
+                .attr('cx', d => x(d.cadence))
+                .attr('cy', d => y(d.seconds))
+                .attr('r', d => Math.max(6, Math.min(18, d.torso * 0.9)))
+                .attr('fill', d => d3.interpolateCool((d.gct - 90) / 60))
+                .attr('fill-opacity', 0.8)
+                .attr('stroke', '#ffffff')
+                .attr('stroke-width', 2)
+                .attr('cursor', 'pointer')
+                .on('mouseenter', function (event, d) {
+                    tooltip.style('opacity', 1).html(`
+                        <div class="space-y-1">
+                            <p class="font-bold text-white">${d.athleteName}</p>
+                            <p class="text-yellow-400 font-mono text-xs font-bold">Cadence: ${d.cadence} spm (${d.strideHz} Hz)</p>
+                            <p class="text-cyanAccent font-mono text-xs font-bold">Masa: ${d.formattedTime}</p>
+                            <p class="text-emerald-400 text-[10px]">Masa Sentuh Bumi (GCT): ${d.gct} ms</p>
+                            <p class="text-orange-400 text-[10px]">Sudut Condong Torso: ${d.torso}&deg;</p>
+                            <p class="text-gray-400 text-[10px] italic">${d.title}</p>
+                        </div>
+                    `);
+                })
+                .on('mousemove', function (event) {
+                    const [mx, my] = d3.pointer(event, document.body);
+                    tooltip.style('left', (mx + 15) + 'px').style('top', (my - 40) + 'px');
+                })
+                .on('mouseleave', () => tooltip.style('opacity', 0));
+        }
+
+        // -------------------------------------------------------------
+        // UPDATE METRIC CARDS & AI COACHING NARRATIVES
+        // -------------------------------------------------------------
+        function updateKpisAndNarratives(data, athleteFilter, eventFilter) {
+            const pbValEl = document.getElementById('kpiPbValue');
+            const pbSubEl = document.getElementById('kpiPbSubtext');
+            const impValEl = document.getElementById('kpiImprovementValue');
+            const impSubEl = document.getElementById('kpiImprovementSubtext');
+            const consValEl = document.getElementById('kpiConsistencyValue');
+            const consSubEl = document.getElementById('kpiConsistencySubtext');
+            const cadValEl = document.getElementById('kpiCadenceValue');
+            const cadSubEl = document.getElementById('kpiCadenceSubtext');
+            const totalEl = document.getElementById('kpiTotalTrials');
+            const totalSubEl = document.getElementById('kpiTotalTrialsSubtext');
+
+            const narrativeTrend = document.getElementById('analysisTrendNarrative');
+            const narrativeCons = document.getElementById('analysisConsistencyNarrative');
+            const narrativeBio = document.getElementById('analysisBiomechanicsNarrative');
+
+            if (data.length === 0) {
+                if (pbValEl) pbValEl.innerText = '-';
+                if (impValEl) impValEl.innerText = '-';
+                if (consValEl) consValEl.innerText = '-';
+                if (cadValEl) cadValEl.innerText = '-';
+                if (totalEl) totalEl.innerText = '0';
+                return;
+            }
+
+            const times = data.map(d => d.seconds);
+            const minTime = d3.min(times);
+            const pbRecord = data.find(d => d.seconds === minTime) || data[0];
+
+            // 1. Personal Best
+            if (pbValEl) pbValEl.innerText = minTime.toFixed(2);
+            if (pbSubEl) pbSubEl.innerText = `${pbRecord.dateFormatted} • ${pbRecord.eventName}`;
+
+            // 2. Improvement Delta
+            const firstTime = data[0].seconds;
+            const lastTime = data[data.length - 1].seconds;
+            const diff = lastTime - firstTime;
+            const pct = firstTime > 0 ? (diff / firstTime) * 100 : 0;
+
+            if (impValEl) {
+                impValEl.innerText = (diff <= 0 ? '' : '+') + diff.toFixed(2);
+                impValEl.className = 'font-teko text-3xl font-black ' + (diff <= 0 ? 'text-successGreen' : 'text-orangeLaser');
+            }
+            if (impSubEl) {
+                if (diff < 0) {
+                    impSubEl.innerText = `↓ ${Math.abs(pct).toFixed(2)}% Lebih Pantas (Kemajuan)`;
+                    impSubEl.className = 'text-[10px] text-successGreen font-bold truncate';
+                } else if (diff === 0) {
+                    impSubEl.innerText = 'Masa Konsisten Sama';
+                    impSubEl.className = 'text-[10px] text-gray-400 font-bold truncate';
+                } else {
+                    impSubEl.innerText = `↑ +${pct.toFixed(2)}% Variasi Masa`;
+                    impSubEl.className = 'text-[10px] text-orangeLaser font-bold truncate';
+                }
+            }
+
+            // 3. Consistency Index
+            const meanTime = d3.mean(times);
+            const stdTime = d3.deviation(times) || 0.05;
+            const cv = (stdTime / meanTime) * 100;
+            const consistencyScore = Math.max(0, 100 - (cv * 2));
+
+            if (consValEl) consValEl.innerText = consistencyScore.toFixed(1) + '%';
+            if (consSubEl) {
+                const badge = cv < 1.5 ? 'Sangat Tinggi (Elit)' : cv < 3.0 ? 'Tinggi & Stabil' : 'Sederhana';
+                consSubEl.innerText = `CV ${cv.toFixed(2)}% (${badge})`;
+            }
+
+            // 4. Cadence & Biomechanics
+            const avgCad = Math.round(d3.mean(data, d => d.cadence) || 245);
+            const avgGct = Math.round(d3.mean(data, d => d.gct) || 115);
+            const avgTorso = (d3.mean(data, d => d.torso) || 13.5).toFixed(1);
+
+            if (cadValEl) cadValEl.innerText = avgCad;
+            if (cadSubEl) cadSubEl.innerText = `GCT: ${avgGct} ms • Torso ${avgTorso}°`;
+
+            // 5. Total trials
+            if (totalEl) totalEl.innerText = data.length;
+            if (totalSubEl) totalSubEl.innerText = `${data[0].dateFormatted} - ${data[data.length - 1].dateFormatted}`;
+
+            // Narratives
+            const athleteName = athleteFilter === 'all' ? 'Skuad atlit' : athleteFilter;
+            if (narrativeTrend) {
+                if (diff < 0) {
+                    narrativeTrend.innerHTML = `<strong>${athleteName}</strong> menunjukkan trajektori kemajuan yang signifikan dengan penurunan masa kumulatif <strong>${Math.abs(diff).toFixed(2)}s</strong> (${Math.abs(pct).toFixed(1)}%). Corak ini membuktikan program fasa pecutan blok permulaan membuahkan hasil.`;
+                } else {
+                    narrativeTrend.innerHTML = `<strong>${athleteName}</strong> mengekalkan tahap prestasi stabil dengan catatan purata <strong>${meanTime.toFixed(2)}s</strong>. Disarankan latihan fasa pemulihan untuk mencapai penurunan masa berikutnya.`;
+                }
+            }
+
+            if (narrativeCons) {
+                narrativeCons.innerHTML = `Indeks konsistensi berada pada tahap <strong>${consistencyScore.toFixed(1)}%</strong> dengan sisihan piawai &plusmn;${stdTime.toFixed(3)}s. Ini mencerminkan kecekapan ritma langkah yang mantap dan daya tahan kelajuan yang andal di bawah pelbagai tekanan perlumbaan.`;
+            }
+
+            if (narrativeBio) {
+                narrativeBio.innerHTML = `Purata cadence direkodkan pada <strong>${avgCad} spm</strong> dengan masa sentuhan bumi (GCT) sekitar <strong>${avgGct} ms</strong>. Sudut condong torso penamat ${avgTorso}&deg; menepati piawaian aerodinamik garisan penamat bagi memaksimumkan catatan masa laser penamat.`;
+            }
+        }
+
+        // -------------------------------------------------------------
+        // RENDER HISTORICAL TIMING SESSIONS TABLE
+        // -------------------------------------------------------------
+        function renderTrendTrialsTable(data) {
+            const tbody = document.getElementById('trendTrialsTableBody');
+            const countEl = document.getElementById('trialsTableCount');
+            if (!tbody) return;
+
+            if (countEl) countEl.innerText = `${data.length} Sesi Dikesan`;
+
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" class="p-6 text-center text-gray-500">Tiada log ujian masa ditemui.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = data.map((d, i) => {
+                const deltaClass = d.delta < 0 ? 'text-successGreen font-bold' : d.delta > 0 ? 'text-orangeLaser font-bold' : 'text-gray-400';
+                return `
+                    <tr class="hover:bg-trackDark/50 transition">
+                        <td class="p-4 font-mono text-gray-400 text-xs">${d.dateFormatted}</td>
+                        <td class="p-4 font-bold text-white">
+                            <div>${d.title}</div>
+                            <span class="text-[10px] text-cyanAccent font-normal">${d.athleteName}</span>
+                        </td>
+                        <td class="p-4"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-cyanAccent/10 text-cyanAccent border border-cyanAccent/30">${d.eventName}</span></td>
+                        <td class="p-4 font-mono font-black text-cyanAccent text-sm">${d.formattedTime}</td>
+                        <td class="p-4 font-mono text-xs ${deltaClass}">${d.deltaText}</td>
+                        <td class="p-4 text-gray-300 font-mono text-xs">${d.wind} (L${d.lane})</td>
+                        <td class="p-4 font-mono text-yellow-400 font-bold">${d.cadence} spm</td>
+                        <td class="p-4 font-mono text-gray-300">${d.gct} ms</td>
+                        <td class="p-4 text-right">
+                            ${d.photoFinish ? `<a href="${d.photoFinish}" target="_blank" class="px-2.5 py-1 rounded-lg bg-cyanAccent/20 hover:bg-cyanAccent text-cyanAccent hover:text-black font-bold text-[11px] transition inline-flex items-center gap-1"><i class="fa-solid fa-image"></i> Slit Foto</a>` : '<span class="text-gray-600">-</span>'}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Resize handler for responsive D3 charts
+        window.addEventListener('resize', () => {
+            const trendsTab = document.getElementById('tabTrends');
+            if (trendsTab && !trendsTab.classList.contains('hidden')) {
+                renderD3TrendsChart();
+            }
+        });
 
         // Auto load on ready
         document.addEventListener('DOMContentLoaded', () => {

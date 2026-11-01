@@ -40,7 +40,21 @@
             background: linear-gradient(90deg, rgba(239, 68, 68, 0) 0%, rgba(239, 68, 68, 0.8) 50%, rgba(239, 68, 68, 0) 100%);
             box-shadow: 0 0 15px #ef4444;
         }
+        .d3-chart-tooltip {
+            pointer-events: none;
+            transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 50;
+        }
+        .trend-line {
+            stroke-dasharray: 6;
+            animation: dash 30s linear infinite;
+        }
+        @keyframes dash {
+            to { stroke-dashoffset: -1000; }
+        }
     </style>
+    <!-- D3.js v7 CDN for Sports Performance Analytics -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
 </head>
 <body class="bg-track text-gray-100 font-sans antialiased min-h-screen flex flex-col selection:bg-cyanAccent selection:text-black">
 
@@ -65,17 +79,22 @@
                 </div>
 
                 <!-- Desktop Navigation Links -->
-                <div class="hidden md:flex items-center space-x-6 text-sm font-semibold">
+                <div class="hidden md:flex items-center space-x-5 text-sm font-semibold">
                     <a href="#iklan" class="hover:text-cyanAccent transition">Sistem Latihan</a>
                     <a href="#cara-pakai" class="hover:text-cyanAccent transition">Panduan APK</a>
-                    <a href="#download-apk" class="text-cyanAccent hover:text-cyan-300 transition flex items-center gap-1.5 font-bold">
-                        <i class="fa-brands fa-android text-base"></i> Download APK
+                    <a href="#trend-prestasi" class="text-yellow-400 hover:text-yellow-300 transition flex items-center gap-1 font-bold">
+                        <i class="fa-solid fa-chart-line text-xs"></i> Trend Prestasi D3
+                    </a>
+                    <a href="/sports-management/" class="text-cyanAccent hover:text-cyan-300 transition flex items-center gap-1 font-bold">
+                        <i class="fa-solid fa-medal text-xs"></i> Sports Management
+                    </a>
+                    <a href="#download-apk" class="text-emerald-400 hover:text-emerald-300 transition flex items-center gap-1.5 font-bold">
+                        <i class="fa-brands fa-android text-base"></i> APK
                     </a>
                     <a href="#langganan" class="text-orangeLaser hover:text-orange-400 transition flex items-center gap-1.5">
-                        <i class="fa-solid fa-crown text-xs"></i> Pakej & Yuran
+                        <i class="fa-solid fa-crown text-xs"></i> Yuran
                     </a>
-                    <a href="#feedback" class="hover:text-cyanAccent transition">Maklum Balas</a>
-                    <a href="cam2.html" class="text-gray-300 hover:text-white transition flex items-center gap-1 bg-surfaceLight px-3 py-1.5 rounded-lg border border-gray-700">
+                    <a href="cam2.html" class="text-gray-300 hover:text-white transition flex items-center gap-1 bg-surfaceLight px-2.5 py-1 rounded-lg border border-gray-700 text-xs">
                         <i class="fa-solid fa-camera text-orangeLaser"></i> Gate Cam 2
                     </a>
                 </div>
@@ -373,6 +392,140 @@
                         </div>
                     </div>
 
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION KHAS: TREND PRESTASI & ANALISIS SAINS SUKAN BERKUASA D3.JS -->
+    <section id="trend-prestasi" class="py-20 bg-trackDark border-b border-gray-800 relative overflow-hidden">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <!-- Header Title -->
+            <div class="text-center max-w-3xl mx-auto mb-12 space-y-3">
+                <span class="text-xs font-black uppercase text-yellow-400 tracking-widest bg-yellow-400/10 px-3.5 py-1.5 rounded-full border border-yellow-400/30">
+                    <i class="fa-solid fa-chart-line mr-1"></i> ANALITIK LANJUTAN D3.JS &amp; SAINS SUKAN
+                </span>
+                <h2 class="font-teko text-5xl sm:text-7xl font-bold uppercase text-white tracking-wide">
+                    VISUALISASI TREND PRESTASI ATLIS
+                </h2>
+                <p class="text-gray-300 text-sm sm:text-base leading-relaxed">
+                    Sistem pemprosesan data masa rasmi kini dilengkapi enjin visualisasi vektor <strong class="text-cyanAccent">D3.js v7</strong>. Pantau keluk kemajuan masa (monotone spline regression), kestabilan varians merentas acara (<span class="font-mono text-orangeLaser">±σ standard deviation</span>), serta dinamik biomekanik langkah (Cadence vs GCT).
+                </p>
+            </div>
+
+            <!-- 3 Pillars Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                <div class="p-6 rounded-2xl bg-surface border border-gray-800 hover:border-cyanAccent/40 transition">
+                    <div class="w-12 h-12 rounded-xl bg-cyanAccent/10 border border-cyanAccent/30 text-cyanAccent flex items-center justify-center text-xl font-black mb-4">
+                        <i class="fa-solid fa-arrow-trend-up"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-white mb-2">Kemajuan Kronologi &amp; PB</h3>
+                    <p class="text-xs text-gray-400 leading-relaxed mb-3">
+                        Garis lengkung spline D3.js dengan regresi linear menunjukkan kadar peningkatan saat bagi setiap sesi latihan berbanding garisan penanda aras Personal Best (PB).
+                    </p>
+                    <span class="text-[11px] font-mono text-cyanAccent font-semibold">Formula: y = mx + c (Slope Δt/trial)</span>
+                </div>
+
+                <div class="p-6 rounded-2xl bg-surface border border-gray-800 hover:border-orangeLaser/40 transition">
+                    <div class="w-12 h-12 rounded-xl bg-orangeLaser/10 border border-orangeLaser/30 text-orangeLaser flex items-center justify-center text-xl font-black mb-4">
+                        <i class="fa-solid fa-bullseye"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-white mb-2">Konsistensi &amp; Varians Acara</h3>
+                    <p class="text-xs text-gray-400 leading-relaxed mb-3">
+                        Analisis variasi acara dengan jalur ralat sisihan piawai (±σ) dan Indeks Pekali Variasi (CV%) bagi mengukur tahap kestabilan pacing di bawah tekanan pertandingan.
+                    </p>
+                    <span class="text-[11px] font-mono text-orangeLaser font-semibold">Indeks Konsistensi: CV% = (σ / μ) × 100</span>
+                </div>
+
+                <div class="p-6 rounded-2xl bg-surface border border-gray-800 hover:border-yellow-400/40 transition">
+                    <div class="w-12 h-12 rounded-xl bg-yellow-400/10 border border-yellow-400/30 text-yellow-400 flex items-center justify-center text-xl font-black mb-4">
+                        <i class="fa-solid fa-person-running"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-white mb-2">Korelasi Cadence &amp; GCT</h3>
+                    <p class="text-xs text-gray-400 leading-relaxed mb-3">
+                        Plot serakan D3.js meneliti korelasi kadar langkah (spm) dan masa sentuhan bumi (Ground Contact Time ms) terhadap catatan masa akhir untuk sains sukan peringkat tinggi.
+                    </p>
+                    <span class="text-[11px] font-mono text-yellow-400 font-semibold">Gait Dynamics &amp; Sprint Mechanics</span>
+                </div>
+            </div>
+
+            <!-- Interactive D3 Visualizer Box -->
+            <div class="p-6 sm:p-8 rounded-3xl bg-surface border-2 border-cyanAccent/30 shadow-2xl space-y-6">
+                <!-- Toolbar -->
+                <div class="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 border-b border-gray-800 pb-5">
+                    <div class="flex flex-wrap items-center gap-4">
+                        <div>
+                            <label class="text-[11px] font-bold text-gray-400 block mb-1">Pilih Atlet Contoh:</label>
+                            <select id="landingAthleteSelect" onchange="renderLandingD3Chart()" class="bg-trackDark border border-gray-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyanAccent min-w-[200px]">
+                                <option value="all">Semua Atlit (Perbandingan Skuad)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[11px] font-bold text-gray-400 block mb-1">Pilih Acara:</label>
+                            <select id="landingEventSelect" onchange="renderLandingD3Chart()" class="bg-trackDark border border-gray-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyanAccent min-w-[150px]">
+                                <option value="all">Semua Acara</option>
+                                <option value="100m Sprint">100m Sprint</option>
+                                <option value="200m Sprint">200m Sprint</option>
+                                <option value="400m">400m</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <button id="landingBtnTrend" onclick="setLandingTrendMode('trend')" class="px-3.5 py-1.5 rounded-lg text-xs font-black transition bg-cyanAccent text-black shadow">
+                            Kemajuan Masa
+                        </button>
+                        <button id="landingBtnConsistency" onclick="setLandingTrendMode('consistency')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold text-gray-400 hover:text-white transition">
+                            Konsistensi Acara
+                        </button>
+                        <button id="landingBtnBio" onclick="setLandingTrendMode('biomechanics')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold text-gray-400 hover:text-white transition">
+                            Cadence &amp; GCT
+                        </button>
+                    </div>
+                </div>
+
+                <!-- KPI Mini Strip -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                    <div class="p-3 bg-trackDark rounded-xl border border-gray-800">
+                        <span class="text-[10px] text-gray-400 uppercase font-bold block">Catatan Terbaik (PB)</span>
+                        <span id="landingKpiPb" class="font-teko text-2xl font-black text-cyanAccent">--</span>
+                    </div>
+                    <div class="p-3 bg-trackDark rounded-xl border border-gray-800">
+                        <span class="text-[10px] text-gray-400 uppercase font-bold block">Peningkatan Bersih</span>
+                        <span id="landingKpiDelta" class="font-teko text-2xl font-black text-successGreen">--</span>
+                    </div>
+                    <div class="p-3 bg-trackDark rounded-xl border border-gray-800">
+                        <span class="text-[10px] text-gray-400 uppercase font-bold block">Indeks Konsistensi</span>
+                        <span id="landingKpiCons" class="font-teko text-2xl font-black text-orangeLaser">--</span>
+                    </div>
+                    <div class="p-3 bg-trackDark rounded-xl border border-gray-800">
+                        <span class="text-[10px] text-gray-400 uppercase font-bold block">Purata Cadence / GCT</span>
+                        <span id="landingKpiBio" class="font-teko text-2xl font-black text-yellow-400">--</span>
+                    </div>
+                </div>
+
+                <!-- SVG D3 Rendering Box with Tooltip -->
+                <div class="relative bg-trackDark/90 rounded-2xl border border-gray-800 p-2 sm:p-4 overflow-hidden" id="landingD3ChartContainer">
+                    <div id="landingD3Tooltip" class="d3-chart-tooltip absolute opacity-0 bg-surfaceLight/95 backdrop-blur-md text-white text-xs rounded-xl p-3 border border-gray-700 shadow-2xl pointer-events-none"></div>
+                    <svg id="landingD3Svg" class="w-full h-[340px]"></svg>
+                </div>
+
+                <!-- Navigation Portal Actions CTA -->
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2 border-t border-gray-800">
+                    <div class="text-xs text-gray-400 flex items-center gap-2">
+                        <i class="fa-solid fa-database text-cyanAccent"></i>
+                        <span>Disegerakan secara langsung daripada storan data rasmi <strong>athletes.json</strong> &amp; <strong>races.json</strong>.</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <a href="/sports-management/" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-yellow-400 to-orangeLaser text-black text-xs font-black shadow-lg shadow-orangeLaser/20 hover:scale-[1.02] transition flex items-center gap-2">
+                            <i class="fa-solid fa-up-right-from-square"></i>
+                            <span>Buka Portal Penuh Sports Management</span>
+                        </a>
+                        <a href="dashboard.html" class="px-4 py-2.5 rounded-xl bg-surfaceLight hover:bg-gray-700 text-white text-xs font-bold border border-gray-700 transition flex items-center gap-2">
+                            <i class="fa-solid fa-chart-line text-cyanAccent"></i>
+                            <span>Portal Jurulatih</span>
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -909,6 +1062,379 @@
                 window.open(`https://api.whatsapp.com/send?phone=601112345678&text=${fallbackMsg}`, '_blank');
             });
         }
+
+        // ==========================================
+        // D3.JS PERFORMANCE TRENDS ENGINE (LANDING PREVIEW)
+        // ==========================================
+        let landingRacesData = [];
+        let landingAthletesData = [];
+        let landingTrendMode = 'trend';
+
+        function initLandingD3Data() {
+            const tryFetch = (path) => fetch(path).then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); });
+            Promise.all([
+                tryFetch('data/athletes.json').catch(() => tryFetch('../sports-management/data/athletes.json')).catch(() => []),
+                tryFetch('data/races.json').catch(() => tryFetch('../sports-management/data/races.json')).catch(() => [])
+            ]).then(([athletes, races]) => {
+                landingAthletesData = athletes || [];
+                landingRacesData = races || [];
+
+                populateLandingAthletes();
+                renderLandingD3Chart();
+            });
+        }
+
+        function populateLandingAthletes() {
+            const select = document.getElementById('landingAthleteSelect');
+            if (!select) return;
+
+            const namesSet = new Set();
+            landingAthletesData.forEach(a => { if (a.name) namesSet.add(a.name); });
+            landingRacesData.forEach(r => { if (r.athleteName) namesSet.add(r.athleteName); });
+
+            const names = Array.from(namesSet).sort();
+            select.innerHTML = '<option value="all">Semua Atlit (Perbandingan Skuad)</option>' +
+                names.map(n => `<option value="${n}">${n}</option>`).join('');
+
+            if (names.length > 0) {
+                select.value = names[0];
+            }
+        }
+
+        function setLandingTrendMode(mode) {
+            landingTrendMode = mode;
+            const btnTrend = document.getElementById('landingBtnTrend');
+            const btnCons = document.getElementById('landingBtnConsistency');
+            const btnBio = document.getElementById('landingBtnBio');
+
+            [btnTrend, btnCons, btnBio].forEach(b => {
+                if (b) b.className = 'px-3.5 py-1.5 rounded-lg text-xs font-bold text-gray-400 hover:text-white transition';
+            });
+
+            if (mode === 'trend' && btnTrend) {
+                btnTrend.className = 'px-3.5 py-1.5 rounded-lg text-xs font-black transition bg-cyanAccent text-black shadow';
+            } else if (mode === 'consistency' && btnCons) {
+                btnCons.className = 'px-3.5 py-1.5 rounded-lg text-xs font-black transition bg-orangeLaser text-black shadow';
+            } else if (mode === 'biomechanics' && btnBio) {
+                btnBio.className = 'px-3.5 py-1.5 rounded-lg text-xs font-black transition bg-yellow-400 text-black shadow';
+            }
+
+            renderLandingD3Chart();
+        }
+
+        function renderLandingD3Chart() {
+            if (typeof d3 === 'undefined') return;
+            const svg = d3.select('#landingD3Svg');
+            const container = document.getElementById('landingD3ChartContainer');
+            const tooltip = d3.select('#landingD3Tooltip');
+            if (!svg.node() || !container) return;
+
+            svg.selectAll('*').remove();
+            tooltip.style('opacity', 0);
+
+            const athleteFilter = document.getElementById('landingAthleteSelect')?.value || 'all';
+            const eventFilter = document.getElementById('landingEventSelect')?.value || 'all';
+
+            let filtered = landingRacesData.filter(r => {
+                const matchAthlete = (athleteFilter === 'all') || (r.athleteName === athleteFilter);
+                const matchEvent = (eventFilter === 'all') || (r.eventName === eventFilter);
+                return matchAthlete && matchEvent;
+            });
+
+            let parsed = filtered.map((r, idx) => {
+                let sec = 10.5;
+                if (r.timeSeconds) sec = parseFloat(r.timeSeconds);
+                else if (r.recordedTimeMillis) sec = r.recordedTimeMillis / 1000.0;
+                else if (r.formattedTime) {
+                    const parts = r.formattedTime.split(':');
+                    sec = parseFloat(parts[parts.length - 1]) || 10.0;
+                }
+
+                const dStr = r.createdAt || r.syncedAt || '2026-10-01 08:00:00';
+                const dateObj = new Date(dStr.replace(' ', 'T'));
+
+                return {
+                    id: r.id || idx,
+                    title: r.title || `Race ${idx + 1}`,
+                    athleteName: r.athleteName || 'Atlit',
+                    eventName: r.eventName || '100m Sprint',
+                    seconds: sec,
+                    date: isNaN(dateObj.getTime()) ? new Date(2026, 9, idx + 1) : dateObj,
+                    dateFormatted: dStr.split(' ')[0],
+                    formattedTime: r.formattedTime || (sec.toFixed(3) + ' s'),
+                    wind: r.windReading || '+0.0 m/s',
+                    cadence: parseInt(r.cadenceSpM || 245),
+                    strideHz: parseFloat(r.strideFrequencyHz || 4.1),
+                    gct: parseInt(r.groundContactTimeMs || 115),
+                    torso: parseFloat(r.torsoLeanAngleDeg || 13.5)
+                };
+            });
+
+            parsed.sort((a, b) => a.date - b.date);
+
+            const kpiPb = document.getElementById('landingKpiPb');
+            const kpiDelta = document.getElementById('landingKpiDelta');
+            const kpiCons = document.getElementById('landingKpiCons');
+            const kpiBio = document.getElementById('landingKpiBio');
+
+            if (parsed.length > 0) {
+                const minSec = Math.min(...parsed.map(d => d.seconds));
+                const firstSec = parsed[0].seconds;
+                const lastSec = parsed[parsed.length - 1].seconds;
+                const netDiff = lastSec - firstSec;
+
+                if (kpiPb) kpiPb.innerText = minSec.toFixed(2) + 's';
+                if (kpiDelta) {
+                    kpiDelta.innerText = (netDiff <= 0 ? '▼ ' : '▲ +') + Math.abs(netDiff).toFixed(2) + 's';
+                    kpiDelta.className = netDiff <= 0 ? 'font-teko text-2xl font-black text-successGreen' : 'font-teko text-2xl font-black text-orangeLaser';
+                }
+
+                const mean = d3.mean(parsed, d => d.seconds) || 10.0;
+                const stdDev = d3.deviation(parsed, d => d.seconds) || 0;
+                const cv = (stdDev / mean) * 100;
+                if (kpiCons) kpiCons.innerText = `${cv.toFixed(1)}% (±${stdDev.toFixed(2)}s)`;
+
+                const avgCadence = Math.round(d3.mean(parsed, d => d.cadence) || 245);
+                const avgGct = Math.round(d3.mean(parsed, d => d.gct) || 115);
+                if (kpiBio) kpiBio.innerText = `${avgCadence} spm / ${avgGct} ms`;
+            } else {
+                if (kpiPb) kpiPb.innerText = '--';
+                if (kpiDelta) kpiDelta.innerText = '--';
+                if (kpiCons) kpiCons.innerText = '--';
+                if (kpiBio) kpiBio.innerText = '--';
+            }
+
+            const width = Math.max(container.clientWidth || 800, 320);
+            const height = 340;
+            const margin = { top: 30, right: 30, bottom: 45, left: 55 };
+            const innerWidth = width - margin.left - margin.right;
+            const innerHeight = height - margin.top - margin.bottom;
+
+            svg.attr('viewBox', `0 0 ${width} ${height}`)
+               .attr('width', '100%')
+               .attr('height', height);
+
+            if (parsed.length === 0) {
+                svg.append('text')
+                    .attr('x', width / 2)
+                    .attr('y', height / 2)
+                    .attr('text-anchor', 'middle')
+                    .attr('fill', '#94a3b8')
+                    .attr('font-size', '14px')
+                    .text('Tiada rekod ujian ditemui untuk tapisan ini.');
+                return;
+            }
+
+            const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+
+            if (landingTrendMode === 'trend') {
+                const x = d3.scaleTime()
+                    .domain(d3.extent(parsed, d => d.date))
+                    .range([0, innerWidth]);
+
+                const yMin = d3.min(parsed, d => d.seconds);
+                const yMax = d3.max(parsed, d => d.seconds);
+                const yPad = Math.max((yMax - yMin) * 0.15, 0.1);
+                const y = d3.scaleLinear()
+                    .domain([yMin - yPad, yMax + yPad])
+                    .range([innerHeight, 0]);
+
+                g.append('g')
+                    .attr('transform', `translate(0,${innerHeight})`)
+                    .attr('stroke', '#374151')
+                    .call(d3.axisBottom(x).ticks(5).tickFormat(d3.timeFormat('%d %b')))
+                    .selectAll('text')
+                    .attr('fill', '#9CA3AF')
+                    .attr('font-size', '11px');
+
+                g.append('g')
+                    .attr('stroke', '#374151')
+                    .call(d3.axisLeft(y).ticks(5).tickFormat(d => d.toFixed(2) + 's'))
+                    .selectAll('text')
+                    .attr('fill', '#9CA3AF')
+                    .attr('font-size', '11px');
+
+                // Gridlines
+                g.append('g')
+                    .attr('stroke', '#1F2937')
+                    .attr('stroke-opacity', 0.6)
+                    .call(d3.axisLeft(y).ticks(5).tickSize(-innerWidth).tickFormat(''));
+
+                // Monotone Spline Curve
+                const line = d3.line()
+                    .curve(d3.curveMonotoneX)
+                    .x(d => x(d.date))
+                    .y(d => y(d.seconds));
+
+                g.append('path')
+                    .datum(parsed)
+                    .attr('fill', 'none')
+                    .attr('stroke', '#06B6D4')
+                    .attr('stroke-width', 3)
+                    .attr('d', line);
+
+                // Best PB Line
+                const best = parsed.reduce((b, c) => c.seconds < b.seconds ? c : b, parsed[0]);
+                g.append('line')
+                    .attr('x1', 0).attr('x2', innerWidth)
+                    .attr('y1', y(best.seconds)).attr('y2', y(best.seconds))
+                    .attr('stroke', '#FBBF24').attr('stroke-width', 1.5).attr('stroke-dasharray', '4,4');
+
+                g.append('text')
+                    .attr('x', 5).attr('y', y(best.seconds) - 6)
+                    .attr('fill', '#FBBF24').attr('font-size', '10px').attr('font-weight', 'bold')
+                    .text(`PB: ${best.seconds.toFixed(2)}s`);
+
+                // Interactive Dots
+                g.selectAll('.dot')
+                    .data(parsed)
+                    .enter().append('circle')
+                    .attr('cx', d => x(d.date))
+                    .attr('cy', d => y(d.seconds))
+                    .attr('r', 5)
+                    .attr('fill', '#06B6D4')
+                    .attr('stroke', '#0A0F1D')
+                    .attr('stroke-width', 2)
+                    .attr('cursor', 'pointer')
+                    .on('mouseover', function(evt, d) {
+                        d3.select(this).attr('r', 8).attr('fill', '#F97316');
+                        tooltip.style('opacity', 1)
+                            .html(`
+                                <div class="font-bold text-cyanAccent">${d.athleteName}</div>
+                                <div class="text-[11px] text-gray-300">${d.eventName} • ${d.dateFormatted}</div>
+                                <div class="text-sm font-black text-yellow-400 font-mono mt-1">${d.seconds.toFixed(2)}s (${d.formattedTime})</div>
+                                <div class="text-[10px] text-gray-400 mt-0.5">Cadence: ${d.cadence} spm | GCT: ${d.gct} ms</div>
+                            `)
+                            .style('left', (evt.layerX + 15) + 'px')
+                            .style('top', (evt.layerY - 20) + 'px');
+                    })
+                    .on('mouseout', function() {
+                        d3.select(this).attr('r', 5).attr('fill', '#06B6D4');
+                        tooltip.style('opacity', 0);
+                    });
+
+            } else if (landingTrendMode === 'consistency') {
+                const grouped = d3.groups(parsed, d => d.eventName);
+                const stats = grouped.map(([eventName, items]) => {
+                    const secs = items.map(d => d.seconds);
+                    const mean = d3.mean(secs) || 10.0;
+                    const sd = d3.deviation(secs) || 0;
+                    return { eventName, count: items.length, mean, sd, min: d3.min(secs), max: d3.max(secs), cv: (sd / mean) * 100 };
+                });
+
+                const x = d3.scaleBand()
+                    .domain(stats.map(d => d.eventName))
+                    .range([0, innerWidth])
+                    .padding(0.4);
+
+                const yMin = d3.min(stats, d => Math.max(0, d.mean - d.sd * 1.5));
+                const yMax = d3.max(stats, d => d.mean + d.sd * 1.5);
+                const y = d3.scaleLinear()
+                    .domain([yMin * 0.95, yMax * 1.05])
+                    .range([innerHeight, 0]);
+
+                g.append('g')
+                    .attr('transform', `translate(0,${innerHeight})`)
+                    .attr('stroke', '#374151')
+                    .call(d3.axisBottom(x))
+                    .selectAll('text')
+                    .attr('fill', '#9CA3AF')
+                    .attr('font-size', '11px');
+
+                g.append('g')
+                    .attr('stroke', '#374151')
+                    .call(d3.axisLeft(y).ticks(5).tickFormat(d => d.toFixed(1) + 's'))
+                    .selectAll('text')
+                    .attr('fill', '#9CA3AF');
+
+                stats.forEach(st => {
+                    const bx = x(st.eventName);
+                    const bw = x.bandwidth();
+
+                    g.append('rect')
+                        .attr('x', bx).attr('y', y(st.mean))
+                        .attr('width', bw).attr('height', innerHeight - y(st.mean))
+                        .attr('fill', '#F97316').attr('opacity', 0.45).attr('rx', 6);
+
+                    const cx = bx + bw / 2;
+                    g.append('line')
+                        .attr('x1', cx).attr('x2', cx)
+                        .attr('y1', y(st.mean - st.sd)).attr('y2', y(st.mean + st.sd))
+                        .attr('stroke', '#FBBF24').attr('stroke-width', 2);
+
+                    g.append('line')
+                        .attr('x1', cx - 12).attr('x2', cx + 12)
+                        .attr('y1', y(st.mean - st.sd)).attr('y2', y(st.mean - st.sd))
+                        .attr('stroke', '#FBBF24').attr('stroke-width', 2);
+
+                    g.append('line')
+                        .attr('x1', cx - 12).attr('x2', cx + 12)
+                        .attr('y1', y(st.mean + st.sd)).attr('y2', y(st.mean + st.sd))
+                        .attr('stroke', '#FBBF24').attr('stroke-width', 2);
+
+                    g.append('text')
+                        .attr('x', cx).attr('y', y(st.mean) - 8)
+                        .attr('text-anchor', 'middle')
+                        .attr('fill', '#FBBF24').attr('font-size', '11px').attr('font-weight', 'bold')
+                        .text(`${st.mean.toFixed(2)}s (±${st.sd.toFixed(2)}s)`);
+                });
+
+            } else if (landingTrendMode === 'biomechanics') {
+                const x = d3.scaleLinear()
+                    .domain([d3.min(parsed, d => d.cadence) - 8, d3.max(parsed, d => d.cadence) + 8])
+                    .range([0, innerWidth]);
+
+                const y = d3.scaleLinear()
+                    .domain([d3.min(parsed, d => d.seconds) * 0.97, d3.max(parsed, d => d.seconds) * 1.03])
+                    .range([innerHeight, 0]);
+
+                g.append('g')
+                    .attr('transform', `translate(0,${innerHeight})`)
+                    .attr('stroke', '#374151')
+                    .call(d3.axisBottom(x).ticks(5).tickFormat(d => d + ' spm'))
+                    .selectAll('text')
+                    .attr('fill', '#9CA3AF');
+
+                g.append('g')
+                    .attr('stroke', '#374151')
+                    .call(d3.axisLeft(y).ticks(5).tickFormat(d => d.toFixed(2) + 's'))
+                    .selectAll('text')
+                    .attr('fill', '#9CA3AF');
+
+                g.selectAll('.bio-dot')
+                    .data(parsed)
+                    .enter().append('circle')
+                    .attr('cx', d => x(d.cadence))
+                    .attr('cy', d => y(d.seconds))
+                    .attr('r', d => Math.max(4, 18 - (d.gct / 10)))
+                    .attr('fill', '#FBBF24')
+                    .attr('opacity', 0.8)
+                    .attr('stroke', '#F97316')
+                    .attr('stroke-width', 1.5)
+                    .on('mouseover', function(evt, d) {
+                        tooltip.style('opacity', 1)
+                            .html(`
+                                <div class="font-bold text-yellow-400">${d.athleteName}</div>
+                                <div class="text-[11px] text-gray-300">Cadence: ${d.cadence} spm | GCT: ${d.gct} ms</div>
+                                <div class="text-xs font-mono font-bold text-cyanAccent mt-1">Masa: ${d.seconds.toFixed(2)}s | Torso: ${d.torso}°</div>
+                            `)
+                            .style('left', (evt.layerX + 15) + 'px')
+                            .style('top', (evt.layerY - 20) + 'px');
+                    })
+                    .on('mouseout', function() {
+                        tooltip.style('opacity', 0);
+                    });
+            }
+        }
+
+        window.addEventListener('resize', function() {
+            renderLandingD3Chart();
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initPromoAd();
+            initLandingD3Data();
+        });
     </script>
 </body>
 </html>

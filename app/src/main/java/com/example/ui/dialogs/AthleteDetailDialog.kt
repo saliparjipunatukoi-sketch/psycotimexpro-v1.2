@@ -211,31 +211,110 @@ fun AthleteDetailDialog(
                     }
                 }
 
-                // AI Biomechanical Stats
+                // AI Sports Science Biomechanical & Running Gait Stats
+                val latestMetric = athleteMetrics.firstOrNull()
+                val displayCadence = latestMetric?.cadenceSpM ?: 258
+                val displayGct = latestMetric?.groundContactTimeMs ?: 106
+                val displayTorso = latestMetric?.torsoLeanAngleDeg ?: 14.5
+                val displayStrideFreq = latestMetric?.strideFrequencyHz ?: (displayCadence / 60.0)
+
                 Surface(
                     color = StadiumSurfaceVariant,
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, ElectricCyan.copy(alpha = 0.3f)),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Text(
-                            text = "Analisis Biomekanik Latihan Rasmi (AI)",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Frekuensi Langkah:", fontSize = 11.sp, color = TextSecondary)
-                            Text("4.35 Hz (261 spm)", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = ElectricCyan)
+                    Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Speed, contentDescription = null, tint = ElectricCyan, modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "Analisis Sains Sukan & Gaya Larian (Gait)",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Black,
+                                    color = Color.White
+                                )
+                            }
+                            Surface(
+                                color = ElectricCyan.copy(alpha = 0.15f),
+                                shape = RoundedCornerShape(6.dp)
+                            ) {
+                                Text(
+                                    text = "AI BIOMECHANICS",
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = ElectricCyan,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
                         }
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Masa Sentuhan Tanah (GCT):", fontSize = 11.sp, color = TextSecondary)
-                            Text("104 ms (Reaktif)", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = LaserOrange)
+
+                        // Kinematic Grid
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Surface(
+                                color = Color.Black,
+                                shape = RoundedCornerShape(8.dp),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Column(modifier = Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text("Cadence", fontSize = 9.sp, color = TextSecondary)
+                                    Text("$displayCadence spm", fontSize = 13.sp, fontWeight = FontWeight.Black, color = ElectricCyan)
+                                    Text("%.2f Hz".format(displayStrideFreq), fontSize = 8.sp, color = TextMuted)
+                                }
+                            }
+                            Surface(
+                                color = Color.Black,
+                                shape = RoundedCornerShape(8.dp),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Column(modifier = Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text("Sentuhan GCT", fontSize = 9.sp, color = TextSecondary)
+                                    Text("${displayGct} ms", fontSize = 13.sp, fontWeight = FontWeight.Black, color = LaserOrange)
+                                    Text(if (displayGct <= 110) "Reaktif Elit" else "Sederhana", fontSize = 8.sp, color = SuccessGreen)
+                                }
+                            }
+                            Surface(
+                                color = Color.Black,
+                                shape = RoundedCornerShape(8.dp),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Column(modifier = Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text("Sudut Torso", fontSize = 9.sp, color = TextSecondary)
+                                    Text("%.1f°".format(displayTorso), fontSize = 13.sp, fontWeight = FontWeight.Black, color = FinishLineRed)
+                                    Text("Condongan Garis", fontSize = 8.sp, color = TextMuted)
+                                }
+                            }
                         }
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Sudut Condong Torso Garisan:", fontSize = 11.sp, color = TextSecondary)
-                            Text("14.8° (Optimum Beam)", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = SpeedAmber)
+
+                        // Sports Science Coaching Feedback
+                        Surface(
+                            color = Color(0xFF0F172A),
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(modifier = Modifier.padding(10.dp)) {
+                                Text(
+                                    text = "💡 Pandangan Sains Sukan & Cadangan Jurulatih:",
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = LaserOrange
+                                )
+                                Spacer(modifier = Modifier.height(3.dp))
+                                Text(
+                                    text = if (displayGct <= 110)
+                                        "Kadar sentuhan tanah ${displayGct}ms sangat efisien dengan fasa pecutan pantas. Irama langkah ${displayCadence} spm stabil pada 30 meter penamat."
+                                    else
+                                        "Lakukan latihan 'A-Skips' dan plyometric ankle bounce untuk memendekkan Ground Contact Time bawah 110ms bagi pecutan lebih meletup.",
+                                    fontSize = 10.sp,
+                                    color = Color.White,
+                                    lineHeight = 14.sp
+                                )
+                            }
                         }
                     }
                 }

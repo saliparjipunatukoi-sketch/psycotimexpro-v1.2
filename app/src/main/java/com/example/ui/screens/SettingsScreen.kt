@@ -36,6 +36,8 @@ fun SettingsScreen(
     currentUserName: String,
     isSuperAdmin: Boolean,
     deviceStorageDirs: List<String>,
+    selectedVideoFolderPath: String = "",
+    onOpenVideoStorageSettings: () -> Unit = {},
     onSwitchUser: (email: String, name: String) -> Unit,
     onUpdateClubInfo: (name: String, logoUri: String?, coachName: String, phone: String, photoUri: String?) -> Unit,
     onOpenWebSync: () -> Unit,
@@ -346,9 +348,52 @@ fun SettingsScreen(
                     }
                 }
 
+                if (selectedVideoFolderPath.isNotBlank()) {
+                    Surface(
+                        color = ElectricCyan.copy(alpha = 0.12f),
+                        shape = RoundedCornerShape(8.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, ElectricCyan.copy(alpha = 0.4f)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(10.dp)) {
+                            Text(
+                                text = "FOLDER RAKAMAN VIDEO AKTIF:",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Black,
+                                color = ElectricCyan
+                            )
+                            Text(
+                                text = selectedVideoFolderPath,
+                                fontSize = 11.sp,
+                                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                                color = Color.White
+                            )
+                        }
+                    }
+                }
+
+                Button(
+                    onClick = onOpenVideoStorageSettings,
+                    colors = ButtonDefaults.buttonColors(containerColor = ElectricCyan),
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 48.dp)
+                        .testTag("open_video_storage_settings_button")
+                ) {
+                    Icon(Icons.Default.FolderSpecial, contentDescription = null, tint = Color.Black, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Tetapan Folder Rakaman Video & Kebenaran Storan",
+                        color = Color.Black,
+                        fontWeight = FontWeight.Black,
+                        fontSize = 12.sp
+                    )
+                }
+
                 Button(
                     onClick = {
-                        storageStatusMessage = "Semua 5 folder /PsycoTimeXPro/ telah disahkan aktif & boleh diakses!"
+                        storageStatusMessage = "Semua folder /PsycoTimeXPro/ telah disahkan aktif & boleh diakses!"
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = StadiumSurfaceVariant),
                     modifier = Modifier.fillMaxWidth()

@@ -39,7 +39,8 @@ enum class ScreenTab(val title: String, val icon: androidx.compose.ui.graphics.v
     FEES("Yuran", Icons.Default.ReceiptLong),
     SUBUSERS("Pegawai", Icons.Default.Group),
     WEB_PORTAL("Web Portal", Icons.Default.Public),
-    SETTINGS("Tetapan", Icons.Default.Settings)
+    SETTINGS("Tetapan", Icons.Default.Settings),
+    VIDEO_STORAGE_SETTINGS("Storan Video", Icons.Default.FolderSpecial)
 }
 
 class MainActivity : ComponentActivity() {
@@ -103,10 +104,15 @@ class MainActivity : ComponentActivity() {
                     val selectedAthleteDetail by viewModel.selectedAthleteDetail.collectAsStateWithLifecycle()
                     val syncStatus by viewModel.syncStatus.collectAsStateWithLifecycle()
                     val isSyncing by viewModel.isSyncing.collectAsStateWithLifecycle()
+                    val selectedVideoFolderPath by viewModel.selectedVideoFolderPath.collectAsStateWithLifecycle()
 
                     // Back navigation handler
                     BackHandler(enabled = currentTab != ScreenTab.DASHBOARD) {
-                        currentTab = ScreenTab.DASHBOARD
+                        currentTab = if (currentTab == ScreenTab.VIDEO_STORAGE_SETTINGS) {
+                            ScreenTab.SETTINGS
+                        } else {
+                            ScreenTab.DASHBOARD
+                        }
                     }
 
                     Scaffold(
@@ -318,12 +324,23 @@ class MainActivity : ComponentActivity() {
                                     currentUserName = currentUserName,
                                     isSuperAdmin = isSuperAdmin,
                                     deviceStorageDirs = viewModel.storageManager.ensureDirectoriesExist(),
+                                    selectedVideoFolderPath = selectedVideoFolderPath,
+                                    onOpenVideoStorageSettings = { currentTab = ScreenTab.VIDEO_STORAGE_SETTINGS },
                                     onSwitchUser = { email, name -> viewModel.switchUser(email, name) },
                                     onUpdateClubInfo = { name, logo, coach, phone, photo ->
                                         viewModel.updateClubInfo(name, logo, coach, phone, photo)
                                     },
                                     onOpenWebSync = { viewModel.setShowWebSyncDialog(true) },
                                     onLogout = { showLogoutConfirmDialog = true }
+                                )
+
+                                ScreenTab.VIDEO_STORAGE_SETTINGS -> VideoStorageSettingsScreen(
+                                    storageManager = viewModel.storageManager,
+                                    selectedVideoFolderPath = selectedVideoFolderPath,
+                                    onUpdateSelectedVideoFolder = { path ->
+                                        viewModel.updateSelectedVideoFolder(path)
+                                    },
+                                    onNavigateBack = { currentTab = ScreenTab.SETTINGS }
                                 )
                             }
                         }

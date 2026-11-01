@@ -1,21 +1,42 @@
 package com.example.service
 
+import android.Manifest
 import android.content.ContentValues
 import android.content.Context
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.net.Uri
 import android.os.Build
 import android.os.Environment
+import android.os.StatFs
+import android.provider.DocumentsContract
 import android.provider.MediaStore
+import androidx.core.content.ContextCompat
 import java.io.File
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+data class FolderValidationResult(
+    val isValid: Boolean,
+    val resolvedPath: String,
+    val message: String,
+    val freeSpaceMb: Long = 0L,
+    val requiresManageStoragePermission: Boolean = false
+)
+
 class StorageManager(private val context: Context) {
+
+    private val prefs = context.getSharedPreferences("psyco_storage_prefs", Context.MODE_PRIVATE)
+
+    companion object {
+        private const val KEY_SELECTED_VIDEO_FOLDER = "selected_video_folder_path"
+        private const val KEY_CUSTOM_FOLDER_PATHS = "custom_folder_paths"
+    }
 
     val appBaseDir: File by lazy {
         val dir = File(context.getExternalFilesDir(null), "PsycoTimeXPro")
@@ -53,14 +74,220 @@ class StorageManager(private val context: Context) {
     }
 
     fun ensureDirectoriesExist(): List<String> {
-        val dirs = listOf(
+        val dirs = mutableListOf(
+            getSelectedVideoFolder(),
             videosDir,
             racesDir,
             photoFinishDir,
             exportsDir
-        )
-        dirs.forEach { if (!it.exists()) it.mkdirs() }
+        ).distinctBy { it.absolutePath }
+        dirs.forEach {
+            try {
+                if (!it.exists()) it.mkdirs()
+            } catch (_: Exception) {}
+        }
         return dirs.map { it.absolutePath }
+    }
+
+    /**
+     * Checks whether 'Manage External Storage' (All Files Access on Android 11+)
+     * or legacy WRITE_EXTERNAL_STORAGE permission is granted.
+     */
+    fun hasManageExternalStoragePermission(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            Environment.isExternalStorageManager()
+        } else {
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE
+            ) == PackageManager.PERMISSION_GRANTED
+        }
+    }
+
+    /**
+     * Returns the currently configured local folder for saving race video recordings.
+     */
+    fun getSelectedVideoFolderPath(): String {
+        val saved = prefs.getString(KEY_SELECTED_VIDEO_FOLDER, null)
+        return if (!saved.isNullOrBlank()) saved else videosDir.absolutePath
+    }
+
+    fun getSelectedVideoFolder(): File {
+        val path = getSelectedVideoFolderPath()
+        val folder = File(path)
+        return try {
+            if (!folder.exists()) folder.mkdirs()
+            if (folder.exists() && folder.isDirectory && folder.canWrite()) {
+                folder
+            } else {
+                videosDir
+            }
+        } catch (_: Exception) {
+            videosDir
+        }
+    }
+
+    /**
+     * Validates a candidate local folder path:
+     * 1. Non-empty & valid path syntax
+     * 2. Checks if outside app-specific storage without MANAGE_EXTERNAL_STORAGE
+     * 3. Attempts mkdirs() if folder does not exist yet
+     * 4. Verifies directory status and performs a real file write probe
+     */
+    fun validateFolderPath(rawPath: String): FolderValidationResult {
+        val trimmed = rawPath.trim()
+        if (trimmed.isEmpty()) {
+            return FolderValidationResult(
+                isValid = false,
+                resolvedPath = "",
+                message = "Laluan folder tidak boleh kosong. Sila pilih atau masukkan laluan folder tempatan."
+            )
+        }
+
+        if (trimmed.contains("\u0000")) {
+            return FolderValidationResult(
+                isValid = false,
+                resolvedPath = trimmed,
+                message = "Laluan mengandungi aksara tidak sah."
+            )
+        }
+
+        val targetDir = File(trimmed)
+        val appExternalPath = context.getExternalFilesDir(null)?.absolutePath ?: ""
+        val appInternalPath = context.filesDir.absolutePath
+        val isAppScoped = targetDir.absolutePath.startsWith(appExternalPath) ||
+                targetDir.absolutePath.startsWith(appInternalPath)
+
+        try {
+            if (!targetDir.exists()) {
+                val created = targetDir.mkdirs()
+                if (!created && !targetDir.exists()) {
+                    val needsPerm = !isAppScoped && !hasManageExternalStoragePermission()
+                    return FolderValidationResult(
+                        isValid = false,
+                        resolvedPath = targetDir.absolutePath,
+                        message = if (needsPerm) {
+                            "Gagal mencipta folder di storan luaran. Sila aktifkan kebenaran 'Manage External Storage' terlebih dahulu."
+                        } else {
+                            "Folder tidak wujud dan gagal dicipta pada laluan: ${targetDir.absolutePath}"
+                        },
+                        requiresManageStoragePermission = needsPerm
+                    )
+                }
+            }
+
+            if (!targetDir.isDirectory) {
+                return FolderValidationResult(
+                    isValid = false,
+                    resolvedPath = targetDir.absolutePath,
+                    message = "Laluan yang dipilih bukan sebuah folder (direktori)."
+                )
+            }
+
+            // Perform real write test probe to verify write permission
+            val probeFile = File(targetDir, ".psyco_write_test_${System.currentTimeMillis()}.tmp")
+            val writeSuccess = try {
+                probeFile.writeText("OK")
+                probeFile.delete()
+                true
+            } catch (_: Exception) {
+                false
+            }
+
+            if (!writeSuccess || !targetDir.canWrite()) {
+                val needsPerm = !isAppScoped && !hasManageExternalStoragePermission()
+                return FolderValidationResult(
+                    isValid = false,
+                    resolvedPath = targetDir.absolutePath,
+                    message = if (needsPerm) {
+                        "Tiada akses menulis ke folder ini. Sila benarkan 'Manage External Storage' untuk menyimpan video di luar folder aplikasi."
+                    } else {
+                        "Folder ditemui tetapi tiada kebenaran menulis (Read-Only): ${targetDir.absolutePath}"
+                    },
+                    requiresManageStoragePermission = needsPerm
+                )
+            }
+
+            val freeMb = try {
+                val stat = StatFs(targetDir.absolutePath)
+                (stat.availableBytes) / (1024L * 1024L)
+            } catch (_: Exception) {
+                0L
+            }
+
+            return FolderValidationResult(
+                isValid = true,
+                resolvedPath = targetDir.absolutePath,
+                message = "Laluan folder sah & boleh ditulis (Writable). Ruang bebas: ${freeMb} MB",
+                freeSpaceMb = freeMb,
+                requiresManageStoragePermission = false
+            )
+        } catch (e: Exception) {
+            val needsPerm = !isAppScoped && !hasManageExternalStoragePermission()
+            return FolderValidationResult(
+                isValid = false,
+                resolvedPath = targetDir.absolutePath,
+                message = "Ralat pengesahan laluan folder: ${e.localizedMessage ?: "Tidak dapat diakses"}",
+                requiresManageStoragePermission = needsPerm
+            )
+        }
+    }
+
+    /**
+     * Validates and saves the folder path as the default race video recording location.
+     */
+    fun saveSelectedVideoFolder(rawPath: String): FolderValidationResult {
+        val validation = validateFolderPath(rawPath)
+        if (validation.isValid) {
+            prefs.edit().putString(KEY_SELECTED_VIDEO_FOLDER, validation.resolvedPath).apply()
+            addSavedCustomFolderPath(validation.resolvedPath)
+        }
+        return validation
+    }
+
+    private fun addSavedCustomFolderPath(path: String) {
+        val current = prefs.getStringSet(KEY_CUSTOM_FOLDER_PATHS, emptySet())?.toMutableSet() ?: mutableSetOf()
+        current.add(path)
+        prefs.edit().putStringSet(KEY_CUSTOM_FOLDER_PATHS, current).apply()
+    }
+
+    /**
+     * Converts a Tree Uri returned by ActivityResultContracts.OpenDocumentTree() into a local file path.
+     */
+    fun resolveTreeUriToLocalPath(treeUri: Uri): String {
+        return try {
+            val docId = DocumentsContract.getTreeDocumentId(treeUri)
+            val split = docId.split(":")
+            if (split.size >= 2) {
+                val type = split[0]
+                val relativePath = split[1]
+                if ("primary".equals(type, ignoreCase = true)) {
+                    val base = Environment.getExternalStorageDirectory().absolutePath
+                    if (relativePath.isEmpty()) base else "$base/$relativePath"
+                } else {
+                    "/storage/$type/$relativePath"
+                }
+            } else if (docId.endsWith(":")) {
+                Environment.getExternalStorageDirectory().absolutePath
+            } else {
+                File(videosDir, docId.replace(":", "_")).absolutePath
+            }
+        } catch (_: Exception) {
+            videosDir.absolutePath
+        }
+    }
+
+    /**
+     * Returns preset storage locations for quick selection.
+     */
+    fun getPresetStorageLocations(): List<Pair<String, String>> {
+        val extRoot = Environment.getExternalStorageDirectory().absolutePath
+        return listOf(
+            "Storan Dalaman Aplikasi (Lalai)" to videosDir.absolutePath,
+            "Folder Movies Awam (/Movies/PsycoTimeXPro)" to "$extRoot/Movies/PsycoTimeXPro",
+            "Folder DCIM Kamera (/DCIM/PsycoTimeXPro)" to "$extRoot/DCIM/PsycoTimeXPro",
+            "Folder Muat Turun (/Download/PsycoTimeXPro)" to "$extRoot/Download/PsycoTimeXPro"
+        )
     }
 
     /**
@@ -202,10 +429,10 @@ class StorageManager(private val context: Context) {
         }
         canvas.drawText(timeFormatted, width - 295f, 80f, timerTextPaint)
 
-        // Save to target folder or internal app storage
+        // Save to target folder or configured video storage folder
         val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
         val fileName = "PhotoFinish_${raceTitle.replace(" ", "_")}_$timeStamp.png"
-        val folderToUse = targetFolder ?: photoFinishDir
+        val folderToUse = targetFolder ?: getSelectedVideoFolder()
         if (!folderToUse.exists()) folderToUse.mkdirs()
         val destFile = File(folderToUse, fileName)
 
@@ -262,7 +489,7 @@ class StorageManager(private val context: Context) {
         val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
         val cleanTitle = raceTitle.replace(" ", "_")
 
-        val destinationFolder = targetFolder ?: videosDir
+        val destinationFolder = targetFolder ?: getSelectedVideoFolder()
         if (!destinationFolder.exists()) destinationFolder.mkdirs()
 
         // Create representative frame video asset files for Cam 1 (Timer Gate) & Cam 2 (Finish Torso)
@@ -291,24 +518,32 @@ class StorageManager(private val context: Context) {
     }
 
     /**
-     * Lists existing custom subfolders or creates a new one
+     * Lists existing custom subfolders or creates a new one, starting with the user's selected video folder.
      */
     fun getAvailableStorageFolders(): List<File> {
-        val list = mutableListOf(videosDir, photoFinishDir, exportsDir)
+        val selected = getSelectedVideoFolder()
+        val list = mutableListOf(selected, videosDir, photoFinishDir, exportsDir)
+        val savedCustomPaths = prefs.getStringSet(KEY_CUSTOM_FOLDER_PATHS, emptySet()) ?: emptySet()
+        savedCustomPaths.forEach { path ->
+            val file = File(path)
+            if (file.exists() && file.isDirectory) {
+                list.add(file)
+            }
+        }
         val customParent = File(appBaseDir, "CustomFolders")
         if (!customParent.exists()) customParent.mkdirs()
         customParent.listFiles()?.filter { it.isDirectory }?.let {
             list.addAll(it)
         }
-        return list
+        return list.distinctBy { it.absolutePath }
     }
 
     fun createCustomFolder(folderName: String): File {
         val safeName = folderName.trim().replace(Regex("[^a-zA-Z0-9_-]"), "_")
-        val customParent = File(appBaseDir, "CustomFolders")
-        if (!customParent.exists()) customParent.mkdirs()
-        val newFolder = File(customParent, safeName)
+        val baseParent = getSelectedVideoFolder()
+        val newFolder = File(baseParent, safeName)
         if (!newFolder.exists()) newFolder.mkdirs()
+        addSavedCustomFolderPath(newFolder.absolutePath)
         return newFolder
     }
 }

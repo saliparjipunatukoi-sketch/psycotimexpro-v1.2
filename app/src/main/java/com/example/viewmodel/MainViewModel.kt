@@ -94,6 +94,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _isSyncing = MutableStateFlow(false)
     val isSyncing: StateFlow<Boolean> = _isSyncing.asStateFlow()
 
+    private val _selectedVideoFolderPath = MutableStateFlow(storageManager.getSelectedVideoFolderPath())
+    val selectedVideoFolderPath: StateFlow<String> = _selectedVideoFolderPath.asStateFlow()
+
+    fun updateSelectedVideoFolder(path: String): FolderValidationResult {
+        val result = storageManager.saveSelectedVideoFolder(path)
+        if (result.isValid) {
+            _selectedVideoFolderPath.value = result.resolvedPath
+        }
+        return result
+    }
+
     // Reactive Database flows
     val allAthletes: StateFlow<List<Athlete>> = athleteRepository.allAthletes
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())

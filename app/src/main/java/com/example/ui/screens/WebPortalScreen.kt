@@ -9,7 +9,9 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -129,9 +131,13 @@ fun WebPortalScreen(
 
                 // Direct shortcut chips
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
+                    QuickWebChip("Trend D3", "https://www.psycotimexpro.my/sports-management") { url ->
+                        currentUrl = url
+                        webViewInstance?.loadUrl(url)
+                    }
                     QuickWebChip("Latihan ET", "https://www.psycotimexpro.my/training-management") { url ->
                         currentUrl = url
                         webViewInstance?.loadUrl(url)
