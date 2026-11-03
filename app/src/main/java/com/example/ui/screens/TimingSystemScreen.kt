@@ -31,8 +31,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import com.example.service.AiSportsScienceAnalyzer
 import com.example.service.ElectronicStarterGunAudio
 import com.example.service.MotionAnalysisResult
+import com.example.service.RemoteKeySignal
+import com.example.ui.components.CameraFrameHolder
 import com.example.ui.components.RealCameraPreview
 import com.example.ui.theme.*
 
@@ -52,6 +55,9 @@ fun TimingSystemScreen(
     onResetTimer: () -> Unit,
     onTriggerMotion: (hasMotion: Boolean, energy: Float) -> Unit,
     onOpenQrPair: () -> Unit,
+    isBluetoothTriggerEnabled: Boolean = true,
+    lastRemoteSignal: RemoteKeySignal? = null,
+    onOpenBluetoothRemoteSetup: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -137,6 +143,106 @@ fun TimingSystemScreen(
                 Icon(Icons.Default.QrCodeScanner, contentDescription = null, tint = SilverMetallic, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(6.dp))
                 Text("Link Cam 2 QR", fontSize = 11.sp, color = Color.White, fontWeight = FontWeight.Bold)
+            }
+        }
+
+        // BLUETOOTH CAMERA SELFIE REMOTE STARTER TRIGGER BAR (START ONLY + GUN SOUND)
+        Surface(
+            color = StadiumSurface,
+            shape = RoundedCornerShape(14.dp),
+            border = androidx.compose.foundation.BorderStroke(
+                1.dp,
+                if (isBluetoothTriggerEnabled) ElectricCyan.copy(alpha = 0.6f) else StadiumBorder
+            ),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .size(34.dp)
+                            .background(
+                                if (isBluetoothTriggerEnabled) ElectricCyan.copy(alpha = 0.15f) else StadiumSurfaceVariant,
+                                CircleShape
+                            )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.BluetoothConnected,
+                            contentDescription = null,
+                            tint = if (isBluetoothTriggerEnabled) ElectricCyan else TextMuted,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "Bluetooth Selfie Remote Starter",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Black,
+                                color = Color.White
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Surface(
+                                color = if (isBluetoothTriggerEnabled) SuccessGreen.copy(alpha = 0.2f) else TextMuted.copy(alpha = 0.2f),
+                                shape = RoundedCornerShape(4.dp)
+                            ) {
+                                Text(
+                                    text = if (isBluetoothTriggerEnabled) "START + GUN AKTIF" else "MATI",
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Black,
+                                    color = if (isBluetoothTriggerEnabled) SuccessGreen else TextMuted,
+                                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
+                                )
+                            }
+                        }
+                        Text(
+                            text = if (lastRemoteSignal != null) {
+                                "Isyarat Remote: ${lastRemoteSignal.keyName} • Sah untuk MULA sahaja"
+                            } else {
+                                "Sah untuk butang START sahaja • Serentak bunyi Tembakan Starter Gun"
+                            },
+                            fontSize = 10.sp,
+                            color = if (lastRemoteSignal != null) ElectricCyan else TextSecondary
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                FilledTonalButton(
+                    onClick = onOpenBluetoothRemoteSetup,
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = ElectricCyan.copy(alpha = 0.2f)
+                    ),
+                    shape = RoundedCornerShape(10.dp),
+                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
+                    modifier = Modifier.testTag("open_bluetooth_remote_setup_button")
+                ) {
+                    Icon(
+                        Icons.Default.SettingsRemote,
+                        contentDescription = null,
+                        tint = ElectricCyan,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        "Setup Remote",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = ElectricCyan
+                    )
+                }
             }
         }
 
@@ -504,10 +610,7 @@ fun TimingSystemScreen(
             if (!isTimerRunning) {
                 Button(
                     onClick = {
-                        // Play genuine explosive Electronic Starter Gun shot audio
-                        if (isAudioGunEnabled) {
-                            ElectronicStarterGunAudio.playExplosiveStarterGunShot(coroutineScope)
-                        }
+                        // Start button in the app ALWAYS plays Starter Gun sound together with starting sprint timer
                         onStartTimer()
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = FinishLineRed),
@@ -517,9 +620,9 @@ fun TimingSystemScreen(
                         .height(52.dp)
                         .testTag("start_timer_button")
                 ) {
-                    Icon(Icons.Default.PlayArrow, contentDescription = null, tint = Color.White)
+                    Icon(Icons.Default.Campaign, contentDescription = null, tint = Color.White)
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text("MULA TIMING (GUN)", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White)
+                    Text("MULA TIMING + BUNYI GUN", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color.White)
                 }
             } else {
                 Button(
@@ -552,7 +655,7 @@ fun TimingSystemScreen(
             }
         }
 
-        // BIOMECHANICS & AI INTELLIGENT METRICS / "NO DETECTION SAVE"
+        // BIOMECHANICS & AI INTELLIGENT POSTURE READER (START & FINISH POSTURE: WRONG VS CORRECT + NEXT STEPS)
         Card(
             colors = CardDefaults.cardColors(containerColor = StadiumSurface),
             shape = RoundedCornerShape(16.dp),
@@ -561,27 +664,34 @@ fun TimingSystemScreen(
         ) {
             Column(
                 modifier = Modifier.padding(14.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
                         Icon(
                             imageVector = Icons.Default.Psychology,
                             contentDescription = null,
-                            tint = if (isMovementDetected) SuccessGreen else TextMuted,
+                            tint = if (isMovementDetected) SuccessGreen else ElectricCyan,
                             modifier = Modifier.size(20.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "Kotak AI Pintar: Bacaan Pergerakan & Analisis",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 12.sp,
-                            color = Color.White
-                        )
+                        Column {
+                            Text(
+                                text = "Pembaca Postur AI Pintar (Start & Finish)",
+                                fontWeight = FontWeight.Black,
+                                fontSize = 12.sp,
+                                color = Color.White
+                            )
+                            Text(
+                                text = "Analisis Postur Sebenar Cam 1 (Blok) & Cam 2 (Garisan Penamat)",
+                                fontSize = 10.sp,
+                                color = TextSecondary
+                            )
+                        }
                     }
 
                     Surface(
@@ -589,7 +699,7 @@ fun TimingSystemScreen(
                         shape = RoundedCornerShape(6.dp)
                     ) {
                         Text(
-                            text = if (isMovementDetected) "Manusia Tertangkap ✓" else "Menunggu Atlit",
+                            text = if (isMovementDetected) "Postur Dikesan ✓" else "Menunggu Atlit",
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
                             color = if (isMovementDetected) SuccessGreen else TextMuted,
@@ -600,51 +710,159 @@ fun TimingSystemScreen(
 
                 if (isMovementDetected) {
                     val analysis = latestAiAnalysis
-                    val torsoLean = analysis?.torsoLeanAngleDeg ?: 14.5
+                    val torsoLean = analysis?.torsoLeanAngleDeg ?: CameraFrameHolder.measuredFinishTorsoAngleDeg
                     val cadence = analysis?.cadenceSpM ?: 254
                     val contactTime = analysis?.groundContactTimeMs ?: 108
+                    val posture = analysis?.postureAnalysis ?: AiSportsScienceAnalyzer.evaluateStartAndFinishPosture(
+                        startTrunkAngleDeg = CameraFrameHolder.measuredStartBodyAngleDeg,
+                        frontKneeAngleDeg = CameraFrameHolder.measuredFrontKneeAngleDeg,
+                        rearKneeAngleDeg = CameraFrameHolder.measuredRearKneeAngleDeg,
+                        finishTorsoAngleDeg = torsoLean,
+                        cadenceSpM = cadence,
+                        groundContactTimeMs = contactTime
+                    )
 
-                    // Metrics Grid
+                    // Metrics Grid (4 Boxes: Start Angle, Finish Torso, GCT, Cadence)
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         MetricBox(
-                            title = "Sudut Torso",
-                            value = "%.1f°".format(torsoLean),
-                            subtext = "Condong ke hadapan",
-                            color = FinishLineRed,
+                            title = "Postur Start",
+                            value = "%.1f°".format(posture.startBodyLeanAngleDeg),
+                            subtext = if (posture.isStartPostureCorrect) "Betul (42-48°)" else "Perlu Baiki",
+                            color = if (posture.isStartPostureCorrect) SuccessGreen else LaserOrange,
                             modifier = Modifier.weight(1f)
                         )
                         MetricBox(
-                            title = "Sentuhan Bumi",
+                            title = "Torso Finish",
+                            value = "%.1f°".format(posture.finishTorsoDipAngleDeg),
+                            subtext = if (posture.isFinishPostureCorrect) "Betul (12-18°)" else "Perlu Baiki",
+                            color = if (posture.isFinishPostureCorrect) ElectricCyan else FinishLineRed,
+                            modifier = Modifier.weight(1f)
+                        )
+                        MetricBox(
+                            title = "GCT Bumi",
                             value = "${contactTime}ms",
-                            subtext = "Fasa tolakan pantas",
+                            subtext = "Tolakan kaki",
                             color = Color.White,
                             modifier = Modifier.weight(1f)
                         )
                         MetricBox(
                             title = "Cadence",
                             value = "$cadence",
-                            subtext = "Langkah seminit",
+                            subtext = "Langkah/min",
                             color = SilverMetallic,
                             modifier = Modifier.weight(1f)
                         )
                     }
 
-                    // AI Commentary
+                    // CAM 1 STARTING POSTURE: CORRECT VS WRONG + NEXT STEPS
                     Surface(
                         color = StadiumSurfaceVariant,
-                        shape = RoundedCornerShape(8.dp),
+                        shape = RoundedCornerShape(10.dp),
+                        border = androidx.compose.foundation.BorderStroke(
+                            1.dp,
+                            if (posture.isStartPostureCorrect) SuccessGreen.copy(alpha = 0.5f) else LaserOrange.copy(alpha = 0.5f)
+                        ),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text(
-                            text = "Komen & Analisis AI: Pergerakan dada/torso sempurna melepasi garis penamat merah. Sudut kecondongan %.1f° menepati standard perlumbaan untuk catatan masa rasmi yang optimum.".format(torsoLean),
-                            fontSize = 11.sp,
-                            color = Color.White,
-                            lineHeight = 15.sp,
-                            modifier = Modifier.padding(8.dp)
-                        )
+                        Column(
+                            modifier = Modifier.padding(10.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "1. Postur Permulaan (CAM 1 — Blok & Pecutan)",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Black,
+                                    color = ElectricCyan
+                                )
+                                Text(
+                                    text = posture.startPostureStatusBadge,
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Black,
+                                    color = if (posture.isStartPostureCorrect) SuccessGreen else LaserOrange
+                                )
+                            }
+                            Text(
+                                text = "✓ Postur Betul: ${posture.startCorrectPostureAnalysis}",
+                                fontSize = 10.sp,
+                                color = Color.White,
+                                lineHeight = 14.sp
+                            )
+                            Text(
+                                text = "⚠ Analisis Postur Salah: ${posture.startWrongPostureAnalysis}",
+                                fontSize = 10.sp,
+                                color = Color(0xFFFCA5A5),
+                                lineHeight = 14.sp
+                            )
+                            Text(
+                                text = "➡ Tindakan Seterusnya: ${posture.startNextActionDrills.firstOrNull() ?: ""}",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = SpeedAmber,
+                                lineHeight = 14.sp
+                            )
+                        }
+                    }
+
+                    // CAM 2 FINISHING POSTURE: CORRECT VS WRONG + NEXT STEPS
+                    Surface(
+                        color = StadiumSurfaceVariant,
+                        shape = RoundedCornerShape(10.dp),
+                        border = androidx.compose.foundation.BorderStroke(
+                            1.dp,
+                            if (posture.isFinishPostureCorrect) ElectricCyan.copy(alpha = 0.5f) else FinishLineRed.copy(alpha = 0.5f)
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(10.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "2. Postur Garisan Penamat (CAM 2 — Torso Slit Dip)",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Black,
+                                    color = FinishLineRed
+                                )
+                                Text(
+                                    text = posture.finishPostureStatusBadge,
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Black,
+                                    color = if (posture.isFinishPostureCorrect) SuccessGreen else FinishLineRed
+                                )
+                            }
+                            Text(
+                                text = "✓ Postur Betul: ${posture.finishCorrectPostureAnalysis}",
+                                fontSize = 10.sp,
+                                color = Color.White,
+                                lineHeight = 14.sp
+                            )
+                            Text(
+                                text = "⚠ Analisis Postur Salah: ${posture.finishWrongPostureAnalysis}",
+                                fontSize = 10.sp,
+                                color = Color(0xFFFCA5A5),
+                                lineHeight = 14.sp
+                            )
+                            Text(
+                                text = "➡ Tindakan Seterusnya: ${posture.finishNextActionDrills.firstOrNull() ?: ""}",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = SpeedAmber,
+                                lineHeight = 14.sp
+                            )
+                        }
                     }
                 } else {
                     // IF NO HUMAN DETECTED: TEXT NO DETECTION SAVE AS REQUESTED
@@ -666,7 +884,7 @@ fun TimingSystemScreen(
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = "Tiada manusia tertangkap oleh kotak sensor AI buat masa ini. Sensor bersedia mengesan atlit semasa melepasi garisan.",
+                                text = "Tiada manusia tertangkap oleh kotak sensor AI buat masa ini. Sensor bersedia membaca postur badan Permulaan (Cam 1) dan Penamat (Cam 2) secara langsung.",
                                 fontSize = 11.sp,
                                 color = TextSecondary,
                                 textAlign = TextAlign.Center

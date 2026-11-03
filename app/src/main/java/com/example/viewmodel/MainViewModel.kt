@@ -18,6 +18,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val repository = SportsRepository(db)
     val storageManager = StorageManager(application)
     val webSyncManager = WebSyncManager()
+    val bluetoothTriggerManager = BluetoothSelfieTriggerManager(application)
 
     // Current User & Authentication
     val superAdminEmail = "saliparjipun.atukoi@gmail.com"
@@ -51,10 +52,19 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _camMode = MutableStateFlow(1)
     val camMode: StateFlow<Int> = _camMode.asStateFlow()
 
-    // Audio Gun Detector
-    private val _isAudioGunEnabled = MutableStateFlow(false)
+    // Audio Gun Detector & Bluetooth Selfie Remote Trigger
+    private val _isAudioGunEnabled = MutableStateFlow(true)
     val isAudioGunEnabled: StateFlow<Boolean> = _isAudioGunEnabled.asStateFlow()
     private var audioGunDetector: AudioGunDetector? = null
+
+    private val _isBluetoothTriggerEnabled = MutableStateFlow(true)
+    val isBluetoothTriggerEnabled: StateFlow<Boolean> = _isBluetoothTriggerEnabled.asStateFlow()
+
+    private val _showBluetoothRemoteSetupDialog = MutableStateFlow(false)
+    val showBluetoothRemoteSetupDialog: StateFlow<Boolean> = _showBluetoothRemoteSetupDialog.asStateFlow()
+
+    private val _lastRemoteKeySignal = MutableStateFlow<RemoteKeySignal?>(null)
+    val lastRemoteKeySignal: StateFlow<RemoteKeySignal?> = _lastRemoteKeySignal.asStateFlow()
 
     // Real Motion & AI Detection
     private val _motionEnergy = MutableStateFlow(0.0f)
@@ -96,6 +106,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _selectedVideoFolderPath = MutableStateFlow(storageManager.getSelectedVideoFolderPath())
     val selectedVideoFolderPath: StateFlow<String> = _selectedVideoFolderPath.asStateFlow()
+
+    // AI Posture Reader & Direct Analytics Table Slit Export State
+    private val _selectedRaceForPostureAi = MutableStateFlow<RaceRecordEntity?>(null)
+    val selectedRaceForPostureAi: StateFlow<RaceRecordEntity?> = _selectedRaceForPostureAi.asStateFlow()
+
+    private val _lastExportedSlitPath = MutableStateFlow<String?>(null)
+    val lastExportedSlitPath: StateFlow<String?> = _lastExportedSlitPath.asStateFlow()
 
     fun updateSelectedVideoFolder(path: String): FolderValidationResult {
         val result = storageManager.saveSelectedVideoFolder(path)
@@ -203,8 +220,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun startTimer() {
+    /**
+     * Starts the sprint timer AND simultaneously fires the explosive Electronic Starter Gun sound.
+     *Strictly idempotent: if already running, calling startTimer() again will NOT reset or stop it.
+     */
+    fun startTimer(fireGunSound: Boolean = true) {
         if (_isTimerRunning.value) return
+        if (fireGunSound) {
+            ElectronicStarterGunAudio.playExplosiveStarterGunShot(viewModelScope)
+        }
         _isTimerRunning.value = true
         timerStartTime = System.currentTimeMillis() - _elapsedMillis.value
         timerJob = viewModelScope.launch(Dispatchers.Default) {
@@ -212,6 +236,67 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 _elapsedMillis.value = System.currentTimeMillis() - timerStartTime
                 delay(10) // 10ms high precision tick
             }
+        }
+    }
+
+    /**
+     * Handles hardware KeyEvent from a connected Bluetooth Camera Selfie Trigger
+     * (e.g. AB Shutter 3 / Bluetooth Remote Shutter).
+     * STRICT RULE: Only valid for the START button!
+     * - If timer is NOT running: fires Starter Gun sound and starts the sprint timer.
+     * - If timer IS already running: consumes the event without stopping the race.
+     */
+    fun handleBluetoothRemoteKeyEvent(event: android.view.KeyEvent): Boolean {
+        if (!bluetoothTriggerManager.isSupportedTriggerKey(event)) return false
+        val signal = bluetoothTriggerManager.extractSignal(event)
+        _lastRemoteKeySignal.value = signal
+
+        if (_showBluetoothRemoteSetupDialog.value) {
+            ElectronicStarterGunAudio.playExplosiveStarterGunShot(viewModelScope)
+            return true
+        }
+
+        if (_isBluetoothTriggerEnabled.value) {
+            if (!_isTimerRunning.value) {
+                // ONLY valid for START button: fire starter gun sound + start timer together!
+                startTimer(fireGunSound = true)
+            }
+            // Consume key event even if timer is running so Volume bar doesn't pop up or stop race
+            return true
+        }
+        return false
+    }
+
+    fun toggleBluetoothTrigger(enabled: Boolean) {
+        _isBluetoothTriggerEnabled.value = enabled
+    }
+
+    fun setShowBluetoothRemoteSetupDialog(show: Boolean) {
+        _showBluetoothRemoteSetupDialog.value = show
+    }
+
+    fun openPostureReaderForRace(race: RaceRecordEntity?) {
+        _selectedRaceForPostureAi.value = race
+        if (race == null) {
+            _lastExportedSlitPath.value = null
+        }
+    }
+
+    fun exportSlitImageFromAnalyticsTable(race: RaceRecordEntity, onExported: ((String) -> Unit)? = null) {
+        viewModelScope.launch {
+            val posture = AiSportsScienceAnalyzer.analyzePostureForRace(race)
+            val liveBmp = com.example.ui.components.CameraFrameHolder.latestFinishFrameBitmap
+                ?: com.example.ui.components.CameraFrameHolder.latestLiveFrameBitmap
+            val exportedPath = withContext(Dispatchers.IO) {
+                storageManager.exportPhotoFinishSlitForRace(
+                    race = race,
+                    posture = posture,
+                    realCameraFrame = liveBmp
+                )
+            }
+            _lastExportedSlitPath.value = exportedPath
+            _selectedRaceForPostureAi.value = race
+            onExported?.invoke(exportedPath)
         }
     }
 

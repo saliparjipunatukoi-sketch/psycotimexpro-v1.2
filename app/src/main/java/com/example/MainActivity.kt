@@ -47,6 +47,13 @@ class MainActivity : ComponentActivity() {
 
     private val viewModel: MainViewModel by viewModels()
 
+    override fun dispatchKeyEvent(event: android.view.KeyEvent): Boolean {
+        if (viewModel.handleBluetoothRemoteKeyEvent(event)) {
+            return true
+        }
+        return super.dispatchKeyEvent(event)
+    }
+
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -105,6 +112,11 @@ class MainActivity : ComponentActivity() {
                     val syncStatus by viewModel.syncStatus.collectAsStateWithLifecycle()
                     val isSyncing by viewModel.isSyncing.collectAsStateWithLifecycle()
                     val selectedVideoFolderPath by viewModel.selectedVideoFolderPath.collectAsStateWithLifecycle()
+                    val isBluetoothTriggerEnabled by viewModel.isBluetoothTriggerEnabled.collectAsStateWithLifecycle()
+                    val showBluetoothRemoteSetupDialog by viewModel.showBluetoothRemoteSetupDialog.collectAsStateWithLifecycle()
+                    val lastRemoteKeySignal by viewModel.lastRemoteKeySignal.collectAsStateWithLifecycle()
+                    val selectedRaceForPostureAi by viewModel.selectedRaceForPostureAi.collectAsStateWithLifecycle()
+                    val lastExportedSlitPath by viewModel.lastExportedSlitPath.collectAsStateWithLifecycle()
 
                     // Back navigation handler
                     BackHandler(enabled = currentTab != ScreenTab.DASHBOARD) {
@@ -252,13 +264,16 @@ class MainActivity : ComponentActivity() {
                                     latestAiAnalysis = latestAiAnalysis,
                                     onSetCamMode = { viewModel.setCamMode(it) },
                                     onToggleAudioGun = { viewModel.toggleAudioGun(it) },
-                                    onStartTimer = { viewModel.startTimer() },
+                                    onStartTimer = { viewModel.startTimer(fireGunSound = true) },
                                     onStopTimer = { viewModel.stopTimer() },
                                     onResetTimer = { viewModel.resetTimer() },
                                     onTriggerMotion = { hasMotion, energy ->
                                         viewModel.setMotionDetection(hasMotion, energy)
                                     },
-                                    onOpenQrPair = { viewModel.setShowQrPairDialog(true) }
+                                    onOpenQrPair = { viewModel.setShowQrPairDialog(true) },
+                                    isBluetoothTriggerEnabled = isBluetoothTriggerEnabled,
+                                    lastRemoteSignal = lastRemoteKeySignal,
+                                    onOpenBluetoothRemoteSetup = { viewModel.setShowBluetoothRemoteSetupDialog(true) }
                                 )
 
                                 ScreenTab.REPLAY -> ReplayScreen(
@@ -274,6 +289,18 @@ class MainActivity : ComponentActivity() {
                                     onDeleteRace = { race ->
                                         viewModel.deleteRace(race)
                                         Toast.makeText(this@MainActivity, "Rekod race '${race.title}' berjaya dipadam.", Toast.LENGTH_SHORT).show()
+                                    },
+                                    onExportSlitFromTable = { race ->
+                                        viewModel.exportSlitImageFromAnalyticsTable(race) { savedPath ->
+                                            Toast.makeText(
+                                                this@MainActivity,
+                                                "Imej Slit Photo-Finish dieksport ke: $savedPath",
+                                                Toast.LENGTH_LONG
+                                            ).show()
+                                        }
+                                    },
+                                    onOpenPostureAiForRace = { race ->
+                                        viewModel.openPostureReaderForRace(race)
                                     }
                                 )
 
@@ -401,6 +428,36 @@ class MainActivity : ComponentActivity() {
                             syncResult = syncStatus,
                             onDismiss = { viewModel.setShowWebSyncDialog(false) },
                             onTriggerSync = { viewModel.syncWithWeb() }
+                        )
+                    }
+
+                    if (showBluetoothRemoteSetupDialog) {
+                        BluetoothRemoteSetupDialog(
+                            triggerManager = viewModel.bluetoothTriggerManager,
+                            isBluetoothTriggerEnabled = isBluetoothTriggerEnabled,
+                            lastRemoteSignal = lastRemoteKeySignal,
+                            onToggleBluetoothTrigger = { viewModel.toggleBluetoothTrigger(it) },
+                            onTestFireStarterGun = {
+                                Toast.makeText(this@MainActivity, "Bunyi Tembakan Starter Gun Diuji!", Toast.LENGTH_SHORT).show()
+                            },
+                            onDismiss = { viewModel.setShowBluetoothRemoteSetupDialog(false) }
+                        )
+                    }
+
+                    selectedRaceForPostureAi?.let { selectedRace ->
+                        AiPostureReaderDialog(
+                            race = selectedRace,
+                            exportedSlitPath = lastExportedSlitPath,
+                            onExportSlitNow = { race ->
+                                viewModel.exportSlitImageFromAnalyticsTable(race) { savedPath ->
+                                    Toast.makeText(
+                                        this@MainActivity,
+                                        "Imej Slit Photo-Finish disimpan: $savedPath",
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                }
+                            },
+                            onDismiss = { viewModel.openPostureReaderForRace(null) }
                         )
                     }
 
