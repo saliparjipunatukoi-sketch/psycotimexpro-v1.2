@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -42,103 +43,168 @@ fun ReplayScreen(
     onOpenPostureAiForRace: (race: RaceRecordEntity) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    var selectedRace by remember { mutableStateOf<RaceRecordEntity?>(null) }
+    var selectedRace by remember(races.firstOrNull()?.id) { mutableStateOf(races.firstOrNull()) }
     var raceToDelete by remember { mutableStateOf<RaceRecordEntity?>(null) }
+    var showCompactTable by remember { mutableStateOf(true) }
 
     val dateFormat = remember {
-        SimpleDateFormat("dd-MM-yyyy, hh:mm a", Locale.getDefault())
+        SimpleDateFormat("dd/MM/yy hh:mm a", Locale.getDefault())
     }
 
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
             .background(TrackDarkNavy)
-            .padding(horizontal = 16.dp),
-        contentPadding = PaddingValues(top = 16.dp, bottom = 90.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+            .padding(horizontal = 12.dp),
+        contentPadding = PaddingValues(top = 8.dp, bottom = 84.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        // HEADER & FILTER STATUS
+        // ULTRA-COMPACT PRO BROADCAST STUDIO BAR (Zero bloated fonts)
         item {
-            Column {
+            Surface(
+                color = StadiumSurface,
+                shape = RoundedCornerShape(10.dp),
+                border = BorderStroke(1.dp, StadiumBorder),
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 10.dp, vertical = 7.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "Replay, Jadual Analitik & Postur AI",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Black,
-                        color = Color.White
-                    )
-                    Surface(
-                        color = if (isSuperAdmin) FinishLineRed.copy(alpha = 0.2f) else SilverBorder.copy(alpha = 0.2f),
-                        shape = RoundedCornerShape(6.dp)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        Text(
-                            text = if (isSuperAdmin) "SEMUA VIDEO (SUPERADMIN)" else "PASUKAN SENDIRI",
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = if (isSuperAdmin) FinishLineRed else Color.White,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                        )
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier
+                                .size(24.dp)
+                                .background(FinishLineRed.copy(alpha = 0.18f), CircleShape)
+                        ) {
+                            Icon(
+                                Icons.Default.SlowMotionVideo,
+                                contentDescription = null,
+                                tint = FinishLineRed,
+                                modifier = Modifier.size(14.dp)
+                            )
+                        }
+                        Column {
+                            Text(
+                                text = "STUDIO REPLAY PORTRAIT & TELEMETRI AI",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Black,
+                                color = Color.White
+                            )
+                            Text(
+                                text = "${races.size} Rekod • Kotak AI Menegak • Photo-Finish Slit",
+                                fontSize = 8.sp,
+                                color = TextSecondary
+                            )
+                        }
+                    }
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(5.dp)
+                    ) {
+                        Surface(
+                            color = if (showCompactTable) ElectricCyan.copy(alpha = 0.18f) else StadiumSurfaceVariant,
+                            shape = RoundedCornerShape(6.dp),
+                            border = BorderStroke(1.dp, if (showCompactTable) ElectricCyan else StadiumBorder),
+                            modifier = Modifier
+                                .height(24.dp)
+                                .clickable { showCompactTable = !showCompactTable }
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 7.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    Icons.Default.TableChart,
+                                    contentDescription = null,
+                                    tint = if (showCompactTable) ElectricCyan else SilverMetallic,
+                                    modifier = Modifier.size(11.dp)
+                                )
+                                Spacer(modifier = Modifier.width(3.dp))
+                                Text(
+                                    text = "Jadual",
+                                    fontSize = 8.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (showCompactTable) ElectricCyan else Color.White
+                                )
+                            }
+                        }
+
+                        Surface(
+                            color = if (isSuperAdmin) FinishLineRed.copy(alpha = 0.18f) else StadiumSurfaceVariant,
+                            shape = RoundedCornerShape(6.dp)
+                        ) {
+                            Text(
+                                text = if (isSuperAdmin) "ADMIN" else "COACH",
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Black,
+                                color = if (isSuperAdmin) FinishLineRed else SilverMetallic,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp)
+                            )
+                        }
                     }
                 }
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = if (selectedRace != null) {
-                        "Menayangkan video: ${selectedRace?.title} - ${selectedRace?.athleteName}. Tekan 'Kembali ke Senarai' untuk memilih race lain."
-                    } else {
-                        "Eksport imej Slit Photo-Finish secara terus daripada Jadual Analitik di bawah atau buka Pembaca Postur AI (Start & Finish)."
-                    },
-                    style = MaterialTheme.typography.bodySmall,
-                    color = TextSecondary
-                )
             }
         }
 
-        // IF RACE IS SELECTED: SHOW VIDEO PLAYER
-        if (selectedRace != null) {
+        // ACTIVE PORTRAIT VIDEO & PHOTO-FINISH VIEWER (Docked right at top for instant replay!)
+        selectedRace?.let { activeRace ->
             item {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Button(
-                            onClick = { selectedRace = null },
-                            colors = ButtonDefaults.buttonColors(containerColor = StadiumSurfaceVariant),
-                            shape = RoundedCornerShape(10.dp),
-                            modifier = Modifier.weight(1f)
+                            onClick = { onExportSlitFromTable(activeRace) },
+                            colors = ButtonDefaults.buttonColors(containerColor = FinishLineRed),
+                            shape = RoundedCornerShape(8.dp),
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(30.dp)
                         ) {
-                            Icon(Icons.Default.ArrowBack, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("← Kembali ke Jadual", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 11.sp)
+                            Icon(Icons.Default.Download, contentDescription = null, tint = Color.White, modifier = Modifier.size(13.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Eksport Imej Slit (PNG)", fontWeight = FontWeight.Black, color = Color.White, fontSize = 10.sp)
                         }
 
-                        Button(
-                            onClick = { onExportSlitFromTable(selectedRace!!) },
-                            colors = ButtonDefaults.buttonColors(containerColor = FinishLineRed),
-                            shape = RoundedCornerShape(10.dp),
-                            modifier = Modifier.weight(1f)
+                        FilledTonalButton(
+                            onClick = { onOpenPostureAiForRace(activeRace) },
+                            colors = ButtonDefaults.filledTonalButtonColors(
+                                containerColor = ElectricCyan.copy(alpha = 0.2f)
+                            ),
+                            shape = RoundedCornerShape(8.dp),
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(30.dp)
                         ) {
-                            Icon(Icons.Default.Download, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+                            Icon(Icons.Default.AccessibilityNew, contentDescription = null, tint = ElectricCyan, modifier = Modifier.size(13.dp))
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("Eksport Slit & Postur AI", fontWeight = FontWeight.Black, color = Color.White, fontSize = 11.sp)
+                            Text("Laporan Postur AI", fontWeight = FontWeight.Black, color = ElectricCyan, fontSize = 10.sp)
                         }
                     }
 
                     PhotoFinishViewer(
-                        race = selectedRace!!,
+                        race = activeRace,
                         onCapturePhotoFinish = { frameMs, isCam2 ->
-                            onCapturePhotoFinish(selectedRace!!, frameMs, isCam2)
+                            onCapturePhotoFinish(activeRace, frameMs, isCam2)
                         },
                         onDownloadToPhone = { isCam2 ->
-                            onDownloadVideo(selectedRace!!, isCam2)
+                            onDownloadVideo(activeRace, isCam2)
                         },
                         onDelete = {
-                            val target = selectedRace!!
-                            selectedRace = null
+                            val target = activeRace
+                            selectedRace = races.firstOrNull { it.id != target.id }
                             onDeleteRace(target)
                         },
                         onClose = {
@@ -147,379 +213,356 @@ fun ReplayScreen(
                     )
                 }
             }
-        } else {
-            // 1. DIRECT ANALYTICS TABLE WITH ONE-TAP PHOTO-FINISH SLIT IMAGE EXPORT & AI POSTURE READER
-            if (races.isNotEmpty()) {
-                item {
-                    Card(
-                        colors = CardDefaults.cardColors(containerColor = StadiumSurface),
-                        shape = RoundedCornerShape(16.dp),
-                        border = BorderStroke(1.dp, ElectricCyan.copy(alpha = 0.45f)),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .testTag("race_analytics_table_card")
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(12.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(
-                                        Icons.Default.TableChart,
-                                        contentDescription = null,
-                                        tint = ElectricCyan,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Column {
-                                        Text(
-                                            text = "Jadual Analitik Keputusan Race & Eksport Slit",
-                                            fontSize = 13.sp,
-                                            fontWeight = FontWeight.Black,
-                                            color = Color.White
-                                        )
-                                        Text(
-                                            text = "Eksport imej Slit Photo-Finish & baca Postur Start/Finish AI terus dari jadual",
-                                            fontSize = 10.sp,
-                                            color = TextSecondary
-                                        )
-                                    }
-                                }
-                            }
+        }
 
-                            // Scrollable Analytics Table
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .horizontalScroll(rememberScrollState())
-                            ) {
-                                // Table Header
-                                Row(
-                                    modifier = Modifier
-                                        .background(Color.Black, RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
-                                        .padding(vertical = 8.dp, horizontal = 10.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text("RACE / ATLIT", fontSize = 10.sp, fontWeight = FontWeight.Black, color = ElectricCyan, modifier = Modifier.width(135.dp))
-                                    Text("MASA (s)", fontSize = 10.sp, fontWeight = FontWeight.Black, color = ElectricCyan, modifier = Modifier.width(85.dp))
-                                    Text("POSTUR START/FINISH", fontSize = 10.sp, fontWeight = FontWeight.Black, color = ElectricCyan, modifier = Modifier.width(145.dp))
-                                    Text("EKSPORT SLIT & POSTUR AI", fontSize = 10.sp, fontWeight = FontWeight.Black, color = ElectricCyan, modifier = Modifier.width(210.dp))
-                                }
-
-                                // Table Rows
-                                races.forEachIndexed { index, race ->
-                                    val posture = remember(race) { AiSportsScienceAnalyzer.analyzePostureForRace(race) }
-                                    val rowBg = if (index % 2 == 0) StadiumSurfaceVariant.copy(alpha = 0.65f) else StadiumSurface
-                                    Row(
-                                        modifier = Modifier
-                                            .background(rowBg)
-                                            .padding(vertical = 8.dp, horizontal = 10.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        // Column 1: Race & Athlete
-                                        Column(modifier = Modifier.width(135.dp)) {
-                                            Text(
-                                                text = race.title,
-                                                fontSize = 11.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = Color.White,
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
-                                            Text(
-                                                text = "${race.athleteName} (${race.eventName})",
-                                                fontSize = 10.sp,
-                                                color = SilverMetallic,
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
-                                        }
-
-                                        // Column 2: Official Time
-                                        Column(modifier = Modifier.width(85.dp)) {
-                                            Text(
-                                                text = String.format(Locale.US, "%.2f s", race.recordedTimeMillis / 1000.0),
-                                                fontSize = 12.sp,
-                                                fontFamily = FontFamily.Monospace,
-                                                fontWeight = FontWeight.Black,
-                                                color = FinishLineRed
-                                            )
-                                            Text(
-                                                text = "${race.cadenceSpM} spm",
-                                                fontSize = 9.sp,
-                                                color = TextSecondary
-                                            )
-                                        }
-
-                                        // Column 3: Start & Finish Posture Summary
-                                        Column(modifier = Modifier.width(145.dp)) {
-                                            Text(
-                                                text = "Start: ${"%.1f".format(posture.startBodyLeanAngleDeg)}° ${if (posture.isStartPostureCorrect) "✓" else "⚠"}",
-                                                fontSize = 10.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = if (posture.isStartPostureCorrect) SuccessGreen else LaserOrange
-                                            )
-                                            Text(
-                                                text = "Finish: ${"%.1f".format(posture.finishTorsoDipAngleDeg)}° ${if (posture.isFinishPostureCorrect) "✓" else "⚠"}",
-                                                fontSize = 10.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = if (posture.isFinishPostureCorrect) ElectricCyan else FinishLineRed
-                                            )
-                                        }
-
-                                        // Column 4: Direct Slit Export & AI Posture Buttons
-                                        Row(
-                                            modifier = Modifier.width(210.dp),
-                                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Button(
-                                                onClick = { onExportSlitFromTable(race) },
-                                                colors = ButtonDefaults.buttonColors(containerColor = FinishLineRed),
-                                                shape = RoundedCornerShape(8.dp),
-                                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
-                                                modifier = Modifier
-                                                    .height(32.dp)
-                                                    .testTag("export_slit_table_btn_${race.id}")
-                                            ) {
-                                                Icon(Icons.Default.Download, contentDescription = null, tint = Color.White, modifier = Modifier.size(13.dp))
-                                                Spacer(modifier = Modifier.width(4.dp))
-                                                Text("Eksport Slit", fontSize = 10.sp, fontWeight = FontWeight.Black, color = Color.White)
-                                            }
-
-                                            FilledTonalButton(
-                                                onClick = { onOpenPostureAiForRace(race) },
-                                                colors = ButtonDefaults.filledTonalButtonColors(
-                                                    containerColor = ElectricCyan.copy(alpha = 0.2f)
-                                                ),
-                                                shape = RoundedCornerShape(8.dp),
-                                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
-                                                modifier = Modifier
-                                                    .height(32.dp)
-                                                    .testTag("posture_ai_table_btn_${race.id}")
-                                            ) {
-                                                Icon(Icons.Default.AccessibilityNew, contentDescription = null, tint = ElectricCyan, modifier = Modifier.size(13.dp))
-                                                Spacer(modifier = Modifier.width(3.dp))
-                                                Text("Postur AI", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = ElectricCyan)
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            // 2. LIST OF RECORDED RACES
+        // COMPACT ANALYTICS TABLE WITH ONE-TAP SLIT EXPORT & POSTURE AI
+        if (races.isNotEmpty() && showCompactTable) {
             item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = StadiumSurface),
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, ElectricCyan.copy(alpha = 0.4f)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("race_analytics_table_card")
                 ) {
-                    Text(
-                        text = "Senarai Rakaman Selesai (${races.size})",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                    Text(
-                        text = "Pilih untuk tonton video / analisis",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = TextSecondary
-                    )
-                }
-            }
-
-            if (races.isEmpty()) {
-                item {
-                    Surface(
-                        color = StadiumSurface,
-                        shape = RoundedCornerShape(14.dp),
-                        modifier = Modifier.fillMaxWidth()
+                    Column(
+                        modifier = Modifier.padding(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        Column(
-                            modifier = Modifier.padding(32.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(Icons.Default.VideocamOff, contentDescription = null, tint = TextMuted, modifier = Modifier.size(44.dp))
-                            Spacer(modifier = Modifier.height(10.dp))
-                            Text("Tiada rakaman race lagi.", color = Color.White, fontWeight = FontWeight.Bold)
-                            Text("Jalankan ujian masa di Tab ET Timing untuk merekodkan Race 1, Race 2...", color = TextSecondary, fontSize = 12.sp)
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    Icons.Default.TableChart,
+                                    contentDescription = null,
+                                    tint = ElectricCyan,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Spacer(modifier = Modifier.width(5.dp))
+                                Text(
+                                    text = "Jadual Analitik & Eksport Slit Pantas",
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Black,
+                                    color = Color.White
+                                )
+                            }
+                            Text(
+                                text = "Klik baris untuk tonton video",
+                                fontSize = 8.sp,
+                                color = TextSecondary
+                            )
                         }
-                    }
-                }
-            } else {
-                items(races) { race ->
-                    val dateStr = try {
-                        dateFormat.format(Date(race.createdAt))
-                    } catch (_: Exception) {
-                        "20-10-2026, 10:00 AM"
-                    }
-                    val posture = remember(race) { AiSportsScienceAnalyzer.analyzePostureForRace(race) }
 
-                    Card(
-                        colors = CardDefaults.cardColors(containerColor = StadiumSurface),
-                        shape = RoundedCornerShape(14.dp),
-                        border = BorderStroke(1.dp, StadiumBorder),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { selectedRace = race }
-                            .testTag("race_item_${race.id}")
-                    ) {
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(14.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                                .horizontalScroll(rememberScrollState())
                         ) {
+                            // Compact Header
                             Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.Top
-                            ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = "${race.title} - ${race.athleteName}",
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Black,
-                                        color = Color.White
-                                    )
-                                    Spacer(modifier = Modifier.height(2.dp))
-                                    Text(
-                                        text = "Tarikh & Masa: $dateStr",
-                                        fontSize = 11.sp,
-                                        color = SilverMetallic
-                                    )
-                                    Text(
-                                        text = "${race.eventName} • Lorong ${race.lane} • Angin: ${race.windReading}",
-                                        fontSize = 11.sp,
-                                        color = TextSecondary
-                                    )
-                                }
-
-                                Surface(
-                                    color = Color.Black,
-                                    shape = RoundedCornerShape(8.dp),
-                                    border = BorderStroke(1.dp, FinishLineRed)
-                                ) {
-                                    Text(
-                                        text = race.formattedTime,
-                                        fontFamily = FontFamily.Monospace,
-                                        fontWeight = FontWeight.Black,
-                                        fontSize = 13.sp,
-                                        color = FinishLineRed,
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                                    )
-                                }
-                            }
-
-                            // SAINS SUKAN, BIOMEKANIK & POSTUR START/FINISH BADGES
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                modifier = Modifier
+                                    .background(Color.Black, RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp))
+                                    .padding(vertical = 5.dp, horizontal = 8.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Surface(
-                                    color = StadiumSurfaceVariant,
-                                    shape = RoundedCornerShape(4.dp)
-                                ) {
-                                    Text(
-                                        text = "⚡ Cadence: ${race.cadenceSpM} spm",
-                                        fontSize = 9.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = ElectricCyan,
-                                        modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
-                                    )
-                                }
-                                Surface(
-                                    color = StadiumSurfaceVariant,
-                                    shape = RoundedCornerShape(4.dp)
-                                ) {
-                                    Text(
-                                        text = "🚀 Start: ${"%.1f".format(posture.startBodyLeanAngleDeg)}° (${if (posture.isStartPostureCorrect) "Betul" else "Salah"})",
-                                        fontSize = 9.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = if (posture.isStartPostureCorrect) SuccessGreen else LaserOrange,
-                                        modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
-                                    )
-                                }
-                                Surface(
-                                    color = StadiumSurfaceVariant,
-                                    shape = RoundedCornerShape(4.dp)
-                                ) {
-                                    Text(
-                                        text = "📐 Finish: ${"%.1f".format(posture.finishTorsoDipAngleDeg)}° (${if (posture.isFinishPostureCorrect) "Betul" else "Salah"})",
-                                        fontSize = 9.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = if (posture.isFinishPostureCorrect) ElectricCyan else FinishLineRed,
-                                        modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
-                                    )
-                                }
+                                Text("RACE / ATLIT", fontSize = 8.sp, fontWeight = FontWeight.Black, color = ElectricCyan, modifier = Modifier.width(120.dp))
+                                Text("MASA", fontSize = 8.sp, fontWeight = FontWeight.Black, color = ElectricCyan, modifier = Modifier.width(68.dp))
+                                Text("POSTUR START/FINISH", fontSize = 8.sp, fontWeight = FontWeight.Black, color = ElectricCyan, modifier = Modifier.width(125.dp))
+                                Text("TINDAKAN PANTAS", fontSize = 8.sp, fontWeight = FontWeight.Black, color = ElectricCyan, modifier = Modifier.width(175.dp))
                             }
 
-                            // ACTION ROW: TONTON VIDEO, EKSPORT SLIT, POSTUR AI, PADAM
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                    Button(
-                                        onClick = { selectedRace = race },
-                                        colors = ButtonDefaults.buttonColors(containerColor = FinishLineRed),
-                                        shape = RoundedCornerShape(8.dp),
-                                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
-                                    ) {
-                                        Icon(Icons.Default.PlayArrow, contentDescription = null, tint = Color.White, modifier = Modifier.size(15.dp))
-                                        Spacer(modifier = Modifier.width(4.dp))
-                                        Text("Video", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                                    }
-
-                                    OutlinedButton(
-                                        onClick = { onExportSlitFromTable(race) },
-                                        shape = RoundedCornerShape(8.dp),
-                                        border = BorderStroke(1.dp, FinishLineRed),
-                                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
-                                    ) {
-                                        Icon(Icons.Default.Download, contentDescription = null, tint = FinishLineRed, modifier = Modifier.size(15.dp))
-                                        Spacer(modifier = Modifier.width(4.dp))
-                                        Text("Eksport Slit", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                                    }
-
-                                    FilledTonalButton(
-                                        onClick = { onOpenPostureAiForRace(race) },
-                                        colors = ButtonDefaults.filledTonalButtonColors(
-                                            containerColor = ElectricCyan.copy(alpha = 0.18f)
-                                        ),
-                                        shape = RoundedCornerShape(8.dp),
-                                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
-                                    ) {
-                                        Icon(Icons.Default.AccessibilityNew, contentDescription = null, tint = ElectricCyan, modifier = Modifier.size(15.dp))
-                                        Spacer(modifier = Modifier.width(4.dp))
-                                        Text("Postur AI", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = ElectricCyan)
-                                    }
+                            races.forEachIndexed { index, race ->
+                                val posture = remember(race) { AiSportsScienceAnalyzer.analyzePostureForRace(race) }
+                                val isCurrentSelected = selectedRace?.id == race.id
+                                val rowBg = when {
+                                    isCurrentSelected -> ElectricCyan.copy(alpha = 0.14f)
+                                    index % 2 == 0 -> StadiumSurfaceVariant.copy(alpha = 0.55f)
+                                    else -> StadiumSurface
                                 }
-
-                                IconButton(
-                                    onClick = { raceToDelete = race },
+                                Row(
                                     modifier = Modifier
-                                        .size(34.dp)
-                                        .background(Color(0xFF7F1D1D).copy(alpha = 0.3f), RoundedCornerShape(8.dp))
+                                        .background(rowBg)
+                                        .clickable { selectedRace = race }
+                                        .padding(vertical = 5.dp, horizontal = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column(modifier = Modifier.width(120.dp)) {
+                                        Text(
+                                            text = "${race.title} • ${race.athleteName}",
+                                            fontSize = 9.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                        Text(
+                                            text = "${race.eventName} (L${race.lane})",
+                                            fontSize = 8.sp,
+                                            color = SilverMetallic,
+                                            maxLines = 1
+                                        )
+                                    }
+
+                                    Column(modifier = Modifier.width(68.dp)) {
+                                        Text(
+                                            text = String.format(Locale.US, "%.2fs", race.recordedTimeMillis / 1000.0),
+                                            fontSize = 10.sp,
+                                            fontFamily = FontFamily.Monospace,
+                                            fontWeight = FontWeight.Black,
+                                            color = FinishLineRed
+                                        )
+                                        Text(
+                                            text = "${race.cadenceSpM} spm",
+                                            fontSize = 7.sp,
+                                            color = TextSecondary
+                                        )
+                                    }
+
+                                    Column(modifier = Modifier.width(125.dp)) {
+                                        Text(
+                                            text = "S: ${"%.1f".format(posture.startBodyLeanAngleDeg)}° ${if (posture.isStartPostureCorrect) "✓" else "⚠"} | F: ${"%.1f".format(posture.finishTorsoDipAngleDeg)}° ${if (posture.isFinishPostureCorrect) "✓" else "⚠"}",
+                                            fontSize = 8.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = if (posture.isStartPostureCorrect && posture.isFinishPostureCorrect) SuccessGreen else SpeedAmber
+                                        )
+                                        Text(
+                                            text = "Skor AI: ${posture.overallPostureScore}%",
+                                            fontSize = 7.sp,
+                                            color = TextSecondary
+                                        )
+                                    }
+
+                                    Row(
+                                        modifier = Modifier.width(175.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Button(
+                                            onClick = { onExportSlitFromTable(race) },
+                                            colors = ButtonDefaults.buttonColors(containerColor = FinishLineRed),
+                                            shape = RoundedCornerShape(6.dp),
+                                            contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp),
+                                            modifier = Modifier
+                                                .height(24.dp)
+                                                .testTag("export_slit_table_btn_${race.id}")
+                                        ) {
+                                            Icon(Icons.Default.Download, contentDescription = null, tint = Color.White, modifier = Modifier.size(10.dp))
+                                            Spacer(modifier = Modifier.width(3.dp))
+                                            Text("Slit", fontSize = 8.sp, fontWeight = FontWeight.Black, color = Color.White)
+                                        }
+
+                                        FilledTonalButton(
+                                            onClick = { onOpenPostureAiForRace(race) },
+                                            colors = ButtonDefaults.filledTonalButtonColors(
+                                                containerColor = ElectricCyan.copy(alpha = 0.2f)
+                                            ),
+                                            shape = RoundedCornerShape(6.dp),
+                                            contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp),
+                                            modifier = Modifier
+                                                .height(24.dp)
+                                                .testTag("posture_ai_table_btn_${race.id}")
+                                        ) {
+                                            Icon(Icons.Default.AccessibilityNew, contentDescription = null, tint = ElectricCyan, modifier = Modifier.size(10.dp))
+                                            Spacer(modifier = Modifier.width(2.dp))
+                                            Text("Postur", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = ElectricCyan)
+                                        }
+
+                                        Surface(
+                                            color = StadiumSurfaceVariant,
+                                            shape = RoundedCornerShape(6.dp),
+                                            modifier = Modifier
+                                                .height(24.dp)
+                                                .clickable { selectedRace = race }
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.padding(horizontal = 6.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Icon(Icons.Default.PlayArrow, contentDescription = null, tint = Color.White, modifier = Modifier.size(11.dp))
+                                                Text("Play", fontSize = 8.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // COMPACT RACE RECORD CARDS LIST
+        if (races.isEmpty()) {
+            item {
+                Surface(
+                    color = StadiumSurface,
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(20.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(Icons.Default.VideocamOff, contentDescription = null, tint = TextMuted, modifier = Modifier.size(32.dp))
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text("Tiada rakaman race lagi.", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                        Text("Jalankan ujian masa di Tab Timing ET untuk merekodkan video Portrait.", color = TextSecondary, fontSize = 10.sp)
+                    }
+                }
+            }
+        } else {
+            items(races) { race ->
+                val dateStr = try {
+                    dateFormat.format(Date(race.createdAt))
+                } catch (_: Exception) {
+                    "20/10/26"
+                }
+                val posture = remember(race) { AiSportsScienceAnalyzer.analyzePostureForRace(race) }
+                val isSelected = selectedRace?.id == race.id
+
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (isSelected) StadiumSurfaceVariant else StadiumSurface
+                    ),
+                    shape = RoundedCornerShape(10.dp),
+                    border = BorderStroke(
+                        1.dp,
+                        if (isSelected) ElectricCyan else StadiumBorder
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { selectedRace = race }
+                        .testTag("race_item_${race.id}")
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 10.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(5.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Text(
+                                        text = "${race.title} • ${race.athleteName}",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Black,
+                                        color = Color.White,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                    Text(
+                                        text = dateStr,
+                                        fontSize = 8.sp,
+                                        color = TextMuted
+                                    )
+                                }
+                                Text(
+                                    text = "${race.eventName} • Lorong ${race.lane} • Angin ${race.windReading} • Start ${"%.1f".format(posture.startBodyLeanAngleDeg)}° | Torso ${"%.1f".format(posture.finishTorsoDipAngleDeg)}°",
+                                    fontSize = 9.sp,
+                                    color = SilverMetallic,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+
+                            Surface(
+                                color = Color.Black,
+                                shape = RoundedCornerShape(6.dp),
+                                border = BorderStroke(1.dp, FinishLineRed)
+                            ) {
+                                Text(
+                                    text = String.format(Locale.US, "%.2fs", race.recordedTimeMillis / 1000.0),
+                                    fontFamily = FontFamily.Monospace,
+                                    fontWeight = FontWeight.Black,
+                                    fontSize = 11.sp,
+                                    color = FinishLineRed,
+                                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp)
+                                )
+                            }
+                        }
+
+                        // Slim Action Row
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                                Button(
+                                    onClick = { selectedRace = race },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = if (isSelected) ElectricCyan else FinishLineRed
+                                    ),
+                                    shape = RoundedCornerShape(6.dp),
+                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                                    modifier = Modifier.height(26.dp)
                                 ) {
                                     Icon(
-                                        Icons.Default.Delete,
-                                        contentDescription = "Padam Rekod",
-                                        tint = FinishLineRed,
-                                        modifier = Modifier.size(17.dp)
+                                        Icons.Default.PlayArrow,
+                                        contentDescription = null,
+                                        tint = if (isSelected) Color.Black else Color.White,
+                                        modifier = Modifier.size(12.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(3.dp))
+                                    Text(
+                                        text = if (isSelected) "Sedang Main" else "Main Video",
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.Black,
+                                        color = if (isSelected) Color.Black else Color.White
                                     )
                                 }
+
+                                OutlinedButton(
+                                    onClick = { onExportSlitFromTable(race) },
+                                    shape = RoundedCornerShape(6.dp),
+                                    border = BorderStroke(1.dp, FinishLineRed),
+                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                                    modifier = Modifier.height(26.dp)
+                                ) {
+                                    Icon(Icons.Default.Download, contentDescription = null, tint = FinishLineRed, modifier = Modifier.size(11.dp))
+                                    Spacer(modifier = Modifier.width(3.dp))
+                                    Text("Eksport Slit", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                }
+
+                                FilledTonalButton(
+                                    onClick = { onOpenPostureAiForRace(race) },
+                                    colors = ButtonDefaults.filledTonalButtonColors(
+                                        containerColor = ElectricCyan.copy(alpha = 0.16f)
+                                    ),
+                                    shape = RoundedCornerShape(6.dp),
+                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                                    modifier = Modifier.height(26.dp)
+                                ) {
+                                    Icon(Icons.Default.AccessibilityNew, contentDescription = null, tint = ElectricCyan, modifier = Modifier.size(11.dp))
+                                    Spacer(modifier = Modifier.width(3.dp))
+                                    Text("Postur AI", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = ElectricCyan)
+                                }
+                            }
+
+                            IconButton(
+                                onClick = { raceToDelete = race },
+                                modifier = Modifier
+                                    .size(26.dp)
+                                    .background(Color(0xFF7F1D1D).copy(alpha = 0.3f), RoundedCornerShape(6.dp))
+                            ) {
+                                Icon(
+                                    Icons.Default.Delete,
+                                    contentDescription = "Padam Rekod",
+                                    tint = FinishLineRed,
+                                    modifier = Modifier.size(13.dp)
+                                )
                             }
                         }
                     }
@@ -528,7 +571,6 @@ fun ReplayScreen(
         }
     }
 
-    // DIALOG PENGESAHAN PADAM REKOD RACE
     if (raceToDelete != null) {
         AlertDialog(
             onDismissRequest = { raceToDelete = null },
@@ -536,14 +578,15 @@ fun ReplayScreen(
                 Text(
                     text = "Padam Rekod & Video?",
                     fontWeight = FontWeight.Black,
+                    fontSize = 14.sp,
                     color = Color.White
                 )
             },
             text = {
                 Text(
-                    text = "Adakah anda pasti mahu memadam rakaman '${raceToDelete?.title} - ${raceToDelete?.athleteName}'? Tindakan ini akan mengosongkan storan telefon anda.",
+                    text = "Adakah anda pasti mahu memadam rakaman '${raceToDelete?.title} - ${raceToDelete?.athleteName}'?",
                     color = TextSecondary,
-                    fontSize = 13.sp
+                    fontSize = 12.sp
                 )
             },
             confirmButton = {
@@ -551,16 +594,19 @@ fun ReplayScreen(
                     onClick = {
                         val target = raceToDelete!!
                         raceToDelete = null
+                        if (selectedRace?.id == target.id) {
+                            selectedRace = null
+                        }
                         onDeleteRace(target)
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = FinishLineRed)
                 ) {
-                    Text("Padam Sekarang", color = Color.White, fontWeight = FontWeight.Bold)
+                    Text("Padam", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 11.sp)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { raceToDelete = null }) {
-                    Text("Batal", color = SilverMetallic)
+                    Text("Batal", color = SilverMetallic, fontSize = 11.sp)
                 }
             }
         )

@@ -3,6 +3,8 @@ package com.example
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.view.KeyEvent
+import android.view.MotionEvent
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
@@ -35,6 +37,7 @@ import com.example.viewmodel.MainViewModel
 enum class ScreenTab(val title: String, val icon: androidx.compose.ui.graphics.vector.ImageVector) {
     DASHBOARD("Utama", Icons.Default.Dashboard),
     TIMING("Timing ET", Icons.Default.Timer),
+    SAND_JUMP_AI("Lompat AI", Icons.Default.Straighten),
     REPLAY("Replay", Icons.Default.SlowMotionVideo),
     ATHLETES("Atlit & PB", Icons.Default.DirectionsRun),
     REGISTER_ATHLETE("Daftar Atlit", Icons.Default.PersonAdd),
@@ -49,11 +52,18 @@ class MainActivity : ComponentActivity() {
 
     private val viewModel: MainViewModel by viewModels()
 
-    override fun dispatchKeyEvent(event: android.view.KeyEvent): Boolean {
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         if (viewModel.handleBluetoothRemoteKeyEvent(event)) {
             return true
         }
         return super.dispatchKeyEvent(event)
+    }
+
+    override fun dispatchGenericMotionEvent(ev: MotionEvent): Boolean {
+        if (viewModel.handleBluetoothRemoteMotionEvent(ev)) {
+            return true
+        }
+        return super.dispatchGenericMotionEvent(ev)
     }
 
     @OptIn(ExperimentalMaterial3Api::class)
@@ -102,6 +112,11 @@ class MainActivity : ComponentActivity() {
                     val motionEnergy by viewModel.motionEnergy.collectAsStateWithLifecycle()
                     val latestAiAnalysis by viewModel.latestAiAnalysis.collectAsStateWithLifecycle()
 
+                    val isRecordingSandJump by viewModel.isRecordingSandJump.collectAsStateWithLifecycle()
+                    val sandJumpElapsedMs by viewModel.sandJumpElapsedMs.collectAsStateWithLifecycle()
+                    val sandJumpHistory by viewModel.sandJumpHistory.collectAsStateWithLifecycle()
+                    val latestSandJumpResult by viewModel.latestSandJumpResult.collectAsStateWithLifecycle()
+
                     val showSaveRaceDialog by viewModel.showSaveRaceDialog.collectAsStateWithLifecycle()
                     val suggestedRaceTitle by viewModel.suggestedRaceTitle.collectAsStateWithLifecycle()
                     val showAddAthleteDialog by viewModel.showAddAthleteDialog.collectAsStateWithLifecycle()
@@ -134,18 +149,18 @@ class MainActivity : ComponentActivity() {
                                         Text(
                                             text = "Psyco Time X Pro",
                                             fontWeight = FontWeight.Black,
-                                            fontSize = 17.sp,
+                                            fontSize = 16.sp,
                                             color = Color.White
                                         )
                                         Text(
                                             text = if (isSuperAdmin) "Superadmin: $currentUserName" else "Coach: $currentUserName",
-                                            fontSize = 10.sp,
+                                            fontSize = 9.sp,
                                             color = if (isSuperAdmin) FinishLineRed else SilverMetallic
                                         )
                                     }
                                 },
                                 actions = {
-                                    // COMPACT PRO BLUETOOTH REMOTE TRIGGER BUTTON NEXT TO TOP MENU
+                                    // COMPACT PRO BLE-M3 / BLUETOOTH REMOTE TRIGGER BUTTON NEXT TO TOP MENU
                                     Surface(
                                         color = if (isBluetoothTriggerEnabled) ElectricCyan.copy(alpha = 0.16f) else StadiumSurfaceVariant,
                                         shape = RoundedCornerShape(16.dp),
@@ -154,7 +169,7 @@ class MainActivity : ComponentActivity() {
                                             if (isBluetoothTriggerEnabled) ElectricCyan.copy(alpha = 0.65f) else StadiumBorder
                                         ),
                                         modifier = Modifier
-                                            .height(30.dp)
+                                            .height(28.dp)
                                             .clickable { viewModel.setShowBluetoothRemoteSetupDialog(true) }
                                             .testTag("top_bar_bt_trigger_button")
                                     ) {
@@ -173,13 +188,13 @@ class MainActivity : ComponentActivity() {
                                             )
                                             Icon(
                                                 Icons.Default.SettingsRemote,
-                                                contentDescription = "Bluetooth Remote Starter",
+                                                contentDescription = "BLE-M3 Remote Starter",
                                                 tint = if (isBluetoothTriggerEnabled) ElectricCyan else SilverMetallic,
-                                                modifier = Modifier.size(14.dp)
+                                                modifier = Modifier.size(13.dp)
                                             )
                                             Text(
-                                                text = "BT",
-                                                fontSize = 10.sp,
+                                                text = "BLE-M3",
+                                                fontSize = 9.sp,
                                                 fontWeight = FontWeight.Black,
                                                 color = if (isBluetoothTriggerEnabled) Color.White else SilverMetallic
                                             )
@@ -224,11 +239,11 @@ class MainActivity : ComponentActivity() {
                                 val tabs = listOf(
                                     ScreenTab.DASHBOARD,
                                     ScreenTab.TIMING,
+                                    ScreenTab.SAND_JUMP_AI,
                                     ScreenTab.REPLAY,
                                     ScreenTab.ATHLETES,
                                     ScreenTab.FEES,
-                                    ScreenTab.SUBUSERS,
-                                    ScreenTab.WEB_PORTAL
+                                    ScreenTab.SUBUSERS
                                 )
                                 tabs.forEach { tab ->
                                     val selected = currentTab == tab
@@ -245,9 +260,10 @@ class MainActivity : ComponentActivity() {
                                         label = {
                                             Text(
                                                 text = tab.title,
-                                                fontSize = 9.sp,
+                                                fontSize = 8.sp,
                                                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
-                                                color = if (selected) FinishLineRed else SilverBorder
+                                                color = if (selected) FinishLineRed else SilverBorder,
+                                                maxLines = 1
                                             )
                                         },
                                         colors = NavigationBarItemDefaults.colors(
@@ -314,6 +330,46 @@ class MainActivity : ComponentActivity() {
                                     isRecordingVideo = isRecordingVideo,
                                     lastRemoteSignal = lastRemoteKeySignal,
                                     onOpenBluetoothRemoteSetup = { viewModel.setShowBluetoothRemoteSetupDialog(true) }
+                                )
+
+                                ScreenTab.SAND_JUMP_AI -> SandJumpAiScreen(
+                                    athletes = athletes,
+                                    sandJumpHistory = sandJumpHistory,
+                                    isRecordingJump = isRecordingSandJump,
+                                    recordingElapsedMs = sandJumpElapsedMs,
+                                    latestJumpResult = latestSandJumpResult,
+                                    onStartJumpRecording = {
+                                        viewModel.startSandJumpRecording()
+                                        Toast.makeText(
+                                            this@MainActivity,
+                                            "Rakaman Lompatan AI bermula! Atlit boleh memulakan lari landas.",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    },
+                                    onSaveJumpAndAnalyze = { title, athName, athId, cat, maxM, ratio, toeCm, energy, sx, sy, ex, ey, lx, ly ->
+                                        viewModel.saveSandJumpAndAnalyze(
+                                            jumpTitle = title,
+                                            athleteName = athName,
+                                            athleteId = athId,
+                                            eventCategory = cat,
+                                            configuredMaxTapeMeters = maxM,
+                                            landingProgressRatio = ratio,
+                                            toeToBoardCm = toeCm,
+                                            motionEnergy = energy,
+                                            tapeStartX = sx,
+                                            tapeStartY = sy,
+                                            tapeEndX = ex,
+                                            tapeEndY = ey,
+                                            landingX = lx,
+                                            landingY = ly
+                                        )
+                                        Toast.makeText(
+                                            this@MainActivity,
+                                            "Bukti Photo-Finish Pasir & Analisis Sains Sukan AI telah dijana!",
+                                            Toast.LENGTH_LONG
+                                        ).show()
+                                    },
+                                    onSelectJumpResult = { viewModel.selectSandJumpResult(it) }
                                 )
 
                                 ScreenTab.REPLAY -> ReplayScreen(

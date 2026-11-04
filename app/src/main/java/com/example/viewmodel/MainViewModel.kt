@@ -2,6 +2,8 @@ package com.example.viewmodel
 
 import android.app.Application
 import android.util.Log
+import android.view.KeyEvent
+import android.view.MotionEvent
 import androidx.credentials.ClearCredentialStateRequest
 import androidx.credentials.CredentialManager
 import androidx.lifecycle.AndroidViewModel
@@ -20,6 +22,8 @@ import com.google.firebase.auth.auth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import java.io.File
+import java.util.Locale
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -71,11 +75,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private var timerJob: Job? = null
     private var timerStartTime = 0L
 
-    // Dual-Cam Modes: 1 = Cam 1 (Starter/Timer), 2 = Cam 2 (Finisher Torso Gate)
+    // Camera Modes: 1 = Cam 1 (Portrait Runner Tracker), 2 = Cam 2 (Finisher Torso Gate), 3 = 1-Phone 100M Horizon AI
     private val _camMode = MutableStateFlow(1)
     val camMode: StateFlow<Int> = _camMode.asStateFlow()
 
-    // Audio Gun Detector & Bluetooth Selfie Remote Trigger
+    // Audio Gun Detector & Bluetooth BLE-M3 / Selfie Remote Trigger
     private val _isAudioGunEnabled = MutableStateFlow(true)
     val isAudioGunEnabled: StateFlow<Boolean> = _isAudioGunEnabled.asStateFlow()
     private var audioGunDetector: AudioGunDetector? = null
@@ -98,6 +102,22 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _latestAiAnalysis = MutableStateFlow<MotionAnalysisResult?>(null)
     val latestAiAnalysis: StateFlow<MotionAnalysisResult?> = _latestAiAnalysis.asStateFlow()
+
+    // Sand Jump AI (Lompat Jauh / Triple Jump / Sukan Pasir) State
+    private val _isRecordingSandJump = MutableStateFlow(false)
+    val isRecordingSandJump: StateFlow<Boolean> = _isRecordingSandJump.asStateFlow()
+
+    private val _sandJumpElapsedMs = MutableStateFlow(0L)
+    val sandJumpElapsedMs: StateFlow<Long> = _sandJumpElapsedMs.asStateFlow()
+
+    private var sandJumpTimerJob: Job? = null
+    private var sandJumpStartTimeMs: Long = 0L
+
+    private val _sandJumpHistory = MutableStateFlow<List<SandJumpAiAnalysis>>(emptyList())
+    val sandJumpHistory: StateFlow<List<SandJumpAiAnalysis>> = _sandJumpHistory.asStateFlow()
+
+    private val _latestSandJumpResult = MutableStateFlow<SandJumpAiAnalysis?>(null)
+    val latestSandJumpResult: StateFlow<SandJumpAiAnalysis?> = _latestSandJumpResult.asStateFlow()
 
     // Dialog & UI Navigation States
     private val _showSaveRaceDialog = MutableStateFlow(false)
@@ -284,7 +304,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     /**
-     * Immediately starts the sprint timer, starts live race video recording, AND fires
+     * Immediately starts the sprint timer, starts live Portrait race video recording, AND fires
      * the explosive Electronic Starter Gun sound simultaneously.
      * Strictly idempotent: if already running, calling startTimer() again will NOT reset or stop it.
      */
@@ -293,7 +313,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         if (fireGunSound) {
             ElectronicStarterGunAudio.playExplosiveStarterGunShot(viewModelScope)
         }
-        CameraFrameHolder.startLiveRecordingSession()
+        CameraFrameHolder.startLiveRecordingSession(
+            enable100mFocusTrack = (_camMode.value == 1 || _camMode.value == 3)
+        )
         _isRecordingVideo.value = true
         _isTimerRunning.value = true
         timerStartTime = System.currentTimeMillis() - _elapsedMillis.value
@@ -306,13 +328,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     /**
-     * Handles incoming hardware KeyEvent from a connected Bluetooth Camera Selfie Trigger
-     * (e.g. AB Shutter 3 / Bluetooth Remote Shutter).
+     * Handles incoming hardware KeyEvent from a connected BLE-M3 Remote or Bluetooth Camera Selfie Trigger.
      * STRICT RULE: Only valid for the START action!
-     * - If timer is NOT running: immediately fires Starter Gun sound + starts video recording + starts sprint timer.
-     * - If timer IS already running: consumes the event without stopping the race.
      */
-    fun handleBluetoothRemoteKeyEvent(event: android.view.KeyEvent): Boolean {
+    fun handleBluetoothRemoteKeyEvent(event: KeyEvent): Boolean {
         if (!bluetoothTriggerManager.isSupportedTriggerKey(event)) return false
         val signal = bluetoothTriggerManager.extractSignal(event)
         _lastRemoteKeySignal.value = signal
@@ -326,6 +345,27 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             if (!_isTimerRunning.value) {
                 startTimer(fireGunSound = true)
             }
+            return true
+        }
+        return false
+    }
+
+    /**
+     * Handles incoming external Bluetooth HID Pointer / Touch-Click events from BLE-M3 remotes
+     * (BLE-M3 uses HID pointer/touch clicks when in Camera/TikTok mode).
+     */
+    fun handleBluetoothRemoteMotionEvent(event: MotionEvent): Boolean {
+        if (!bluetoothTriggerManager.isBleM3ExternalPointerTrigger(event)) return false
+        val signal = bluetoothTriggerManager.extractPointerSignal(event)
+        _lastRemoteKeySignal.value = signal
+
+        if (_showBluetoothRemoteSetupDialog.value) {
+            ElectronicStarterGunAudio.playExplosiveStarterGunShot(viewModelScope)
+            return true
+        }
+
+        if (_isBluetoothTriggerEnabled.value && !_isTimerRunning.value) {
+            startTimer(fireGunSound = true)
             return true
         }
         return false
@@ -362,6 +402,121 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             _selectedRaceForPostureAi.value = race
             onExported?.invoke(exportedPath)
         }
+    }
+
+    // SAND JUMP AI (LOMPAT JAUH / TRIPLE JUMP / SUKAN PASIR) RECORDING & EVIDENCE ENGINE
+    fun startSandJumpRecording() {
+        if (_isRecordingSandJump.value) return
+        CameraFrameHolder.startLiveRecordingSession(enable100mFocusTrack = false)
+        _isRecordingSandJump.value = true
+        _sandJumpElapsedMs.value = 0L
+        sandJumpStartTimeMs = System.currentTimeMillis()
+        sandJumpTimerJob?.cancel()
+        sandJumpTimerJob = viewModelScope.launch(Dispatchers.Default) {
+            while (_isRecordingSandJump.value) {
+                _sandJumpElapsedMs.value = System.currentTimeMillis() - sandJumpStartTimeMs
+                delay(30)
+            }
+        }
+    }
+
+    fun saveSandJumpAndAnalyze(
+        jumpTitle: String,
+        athleteName: String,
+        athleteId: Long?,
+        eventCategory: String,
+        configuredMaxTapeMeters: Double,
+        landingProgressRatio: Float,
+        toeToBoardCm: Double,
+        motionEnergy: Float,
+        tapeStartX: Float,
+        tapeStartY: Float,
+        tapeEndX: Float,
+        tapeEndY: Float,
+        landingX: Float,
+        landingY: Float
+    ) {
+        val durationMs = _sandJumpElapsedMs.value
+        _isRecordingSandJump.value = false
+        CameraFrameHolder.stopLiveRecordingSession()
+        sandJumpTimerJob?.cancel()
+
+        viewModelScope.launch {
+            val rawAnalysis = AiSportsScienceAnalyzer.evaluateSandJumpPerformance(
+                jumpTitle = jumpTitle,
+                athleteName = athleteName,
+                eventCategory = eventCategory,
+                configuredMaxTapeMeters = configuredMaxTapeMeters,
+                landingProgressRatio = landingProgressRatio,
+                toeToBoardCm = toeToBoardCm,
+                motionEnergy = motionEnergy,
+                recordedDurationMs = durationMs
+            )
+
+            val liveBmp = CameraFrameHolder.latestFinishFrameBitmap ?: CameraFrameHolder.latestLiveFrameBitmap
+            val (evidencePath, framesDirPath) = withContext(Dispatchers.IO) {
+                val evPath = storageManager.saveSandJumpEvidenceImage(
+                    jumpTitle = jumpTitle,
+                    athleteName = athleteName,
+                    eventCategory = eventCategory,
+                    measuredDistanceMeters = rawAnalysis.measuredDistanceMeters,
+                    boardStatusValid = rawAnalysis.isBoardValid,
+                    toeToBoardCm = rawAnalysis.toeToBoardCm,
+                    takeoffAngleDeg = rawAnalysis.takeoffAngleDeg,
+                    approachSpeedMs = rawAnalysis.approachSpeedMs,
+                    tapeStartRatioX = tapeStartX,
+                    tapeStartRatioY = tapeStartY,
+                    tapeEndRatioX = tapeEndX,
+                    tapeEndRatioY = tapeEndY,
+                    landingRatioX = landingX,
+                    landingRatioY = landingY,
+                    configuredMaxMeters = configuredMaxTapeMeters,
+                    realCameraFrame = liveBmp
+                )
+                val (cam1Uri, _) = storageManager.createRaceVideoPackage(
+                    raceTitle = jumpTitle,
+                    recordedTimeFormatted = String.format(Locale.US, "%.2f m", rawAnalysis.measuredDistanceMeters),
+                    athleteName = athleteName
+                )
+                val fDir = try {
+                    File(cam1Uri).readLines()
+                        .firstOrNull { it.startsWith("FramesDir:") }
+                        ?.substringAfter("FramesDir:")
+                        ?.trim() ?: ""
+                } catch (_: Exception) {
+                    ""
+                }
+                evPath to fDir
+            }
+
+            val completedAnalysis = rawAnalysis.copy(
+                evidenceImagePath = evidencePath,
+                videoFramesDirPath = framesDirPath,
+                recordedFramesCount = CameraFrameHolder.recordedSessionFrames.size.coerceAtLeast(1)
+            )
+
+            _latestSandJumpResult.value = completedAnalysis
+            _sandJumpHistory.value = listOf(completedAnalysis) + _sandJumpHistory.value
+
+            if (athleteId != null) {
+                val metric = PerformanceMetrics(
+                    athleteId = athleteId,
+                    athleteName = athleteName,
+                    eventName = eventCategory,
+                    pbValue = String.format(Locale.US, "%.2f", completedAnalysis.measuredDistanceMeters),
+                    pbUnit = "Meter (m)",
+                    isNewPb = completedAnalysis.isBoardValid,
+                    measuredDistanceOrHeight = completedAnalysis.measuredDistanceMeters,
+                    torsoLeanAngleDeg = completedAnalysis.takeoffAngleDeg,
+                    notes = completedAnalysis.aiScienceVerdict
+                )
+                repository.insertMetrics(metric)
+            }
+        }
+    }
+
+    fun selectSandJumpResult(result: SandJumpAiAnalysis?) {
+        _latestSandJumpResult.value = result
     }
 
     fun stopTimer() {
@@ -408,22 +563,26 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     ) {
         val timeMs = _elapsedMillis.value
         viewModelScope.launch {
-            val (cam1Uri, cam2Uri) = storageManager.createRaceVideoPackage(
-                raceTitle = title,
-                recordedTimeFormatted = String.format("%.2f s", timeMs / 1000.0),
-                athleteName = athleteName,
-                targetFolder = targetFolder
-            )
+            val (cam1Uri, cam2Uri) = withContext(Dispatchers.IO) {
+                storageManager.createRaceVideoPackage(
+                    raceTitle = title,
+                    recordedTimeFormatted = String.format(Locale.US, "%.2f s", timeMs / 1000.0),
+                    athleteName = athleteName,
+                    targetFolder = targetFolder
+                )
+            }
 
             val liveBmp = CameraFrameHolder.latestFinishFrameBitmap ?: CameraFrameHolder.latestLiveFrameBitmap
-            val photoFinishUri = storageManager.savePhotoFinishImage(
-                raceTitle = title,
-                athleteName = athleteName,
-                timeFormatted = String.format("%.2f s", timeMs / 1000.0),
-                isCam2Torso = true,
-                realCameraFrame = liveBmp,
-                targetFolder = targetFolder
-            )
+            val photoFinishUri = withContext(Dispatchers.IO) {
+                storageManager.savePhotoFinishImage(
+                    raceTitle = title,
+                    athleteName = athleteName,
+                    timeFormatted = String.format(Locale.US, "%.2f s", timeMs / 1000.0),
+                    isCam2Torso = true,
+                    realCameraFrame = liveBmp,
+                    targetFolder = targetFolder
+                )
+            }
 
             val analysis = _latestAiAnalysis.value
 
@@ -441,10 +600,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 cam2VideoUri = cam2Uri,
                 photoFinishUri = photoFinishUri,
                 hasMotionDetected = _isMovementDetected.value,
-                cadenceSpM = analysis?.cadenceSpM ?: 254,
-                strideFreqHz = analysis?.strideFrequencyHz ?: 4.25,
-                groundContactTimeMs = analysis?.groundContactTimeMs ?: 110,
-                torsoLeanAngleDeg = analysis?.torsoLeanAngleDeg ?: 14.2,
+                cadenceSpM = analysis?.cadenceSpM?.takeIf { it > 0 } ?: 254,
+                strideFreqHz = analysis?.strideFrequencyHz?.takeIf { it > 0.0 } ?: 4.25,
+                groundContactTimeMs = analysis?.groundContactTimeMs?.takeIf { it > 0 } ?: 110,
+                torsoLeanAngleDeg = analysis?.torsoLeanAngleDeg?.takeIf { it > 1.0 } ?: 14.2,
                 notes = notes
             )
 
@@ -459,14 +618,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     athleteId = athleteId,
                     athleteName = athleteName,
                     eventName = eventName,
-                    pbValue = String.format("%.2f", timeMs / 1000.0),
+                    pbValue = String.format(Locale.US, "%.2f", timeMs / 1000.0),
                     pbUnit = "Saat (s)",
                     isNewPb = true,
                     measuredTimeMillis = timeMs,
-                    cadenceSpM = analysis?.cadenceSpM ?: 254,
-                    strideFrequencyHz = analysis?.strideFrequencyHz ?: 4.25,
-                    groundContactTimeMs = analysis?.groundContactTimeMs ?: 110,
-                    torsoLeanAngleDeg = analysis?.torsoLeanAngleDeg ?: 14.2,
+                    cadenceSpM = analysis?.cadenceSpM?.takeIf { it > 0 } ?: 254,
+                    strideFrequencyHz = analysis?.strideFrequencyHz?.takeIf { it > 0.0 } ?: 4.25,
+                    groundContactTimeMs = analysis?.groundContactTimeMs?.takeIf { it > 0 } ?: 110,
+                    torsoLeanAngleDeg = analysis?.torsoLeanAngleDeg?.takeIf { it > 1.0 } ?: 14.2,
                     windSpeed = wind,
                     notes = notes
                 )
@@ -615,21 +774,27 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun capturePhotoFinish(race: RaceRecordEntity, currentFrameMs: Long, isCam2: Boolean) {
         viewModelScope.launch {
-            storageManager.savePhotoFinishImage(
-                raceTitle = race.title,
-                athleteName = race.athleteName,
-                timeFormatted = String.format("%.2f s", currentFrameMs / 1000.0),
-                isCam2Torso = isCam2
-            )
+            val liveBmp = CameraFrameHolder.latestFinishFrameBitmap ?: CameraFrameHolder.latestLiveFrameBitmap
+            withContext(Dispatchers.IO) {
+                storageManager.savePhotoFinishImage(
+                    raceTitle = race.title,
+                    athleteName = race.athleteName,
+                    timeFormatted = String.format(Locale.US, "%.2f s", currentFrameMs / 1000.0),
+                    isCam2Torso = isCam2,
+                    realCameraFrame = liveBmp
+                )
+            }
         }
     }
 
     fun downloadVideoToPhone(race: RaceRecordEntity, isCam2: Boolean) {
-        storageManager.createRaceVideoPackage(
-            raceTitle = race.title,
-            recordedTimeFormatted = race.formattedTime,
-            athleteName = race.athleteName
-        )
+        viewModelScope.launch(Dispatchers.IO) {
+            storageManager.createRaceVideoPackage(
+                raceTitle = race.title,
+                recordedTimeFormatted = race.formattedTime,
+                athleteName = race.athleteName
+            )
+        }
     }
 
     private fun syncAllToFirestoreCloud() {
@@ -671,5 +836,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         } catch (_: Exception) {}
         audioGunDetector?.stopListening()
         timerJob?.cancel()
+        sandJumpTimerJob?.cancel()
     }
 }

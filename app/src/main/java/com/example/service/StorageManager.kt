@@ -5,9 +5,11 @@ import android.content.ContentValues
 import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.Rect
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
@@ -15,6 +17,7 @@ import android.os.StatFs
 import android.provider.DocumentsContract
 import android.provider.MediaStore
 import androidx.core.content.ContextCompat
+import com.example.ui.components.CameraFrameHolder
 import java.io.File
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
@@ -69,7 +72,6 @@ class StorageManager(private val context: Context) {
     }
 
     init {
-        // Auto-create all required PsycoTimeXPro folders immediately upon app startup
         ensureDirectoriesExist()
     }
 
@@ -89,10 +91,6 @@ class StorageManager(private val context: Context) {
         return dirs.map { it.absolutePath }
     }
 
-    /**
-     * Checks whether 'Manage External Storage' (All Files Access on Android 11+)
-     * or legacy WRITE_EXTERNAL_STORAGE permission is granted.
-     */
     fun hasManageExternalStoragePermission(): Boolean {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             Environment.isExternalStorageManager()
@@ -104,9 +102,6 @@ class StorageManager(private val context: Context) {
         }
     }
 
-    /**
-     * Returns the currently configured local folder for saving race video recordings.
-     */
     fun getSelectedVideoFolderPath(): String {
         val saved = prefs.getString(KEY_SELECTED_VIDEO_FOLDER, null)
         return if (!saved.isNullOrBlank()) saved else videosDir.absolutePath
@@ -127,13 +122,6 @@ class StorageManager(private val context: Context) {
         }
     }
 
-    /**
-     * Validates a candidate local folder path:
-     * 1. Non-empty & valid path syntax
-     * 2. Checks if outside app-specific storage without MANAGE_EXTERNAL_STORAGE
-     * 3. Attempts mkdirs() if folder does not exist yet
-     * 4. Verifies directory status and performs a real file write probe
-     */
     fun validateFolderPath(rawPath: String): FolderValidationResult {
         val trimmed = rawPath.trim()
         if (trimmed.isEmpty()) {
@@ -184,7 +172,6 @@ class StorageManager(private val context: Context) {
                 )
             }
 
-            // Perform real write test probe to verify write permission
             val probeFile = File(targetDir, ".psyco_write_test_${System.currentTimeMillis()}.tmp")
             val writeSuccess = try {
                 probeFile.writeText("OK")
@@ -233,9 +220,6 @@ class StorageManager(private val context: Context) {
         }
     }
 
-    /**
-     * Validates and saves the folder path as the default race video recording location.
-     */
     fun saveSelectedVideoFolder(rawPath: String): FolderValidationResult {
         val validation = validateFolderPath(rawPath)
         if (validation.isValid) {
@@ -251,9 +235,6 @@ class StorageManager(private val context: Context) {
         prefs.edit().putStringSet(KEY_CUSTOM_FOLDER_PATHS, current).apply()
     }
 
-    /**
-     * Converts a Tree Uri returned by ActivityResultContracts.OpenDocumentTree() into a local file path.
-     */
     fun resolveTreeUriToLocalPath(treeUri: Uri): String {
         return try {
             val docId = DocumentsContract.getTreeDocumentId(treeUri)
@@ -277,9 +258,6 @@ class StorageManager(private val context: Context) {
         }
     }
 
-    /**
-     * Returns preset storage locations for quick selection.
-     */
     fun getPresetStorageLocations(): List<Pair<String, String>> {
         val extRoot = Environment.getExternalStorageDirectory().absolutePath
         return listOf(
@@ -291,11 +269,48 @@ class StorageManager(private val context: Context) {
     }
 
     /**
-     * Creates and saves a high-precision Photo Finish Image with Torso Slit Line and Time Overlay
+     * Draws a source bitmap onto a canvas using Center-Crop / Aspect-Preserving scaling so Portrait
+     * frames are NEVER stretched sideways into Landscape or vice-versa.
      */
+    private fun drawBitmapAspectFill(canvas: Canvas, src: Bitmap, destRect: Rect) {
+        val srcW = src.width.toFloat().coerceAtLeast(1f)
+        val srcH = src.height.toFloat().coerceAtLeast(1f)
+        val dstW = destRect.width().toFloat().coerceAtLeast(1f)
+        val dstH = destRect.height().toFloat().coerceAtLeast(1f)
+
+        val scale = maxOf(dstW / srcW, dstH / srcH)
+        val scaledW = srcW * scale
+        val scaledH = srcH * scale
+        val left = destRect.left + (dstW - scaledW) / 2f
+        val top = destRect.top + (dstH - scaledH) / 2f
+
+        canvas.save()
+        canvas.clipRect(destRect)
+        val targetRect = android.graphics.RectF(left, top, left + scaledW, top + scaledH)
+        canvas.drawBitmap(src, null, targetRect, Paint(Paint.FILTER_BITMAP_FLAG))
+        canvas.restore()
+    }
+
     /**
-     * Creates and saves a high-precision Photo Finish Image with Torso Slit Line and Time Overlay.
-     * Uses real live camera frame if available, or realistic photo finish scan (ZERO stick figures).
+     * Resolves the raw un-annotated camera frame associated with a saved photoFinishUri,
+     * preventing double-drawing of headers/green boxes/red lines!
+     */
+    private fun loadRawCleanFrameForRace(photoFinishUri: String?, fallbackFrame: Bitmap?): Bitmap? {
+        if (!photoFinishUri.isNullOrBlank()) {
+            try {
+                val mainFile = File(photoFinishUri)
+                val rawFile = File(mainFile.parentFile, "RAW_${mainFile.name}")
+                if (rawFile.exists()) {
+                    BitmapFactory.decodeFile(rawFile.absolutePath)?.let { return it }
+                }
+            } catch (_: Exception) {}
+        }
+        return fallbackFrame
+    }
+
+    /**
+     * Creates and saves a high-precision Photo Finish Image with a Tall Vertical AI Intelligence Box
+     * (Kotak AI Besar Menegak) and Red Torso Slit Line while strictly preserving Portrait orientation!
      */
     fun savePhotoFinishImage(
         raceTitle: String,
@@ -305,279 +320,340 @@ class StorageManager(private val context: Context) {
         realCameraFrame: Bitmap? = null,
         targetFolder: File? = null
     ): String {
-        val width = 1080
-        val height = 720
+        val isPortraitFrame = realCameraFrame != null && realCameraFrame.height >= realCameraFrame.width
+        val width = if (isPortraitFrame) 900 else 1080
+        val height = if (isPortraitFrame) 1440 else 720
+
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
 
+        val headerH = 116f
+        val footerH = 92f
+        val viewportRect = Rect(0, headerH.toInt(), width, (height - footerH).toInt())
+
         if (realCameraFrame != null) {
-            // Draw actual real live camera feed frame scaled to full resolution!
-            val srcRect = android.graphics.Rect(0, 0, realCameraFrame.width, realCameraFrame.height)
-            val destRect = android.graphics.Rect(0, 0, width, height)
-            canvas.drawBitmap(realCameraFrame, srcRect, destRect, null)
+            drawBitmapAspectFill(canvas, realCameraFrame, viewportRect)
         } else {
-            // Realistic Synthetic Athletics Stadium Finish Line Slit Scan (NO stick figures/orang lidi)
             val bgPaint = Paint().apply {
-                color = Color.parseColor("#0F172A") // Professional Stadium Deep Navy/Charcoal
+                color = Color.parseColor("#0F172A")
                 style = Paint.Style.FILL
             }
             canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), bgPaint)
 
-            // Synthetic Tartan Track lanes
             val trackPaint = Paint().apply {
                 color = Color.parseColor("#1E293B")
                 style = Paint.Style.FILL
             }
-            canvas.drawRect(0f, 130f, width.toFloat(), height.toFloat(), trackPaint)
+            canvas.drawRect(0f, headerH, width.toFloat(), height - footerH, trackPaint)
 
-            // Athletics lane markers
             val lanePaint = Paint().apply {
                 color = Color.parseColor("#475569")
                 strokeWidth = 3f
             }
             for (i in 1..8) {
-                val y = 130f + (i * ((height - 130f) / 8f))
+                val y = headerH + (i * ((height - headerH - footerH) / 8f))
                 canvas.drawLine(0f, y, width.toFloat(), y, lanePaint)
             }
 
-            // Realistic Athlete Body Torso Silhouette (Not stick figure)
-            val finishX = width * 0.55f
+            // Realistic Tall Vertical Sprinter Silhouette inside the Tall AI Box
+            val finishX = width * 0.54f
+            val centerY = (headerH + (height - footerH)) / 2f
             val athleteTorsoPaint = Paint().apply {
-                color = Color.parseColor("#0EA5E9") // Team Athlete Jersey Color
+                color = Color.parseColor("#0EA5E9")
                 style = Paint.Style.FILL
                 isAntiAlias = true
             }
-            // Athlete Chest / Torso Leaning Forward
-            canvas.drawRoundRect(finishX - 45f, 280f, finishX + 35f, 440f, 24f, 24f, athleteTorsoPaint)
-            // Head with helmet/band
+            canvas.drawRoundRect(
+                finishX - 48f,
+                centerY - 120f,
+                finishX + 42f,
+                centerY + 90f,
+                26f,
+                26f,
+                athleteTorsoPaint
+            )
             val headPaint = Paint().apply {
                 color = Color.parseColor("#F59E0B")
                 style = Paint.Style.FILL
                 isAntiAlias = true
             }
-            canvas.drawCircle(finishX + 25f, 250f, 30f, headPaint)
+            canvas.drawCircle(finishX + 20f, centerY - 165f, 34f, headPaint)
 
-            // Upper arms in forward drive motion
             val limbPaint = Paint().apply {
                 color = Color.parseColor("#0284C7")
-                strokeWidth = 22f
+                strokeWidth = 24f
                 strokeCap = Paint.Cap.ROUND
                 isAntiAlias = true
             }
-            canvas.drawLine(finishX - 10f, 320f, finishX + 65f, 360f, limbPaint)
-            canvas.drawLine(finishX - 30f, 330f, finishX - 75f, 380f, limbPaint)
-            // Legs in high velocity stride
-            canvas.drawLine(finishX - 25f, 430f, finishX + 45f, 570f, limbPaint)
-            canvas.drawLine(finishX - 35f, 430f, finishX - 60f, 550f, limbPaint)
+            canvas.drawLine(finishX - 10f, centerY - 80f, finishX + 75f, centerY - 25f, limbPaint)
+            canvas.drawLine(finishX - 30f, centerY - 70f, finishX - 85f, centerY - 10f, limbPaint)
+            canvas.drawLine(finishX - 15f, centerY + 80f, finishX + 60f, centerY + 250f, limbPaint)
+            canvas.drawLine(finishX - 30f, centerY + 80f, finishX - 70f, centerY + 235f, limbPaint)
         }
 
-        // Draw Finishing Line (Bright Red Laser Slit Line)
+        // Draw Finishing Line (Single Bright Red Laser Slit Line)
+        val slitX = width * 0.54f
         val finishLinePaint = Paint().apply {
-            color = Color.parseColor("#DC2626")
+            color = Color.parseColor("#EF4444")
             strokeWidth = 6f
+            isAntiAlias = true
         }
-        val slitX = width * 0.55f
-        canvas.drawLine(slitX, 0f, slitX, height.toFloat(), finishLinePaint)
+        canvas.drawLine(slitX, headerH, slitX, height - footerH, finishLinePaint)
 
-        // Draw AI Bounding Box around Torso Area
-        val aiBoxPaint = Paint().apply {
-            color = Color.parseColor("#22C55E")
-            style = Paint.Style.STROKE
-            strokeWidth = 4f
+        // Draw TALL VERTICAL AI INTELLIGENCE BOX (Kotak AI Besar Menegak) spanning 76% of viewport height
+        val viewH = (height - headerH - footerH)
+        val boxTop = headerH + viewH * 0.11f
+        val boxBottom = height - footerH - viewH * 0.11f
+        val boxHalfW = (width * 0.21f).coerceIn(115f, 185f)
+
+        val aiFillPaint = Paint().apply {
+            color = Color.parseColor("#1810B981")
+            style = Paint.Style.FILL
         }
-        canvas.drawRoundRect(slitX - 70f, 220f, slitX + 70f, 470f, 12f, 12f, aiBoxPaint)
+        canvas.drawRoundRect(slitX - boxHalfW, boxTop, slitX + boxHalfW, boxBottom, 18f, 18f, aiFillPaint)
+
+        val aiBoxPaint = Paint().apply {
+            color = Color.parseColor("#10B981")
+            style = Paint.Style.STROKE
+            strokeWidth = 5f
+            isAntiAlias = true
+        }
+        canvas.drawRoundRect(slitX - boxHalfW, boxTop, slitX + boxHalfW, boxBottom, 18f, 18f, aiBoxPaint)
+
+        // Horizontal Torso Chest Lock Crosshair inside the Tall Vertical Box
+        val torsoY = boxTop + (boxBottom - boxTop) * 0.36f
+        val torsoLinePaint = Paint().apply {
+            color = Color.parseColor("#38BDF8")
+            strokeWidth = 3f
+        }
+        canvas.drawLine(slitX - boxHalfW, torsoY, slitX + boxHalfW, torsoY, torsoLinePaint)
 
         val aiTextPaint = Paint().apply {
-            color = Color.parseColor("#22C55E")
+            color = Color.parseColor("#10B981")
             textSize = 22f
             isAntiAlias = true
             isFakeBoldText = true
         }
-        canvas.drawText("AI TORSO LOCK: VALID FINISH", slitX - 65f, 210f, aiTextPaint)
+        canvas.drawText(
+            if (isCam2Torso) "AI TORSO LOCK (MENEGAK PENUH)" else "CAM 1 AI TRACKER MENEGAK",
+            (slitX - boxHalfW).coerceAtLeast(24f),
+            (boxTop - 12f).coerceAtLeast(headerH + 24f),
+            aiTextPaint
+        )
 
-        // Top Header Banner with Electronic Timing Details
+        // Top Broadcast Header Banner
         val bannerPaint = Paint().apply {
-            color = Color.parseColor("#EE0B111E")
+            color = Color.parseColor("#F2080D1A")
             style = Paint.Style.FILL
         }
-        canvas.drawRect(0f, 0f, width.toFloat(), 130f, bannerPaint)
+        canvas.drawRect(0f, 0f, width.toFloat(), headerH, bannerPaint)
 
         val textPaint = Paint().apply {
             color = Color.WHITE
-            textSize = 32f
+            textSize = if (isPortraitFrame) 25f else 29f
             isAntiAlias = true
             isFakeBoldText = true
         }
-        canvas.drawText("PSYCO TIME X PRO - OFFICIAL PHOTO FINISH & REPLAY", 30f, 48f, textPaint)
+        canvas.drawText("PSYCO TIME X PRO — PHOTO FINISH & AI", 24f, 44f, textPaint)
 
-        textPaint.textSize = 26f
+        textPaint.textSize = if (isPortraitFrame) 20f else 23f
         textPaint.color = Color.parseColor("#38BDF8")
-        canvas.drawText("$raceTitle | Atlit: $athleteName | Garisan Penamat", 30f, 92f, textPaint)
+        canvas.drawText("$raceTitle • $athleteName", 24f, 84f, textPaint)
 
-        // Right side: Official Timer Overlay Badge
+        // Official Timer Badge (Top Right)
         val timerBadgePaint = Paint().apply {
             color = Color.parseColor("#DC2626")
             style = Paint.Style.FILL
+            isAntiAlias = true
         }
-        canvas.drawRoundRect(width - 330f, 22f, width - 25f, 108f, 16f, 16f, timerBadgePaint)
+        canvas.drawRoundRect(width - 275f, 18f, width - 20f, 98f, 16f, 16f, timerBadgePaint)
 
         val timerTextPaint = Paint().apply {
             color = Color.WHITE
-            textSize = 42f
+            textSize = 36f
             isAntiAlias = true
             isFakeBoldText = true
         }
-        canvas.drawText(timeFormatted, width - 295f, 80f, timerTextPaint)
+        canvas.drawText(timeFormatted, width - 248f, 71f, timerTextPaint)
 
-        // Save to target folder or configured video storage folder
+        // Bottom Telemetry Footer
+        val footerPaint = Paint().apply {
+            color = Color.parseColor("#F2080D1A")
+            style = Paint.Style.FILL
+        }
+        canvas.drawRect(0f, height - footerH, width.toFloat(), height.toFloat(), footerPaint)
+
+        val footerTextPaint = Paint().apply {
+            color = Color.parseColor("#E2E8F0")
+            textSize = 20f
+            isAntiAlias = true
+            isFakeBoldText = true
+        }
+        val modeLabel = if (isPortraitFrame) "MOD PORTRAIT ASLI (9:16)" else "MOD LANDSCAPE (16:9)"
+        canvas.drawText(
+            "$modeLabel • KOTAK AI MENEGAK PENUH • GARISAN TORSO SLIT",
+            24f,
+            height - 36f,
+            footerTextPaint
+        )
+
         val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-        val fileName = "PhotoFinish_${raceTitle.replace(" ", "_")}_$timeStamp.png"
+        val safeTitle = raceTitle.replace(Regex("[^a-zA-Z0-9_-]"), "_")
+        val fileName = "PhotoFinish_${safeTitle}_$timeStamp.png"
         val folderToUse = targetFolder ?: getSelectedVideoFolder()
         if (!folderToUse.exists()) folderToUse.mkdirs()
         val destFile = File(folderToUse, fileName)
+
+        // Also save the RAW clean un-annotated camera frame so re-exports never double-draw overlays!
+        if (realCameraFrame != null) {
+            try {
+                val rawFile = File(folderToUse, "RAW_$fileName")
+                FileOutputStream(rawFile).use { out ->
+                    realCameraFrame.compress(Bitmap.CompressFormat.PNG, 95, out)
+                }
+            } catch (_: Exception) {}
+        }
 
         FileOutputStream(destFile).use { out ->
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
         }
 
-        // Also save to Public MediaStore so user can find it in phone gallery
         saveImageToPublicGallery(bitmap, fileName)
-
         return destFile.absolutePath
     }
 
     /**
-     * Exports a high-precision Photo-Finish Slit-Scan Image directly from the Analytics Table
-     * for a selected race result, embedding real camera frame (if captured) + millisecond time-slit ruler
-     * + AI Intelligence Starting & Finishing Posture telemetry.
+     * Exports an Official Photo-Finish Slit-Scan Image directly from the Analytics Table.
+     * Uses the clean raw camera frame (so overlays are NEVER double-drawn) and preserves
+     * Portrait orientation with a Tall Vertical AI Intelligence Box (Kotak AI Besar Menegak).
      */
     fun exportPhotoFinishSlitForRace(
         race: com.example.data.model.RaceRecordEntity,
         posture: StartFinishPostureAnalysis,
         realCameraFrame: Bitmap? = null
     ): String {
-        val width = 1280
-        val height = 720
+        val rawCleanBmp = loadRawCleanFrameForRace(race.photoFinishUri, realCameraFrame)
+        val isPortraitFrame = rawCleanBmp != null && rawCleanBmp.height >= rawCleanBmp.width
+
+        val width = if (isPortraitFrame) 960 else 1280
+        val height = if (isPortraitFrame) 1440 else 760
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
 
-        // Load existing saved photoFinishUri if available, else use realCameraFrame
-        val existingBmp = try {
-            race.photoFinishUri?.let { path ->
-                val f = File(path)
-                if (f.exists()) android.graphics.BitmapFactory.decodeFile(f.absolutePath) else null
-            }
-        } catch (_: Exception) {
-            null
-        } ?: realCameraFrame
+        val headerH = 115f
+        val footerH = 115f
+        val viewportRect = Rect(0, headerH.toInt(), width, (height - footerH).toInt())
 
-        if (existingBmp != null) {
-            val srcRect = android.graphics.Rect(0, 0, existingBmp.width, existingBmp.height)
-            val destRect = android.graphics.Rect(0, 0, width, height)
-            canvas.drawBitmap(existingBmp, srcRect, destRect, null)
+        if (rawCleanBmp != null) {
+            drawBitmapAspectFill(canvas, rawCleanBmp, viewportRect)
         } else {
-            // High-Resolution Slit-Scan Time-Strip Track Background
-            val bgPaint = Paint().apply {
-                color = Color.parseColor("#0A0F1D")
-                style = Paint.Style.FILL
-            }
-            canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), bgPaint)
-
-            val trackPaint = Paint().apply {
-                color = Color.parseColor("#1E293B")
-                style = Paint.Style.FILL
-            }
-            canvas.drawRect(0f, 125f, width.toFloat(), height - 115f, trackPaint)
-
-            // 8 Athletics Lane Lines
-            val lanePaint = Paint().apply {
-                color = Color.parseColor("#475569")
-                strokeWidth = 2.5f
-            }
-            for (i in 1..8) {
-                val y = 125f + (i * ((height - 240f) / 8f))
-                canvas.drawLine(0f, y, width.toFloat(), y, lanePaint)
+            // Check if only an already-rendered photoFinishUri exists (legacy record without RAW_ file)
+            val existingAnnotated = try {
+                race.photoFinishUri?.let { path ->
+                    val f = File(path)
+                    if (f.exists()) BitmapFactory.decodeFile(f.absolutePath) else null
+                }
+            } catch (_: Exception) {
+                null
             }
 
-            // Vertical Slit-Scan Time Grid Lines
-            val gridPaint = Paint().apply {
-                color = Color.parseColor("#334155")
-                strokeWidth = 1.5f
-            }
-            for (xStep in 1..15) {
-                val gx = xStep * (width / 16f)
-                canvas.drawLine(gx, 125f, gx, height - 115f, gridPaint)
-            }
+            if (existingAnnotated != null) {
+                // Crop out the old 130px top banner from legacy file so we never double-render headers
+                val cropTop = (existingAnnotated.height * 0.16f).toInt().coerceAtLeast(0)
+                val srcRect = Rect(0, cropTop, existingAnnotated.width, existingAnnotated.height)
+                canvas.drawBitmap(existingAnnotated, srcRect, viewportRect, Paint(Paint.FILTER_BITMAP_FLAG))
+            } else {
+                val bgPaint = Paint().apply {
+                    color = Color.parseColor("#0A0F1D")
+                    style = Paint.Style.FILL
+                }
+                canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), bgPaint)
 
-            // Render Biomechanical Athlete Torso Vector at Slit X
-            val slitX = width * 0.56f
-            val torsoPaint = Paint().apply {
-                color = Color.parseColor("#06B6D4")
-                style = Paint.Style.FILL
-                isAntiAlias = true
-            }
-            canvas.drawRoundRect(slitX - 48f, 255f, slitX + 36f, 425f, 24f, 24f, torsoPaint)
+                val trackPaint = Paint().apply {
+                    color = Color.parseColor("#1E293B")
+                    style = Paint.Style.FILL
+                }
+                canvas.drawRect(0f, headerH, width.toFloat(), height - footerH, trackPaint)
 
-            val headPaint = Paint().apply {
-                color = Color.parseColor("#F59E0B")
-                style = Paint.Style.FILL
-                isAntiAlias = true
+                val lanePaint = Paint().apply {
+                    color = Color.parseColor("#475569")
+                    strokeWidth = 2.5f
+                }
+                for (i in 1..8) {
+                    val y = headerH + (i * ((height - headerH - footerH) / 8f))
+                    canvas.drawLine(0f, y, width.toFloat(), y, lanePaint)
+                }
             }
-            canvas.drawCircle(slitX + 26f, 222f, 28f, headPaint)
-
-            val drivePaint = Paint().apply {
-                color = Color.parseColor("#0284C7")
-                strokeWidth = 20f
-                strokeCap = Paint.Cap.ROUND
-                isAntiAlias = true
-            }
-            canvas.drawLine(slitX - 12f, 295f, slitX - 75f, 350f, drivePaint)
-            canvas.drawLine(slitX - 24f, 415f, slitX + 46f, 545f, drivePaint)
-            canvas.drawLine(slitX - 34f, 415f, slitX - 64f, 530f, drivePaint)
         }
 
-        // Draw Red Laser Slit Finish Line
-        val slitX = width * 0.56f
+        // Single Red Laser Slit Finish Line
+        val slitX = width * 0.55f
         val finishLinePaint = Paint().apply {
             color = Color.parseColor("#EF4444")
             strokeWidth = 6f
+            isAntiAlias = true
         }
-        canvas.drawLine(slitX, 120f, slitX, height - 115f, finishLinePaint)
+        canvas.drawLine(slitX, headerH, slitX, height - footerH, finishLinePaint)
 
-        // Draw AI Torso & Posture Bounding Box
+        // Single TALL VERTICAL AI INTELLIGENCE BOX (Kotak AI Besar Menegak)
+        val viewH = (height - headerH - footerH)
+        val boxTop = headerH + viewH * 0.10f
+        val boxBottom = height - footerH - viewH * 0.10f
+        val boxHalfW = (width * 0.21f).coerceIn(120f, 190f)
+
+        val aiFillPaint = Paint().apply {
+            color = Color.parseColor("#1A10B981")
+            style = Paint.Style.FILL
+        }
+        canvas.drawRoundRect(slitX - boxHalfW, boxTop, slitX + boxHalfW, boxBottom, 18f, 18f, aiFillPaint)
+
         val aiBoxPaint = Paint().apply {
             color = Color.parseColor("#10B981")
             style = Paint.Style.STROKE
-            strokeWidth = 3.5f
+            strokeWidth = 5f
+            isAntiAlias = true
         }
-        canvas.drawRoundRect(slitX - 78f, 185f, slitX + 78f, 465f, 14f, 14f, aiBoxPaint)
+        canvas.drawRoundRect(slitX - boxHalfW, boxTop, slitX + boxHalfW, boxBottom, 18f, 18f, aiBoxPaint)
 
-        // Top Official Broadcast Header
-        val bannerPaint = Paint().apply {
-            color = Color.parseColor("#EE050811")
-            style = Paint.Style.FILL
-        }
-        canvas.drawRect(0f, 0f, width.toFloat(), 120f, bannerPaint)
-
-        val titlePaint = Paint().apply {
-            color = Color.WHITE
-            textSize = 30f
+        val aiLabelPaint = Paint().apply {
+            color = Color.parseColor("#10B981")
+            textSize = 21f
             isAntiAlias = true
             isFakeBoldText = true
         }
-        canvas.drawText("PSYCO TIME X PRO — OFFICIAL PHOTO-FINISH SLIT EXPORT", 28f, 46f, titlePaint)
+        canvas.drawText(
+            "AI TORSO LOCK: KOTAK MENEGAK PENUH",
+            (slitX - boxHalfW).coerceAtLeast(24f),
+            (boxTop - 10f).coerceAtLeast(headerH + 24f),
+            aiLabelPaint
+        )
+
+        // Top Official Broadcast Header (Single Crisp Header)
+        val bannerPaint = Paint().apply {
+            color = Color.parseColor("#F5050811")
+            style = Paint.Style.FILL
+        }
+        canvas.drawRect(0f, 0f, width.toFloat(), headerH, bannerPaint)
+
+        val titlePaint = Paint().apply {
+            color = Color.WHITE
+            textSize = if (isPortraitFrame) 24f else 28f
+            isAntiAlias = true
+            isFakeBoldText = true
+        }
+        canvas.drawText("PSYCO TIME X PRO — OFFICIAL PHOTO-FINISH SLIT", 24f, 44f, titlePaint)
 
         val subPaint = Paint().apply {
             color = Color.parseColor("#06B6D4")
-            textSize = 23f
+            textSize = if (isPortraitFrame) 19f else 22f
             isAntiAlias = true
             isFakeBoldText = true
         }
         val secFormatted = String.format(Locale.US, "%.3f s", race.recordedTimeMillis / 1000.0)
         canvas.drawText(
-            "${race.title} • ${race.athleteName} • ${race.eventName} (Lorong ${race.lane} | Angin ${race.windReading})",
-            28f,
-            88f,
+            "${race.title} • ${race.athleteName} • ${race.eventName} (Lorong ${race.lane})",
+            24f,
+            84f,
             subPaint
         )
 
@@ -587,51 +663,51 @@ class StorageManager(private val context: Context) {
             style = Paint.Style.FILL
             isAntiAlias = true
         }
-        canvas.drawRoundRect(width - 320f, 18f, width - 24f, 102f, 16f, 16f, badgePaint)
+        canvas.drawRoundRect(width - 280f, 18f, width - 22f, 98f, 16f, 16f, badgePaint)
 
         val timeTextPaint = Paint().apply {
             color = Color.WHITE
-            textSize = 40f
+            textSize = 36f
             isAntiAlias = true
             isFakeBoldText = true
         }
-        canvas.drawText(secFormatted, width - 290f, 74f, timeTextPaint)
+        canvas.drawText(secFormatted, width - 252f, 71f, timeTextPaint)
 
         // Bottom AI Intelligence Posture Telemetry Strip
         val footerPaint = Paint().apply {
-            color = Color.parseColor("#F20A0F1D")
+            color = Color.parseColor("#F50A0F1D")
             style = Paint.Style.FILL
         }
-        canvas.drawRect(0f, height - 115f, width.toFloat(), height.toFloat(), footerPaint)
+        canvas.drawRect(0f, height - footerH, width.toFloat(), height.toFloat(), footerPaint)
 
         val footerLinePaint = Paint().apply {
             color = Color.parseColor("#06B6D4")
-            strokeWidth = 2f
+            strokeWidth = 2.5f
         }
-        canvas.drawLine(0f, height - 115f, width.toFloat(), height - 115f, footerLinePaint)
+        canvas.drawLine(0f, height - footerH, width.toFloat(), height - footerH, footerLinePaint)
 
         val postureTitlePaint = Paint().apply {
             color = Color.parseColor("#FBBF24")
-            textSize = 21f
+            textSize = if (isPortraitFrame) 18f else 20f
             isAntiAlias = true
             isFakeBoldText = true
         }
         canvas.drawText(
-            "AI POSTURE READER: CAM 1 START ${"%.1f".format(posture.startBodyLeanAngleDeg)}° (${if (posture.isStartPostureCorrect) "BETUL ✓" else "SALAH ⚠"})  |  CAM 2 FINISH TORSO ${"%.1f".format(posture.finishTorsoDipAngleDeg)}° (${if (posture.isFinishPostureCorrect) "BETUL ✓" else "SALAH ⚠"})",
-            28f,
-            height - 72f,
+            "AI POSTURE: START ${"%.1f".format(posture.startBodyLeanAngleDeg)}° (${if (posture.isStartPostureCorrect) "BETUL ✓" else "SALAH ⚠"}) | FINISH TORSO ${"%.1f".format(posture.finishTorsoDipAngleDeg)}° (${if (posture.isFinishPostureCorrect) "BETUL ✓" else "SALAH ⚠"})",
+            24f,
+            height - 70f,
             postureTitlePaint
         )
 
         val postureSubPaint = Paint().apply {
             color = Color.parseColor("#E2E8F0")
-            textSize = 19f
+            textSize = if (isPortraitFrame) 16f else 18f
             isAntiAlias = true
         }
         canvas.drawText(
-            "Kinematik: Cadence ${race.cadenceSpM} spm • Ground Contact ${race.groundContactTimeMs} ms • Lutut Blok ${posture.startFrontKneeAngleDeg}°/${posture.startRearKneeAngleDeg}° • Skor Postur AI: ${posture.overallPostureScore}%",
-            28f,
-            height - 32f,
+            "Kinematik: Cadence ${race.cadenceSpM} spm • GCT ${race.groundContactTimeMs} ms • Lutut ${posture.startFrontKneeAngleDeg}°/${posture.startRearKneeAngleDeg}° • Skor AI: ${posture.overallPostureScore}%",
+            24f,
+            height - 30f,
             postureSubPaint
         )
 
@@ -648,15 +724,229 @@ class StorageManager(private val context: Context) {
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
         }
 
-        // Also export to Public Gallery (Pictures/PsycoTimeXPro)
         saveImageToPublicGallery(bitmap, fileName)
-
         return destFile.absolutePath
     }
 
     /**
-     * Exports image to device Pictures/Downloads gallery
+     * Generates and saves an official AI Sand Jump (Lompat Jauh / Triple Jump / Sukan Pasir)
+     * Photo-Finish & Measuring Tape Evidence Image.
      */
+    fun saveSandJumpEvidenceImage(
+        jumpTitle: String,
+        athleteName: String,
+        eventCategory: String,
+        measuredDistanceMeters: Double,
+        boardStatusValid: Boolean,
+        toeToBoardCm: Double,
+        takeoffAngleDeg: Double,
+        approachSpeedMs: Double,
+        tapeStartRatioX: Float,
+        tapeStartRatioY: Float,
+        tapeEndRatioX: Float,
+        tapeEndRatioY: Float,
+        landingRatioX: Float,
+        landingRatioY: Float,
+        configuredMaxMeters: Double,
+        realCameraFrame: Bitmap? = null
+    ): String {
+        val isPortraitFrame = realCameraFrame != null && realCameraFrame.height >= realCameraFrame.width
+        val width = if (isPortraitFrame) 960 else 1280
+        val height = if (isPortraitFrame) 1440 else 800
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+
+        val headerH = 115f
+        val footerH = 120f
+        val viewW = width.toFloat()
+        val viewH = (height - headerH - footerH)
+        val viewportRect = Rect(0, headerH.toInt(), width, (height - footerH).toInt())
+
+        if (realCameraFrame != null) {
+            drawBitmapAspectFill(canvas, realCameraFrame, viewportRect)
+        } else {
+            val bgPaint = Paint().apply {
+                color = Color.parseColor("#0F172A")
+                style = Paint.Style.FILL
+            }
+            canvas.drawRect(0f, 0f, viewW, height.toFloat(), bgPaint)
+
+            // Sand Pit box illustration
+            val sandPaint = Paint().apply {
+                color = Color.parseColor("#78350F")
+                style = Paint.Style.FILL
+            }
+            canvas.drawRoundRect(
+                viewW * 0.35f,
+                headerH + viewH * 0.28f,
+                viewW * 0.92f,
+                headerH + viewH * 0.76f,
+                18f,
+                18f,
+                sandPaint
+            )
+        }
+
+        val startX = (tapeStartRatioX.coerceIn(0.05f, 0.95f)) * viewW
+        val startY = headerH + (tapeStartRatioY.coerceIn(0.10f, 0.90f)) * viewH
+        val endX = (tapeEndRatioX.coerceIn(0.05f, 0.95f)) * viewW
+        val endY = headerH + (tapeEndRatioY.coerceIn(0.10f, 0.90f)) * viewH
+        val landX = (landingRatioX.coerceIn(0.05f, 0.95f)) * viewW
+        val landY = headerH + (landingRatioY.coerceIn(0.10f, 0.90f)) * viewH
+
+        // 1. Draw Take-Off Board Zone (Papan Anjakan)
+        val boardPaint = Paint().apply {
+            color = if (boardStatusValid) Color.parseColor("#10B981") else Color.parseColor("#EF4444")
+            strokeWidth = 7f
+            isAntiAlias = true
+        }
+        canvas.drawLine(startX, startY - 95f, startX, startY + 95f, boardPaint)
+
+        // 2. Draw Calibrated Digital Measuring Tape (Pita Pengukur AI)
+        val tapePaint = Paint().apply {
+            color = Color.parseColor("#FBBF24")
+            strokeWidth = 6f
+            isAntiAlias = true
+        }
+        canvas.drawLine(startX, startY, endX, endY, tapePaint)
+
+        // Meter tick marks along the calibrated measuring tape
+        val tickPaint = Paint().apply {
+            color = Color.WHITE
+            textSize = 18f
+            isAntiAlias = true
+            isFakeBoldText = true
+        }
+        val steps = configuredMaxMeters.toInt().coerceIn(4, 16)
+        for (m in 0..steps) {
+            val t = m.toFloat() / steps.toFloat()
+            val tx = startX + (endX - startX) * t
+            val ty = startY + (endY - startY) * t
+            canvas.drawCircle(tx, ty, 6f, tapePaint)
+            if (m % 2 == 0 || m == steps) {
+                canvas.drawText("${m}m", tx - 14f, ty + 28f, tickPaint)
+            }
+        }
+
+        // 3. Draw Parabolic Flight Trajectory Curve from Board to Sand Landing Mark
+        val arcPaint = Paint().apply {
+            color = Color.parseColor("#38BDF8")
+            style = Paint.Style.STROKE
+            strokeWidth = 5f
+            isAntiAlias = true
+        }
+        val path = android.graphics.Path().apply {
+            moveTo(startX, startY)
+            val ctrlX = (startX + landX) / 2f
+            val ctrlY = minOf(startY, landY) - viewH * 0.26f
+            quadTo(ctrlX, ctrlY, landX, landY)
+        }
+        canvas.drawPath(path, arcPaint)
+
+        // 4. Draw Sand Pit Furthest Landing Box & Break Mark
+        val landPaint = Paint().apply {
+            color = Color.parseColor("#10B981")
+            style = Paint.Style.STROKE
+            strokeWidth = 5f
+            isAntiAlias = true
+        }
+        canvas.drawRoundRect(landX - 75f, landY - 125f, landX + 75f, landY + 55f, 14f, 14f, landPaint)
+        canvas.drawCircle(landX, landY, 12f, Paint().apply {
+            color = Color.parseColor("#EF4444")
+            style = Paint.Style.FILL
+            isAntiAlias = true
+        })
+
+        // Top Header Banner
+        val bannerPaint = Paint().apply {
+            color = Color.parseColor("#F5050811")
+            style = Paint.Style.FILL
+        }
+        canvas.drawRect(0f, 0f, viewW, headerH, bannerPaint)
+
+        val titlePaint = Paint().apply {
+            color = Color.WHITE
+            textSize = if (isPortraitFrame) 23f else 27f
+            isAntiAlias = true
+            isFakeBoldText = true
+        }
+        canvas.drawText("PSYCO TIME X PRO — BUKTI AI SUKAN PASIR & LOMPATAN", 24f, 44f, titlePaint)
+
+        val subPaint = Paint().apply {
+            color = Color.parseColor("#38BDF8")
+            textSize = if (isPortraitFrame) 19f else 21f
+            isAntiAlias = true
+            isFakeBoldText = true
+        }
+        canvas.drawText(
+            "$jumpTitle • $athleteName • $eventCategory (${if (boardStatusValid) "PAPAN SAH ✓" else "BATAL FOUL ⚠"})",
+            24f,
+            84f,
+            subPaint
+        )
+
+        // Distance Badge (Top Right)
+        val badgePaint = Paint().apply {
+            color = if (boardStatusValid) Color.parseColor("#10B981") else Color.parseColor("#DC2626")
+            style = Paint.Style.FILL
+            isAntiAlias = true
+        }
+        canvas.drawRoundRect(viewW - 280f, 18f, viewW - 22f, 98f, 16f, 16f, badgePaint)
+
+        val distTextPaint = Paint().apply {
+            color = Color.BLACK
+            textSize = 36f
+            isAntiAlias = true
+            isFakeBoldText = true
+        }
+        canvas.drawText(String.format(Locale.US, "%.2f m", measuredDistanceMeters), viewW - 245f, 71f, distTextPaint)
+
+        // Footer Telemetry
+        val footerPaint = Paint().apply {
+            color = Color.parseColor("#F50A0F1D")
+            style = Paint.Style.FILL
+        }
+        canvas.drawRect(0f, height - footerH, viewW, height.toFloat(), footerPaint)
+
+        val fLine1 = Paint().apply {
+            color = Color.parseColor("#FBBF24")
+            textSize = if (isPortraitFrame) 18f else 20f
+            isAntiAlias = true
+            isFakeBoldText = true
+        }
+        canvas.drawText(
+            "AI SAND PIT TELEMETRY: JARAK ${"%.2f".format(measuredDistanceMeters)}m | PAPAN ANJAKAN: ${"%.1f".format(toeToBoardCm)}cm (${if (boardStatusValid) "SAH" else "BATAL"})",
+            24f,
+            height - 72f,
+            fLine1
+        )
+
+        val fLine2 = Paint().apply {
+            color = Color.parseColor("#E2E8F0")
+            textSize = if (isPortraitFrame) 16f else 18f
+            isAntiAlias = true
+        }
+        canvas.drawText(
+            "Sains Sukan AI: Lari Landas ${"%.1f".format(approachSpeedMs)} m/s • Sudut Lonjakan ${"%.1f".format(takeoffAngleDeg)}° • Pita Kalibrasi ${"%.1f".format(configuredMaxMeters)}m (SURE APPROVED)",
+            24f,
+            height - 30f,
+            fLine2
+        )
+
+        val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+        val safeTitle = jumpTitle.replace(Regex("[^a-zA-Z0-9_-]"), "_")
+        val fileName = "SandJumpEvidence_${safeTitle}_$timeStamp.png"
+        val folderToUse = getSelectedVideoFolder()
+        if (!folderToUse.exists()) folderToUse.mkdirs()
+        val destFile = File(folderToUse, fileName)
+
+        FileOutputStream(destFile).use { out ->
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+        }
+        saveImageToPublicGallery(bitmap, fileName)
+        return destFile.absolutePath
+    }
+
     private fun saveImageToPublicGallery(bitmap: Bitmap, fileName: String) {
         try {
             val contentValues = ContentValues().apply {
@@ -685,8 +975,8 @@ class StorageManager(private val context: Context) {
     }
 
     /**
-     * Simulates or creates saved race video package files for Cam 1 & Cam 2 with overlays.
-     * Supports saving to user-specified local folder (e.g. creating custom subfolders).
+     * Saves both the race video package metadata AND the actual multi-frame sequence of upright
+     * camera frames captured during the race so Replay plays a real moving Portrait/Landscape video!
      */
     fun createRaceVideoPackage(
         raceTitle: String,
@@ -695,39 +985,118 @@ class StorageManager(private val context: Context) {
         targetFolder: File? = null
     ): Pair<String, String> {
         val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-        val cleanTitle = raceTitle.replace(" ", "_")
+        val cleanTitle = raceTitle.replace(Regex("[^a-zA-Z0-9_-]"), "_")
 
         val destinationFolder = targetFolder ?: getSelectedVideoFolder()
         if (!destinationFolder.exists()) destinationFolder.mkdirs()
 
-        // Create representative frame video asset files for Cam 1 (Timer Gate) & Cam 2 (Finish Torso)
         val cam1File = File(destinationFolder, "CAM1_Timer_${cleanTitle}_$timeStamp.mp4")
         val cam2File = File(destinationFolder, "CAM2_Torso_${cleanTitle}_$timeStamp.mp4")
 
-        // Write marker payload
-        cam1File.writeText("PSYCO_TIMEX_CAM1_VIDEO_STREAM\nRace: $raceTitle\nAtlit: $athleteName\nTime: $recordedTimeFormatted\nOverlay: Digital StopWatch + Starter Gate\nTimestamp: $timeStamp\nSavedFolder: ${destinationFolder.absolutePath}")
-        cam2File.writeText("PSYCO_TIMEX_CAM2_TORSO_VIDEO_STREAM\nRace: $raceTitle\nAtlit: $athleteName\nTime: $recordedTimeFormatted\nOverlay: Finish Line Laser Slit + Torso AI Detector\nTimestamp: $timeStamp\nSavedFolder: ${destinationFolder.absolutePath}")
+        // Save actual recorded frames sequence directory for real moving video replay!
+        val framesDir = File(destinationFolder, "Frames_${cleanTitle}_$timeStamp")
+        if (!framesDir.exists()) framesDir.mkdirs()
 
-        // Also export to Exports folder
+        val sessionFrames = CameraFrameHolder.recordedSessionFrames.toList()
+        val framesToPersist = if (sessionFrames.isNotEmpty()) {
+            sessionFrames
+        } else {
+            listOfNotNull(
+                CameraFrameHolder.latestStartFrameBitmap,
+                CameraFrameHolder.latestLiveFrameBitmap,
+                CameraFrameHolder.latestFinishFrameBitmap
+            ).distinct()
+        }
+
+        framesToPersist.forEachIndexed { index, bmp ->
+            try {
+                val frameFile = File(framesDir, String.format(Locale.US, "frame_%03d.jpg", index))
+                FileOutputStream(frameFile).use { out ->
+                    bmp.compress(Bitmap.CompressFormat.JPEG, 88, out)
+                }
+            } catch (_: Exception) {}
+        }
+
+        cam1File.writeText(
+            "PSYCO_TIMEX_CAM1_VIDEO_STREAM\n" +
+                "Race: $raceTitle\n" +
+                "Atlit: $athleteName\n" +
+                "Time: $recordedTimeFormatted\n" +
+                "FramesDir: ${framesDir.absolutePath}\n" +
+                "FrameCount: ${framesToPersist.size}\n" +
+                "SavedFolder: ${destinationFolder.absolutePath}"
+        )
+        cam2File.writeText(
+            "PSYCO_TIMEX_CAM2_TORSO_VIDEO_STREAM\n" +
+                "Race: $raceTitle\n" +
+                "Atlit: $athleteName\n" +
+                "Time: $recordedTimeFormatted\n" +
+                "FramesDir: ${framesDir.absolutePath}\n" +
+                "FrameCount: ${framesToPersist.size}\n" +
+                "SavedFolder: ${destinationFolder.absolutePath}"
+        )
+
         val exportFile = File(exportsDir, "${cleanTitle}_DataReport.json")
-        exportFile.writeText("""
+        exportFile.writeText(
+            """
             {
                 "race": "$raceTitle",
                 "athlete": "$athleteName",
                 "time": "$recordedTimeFormatted",
                 "cam1_stream": "${cam1File.name}",
                 "cam2_stream": "${cam2File.name}",
+                "frames_dir": "${framesDir.absolutePath}",
+                "frame_count": ${framesToPersist.size},
                 "exported_to_device": true,
                 "folder": "${destinationFolder.absolutePath}"
             }
-        """.trimIndent())
+            """.trimIndent()
+        )
 
         return Pair(cam1File.absolutePath, cam2File.absolutePath)
     }
 
     /**
-     * Lists existing custom subfolders or creates a new one, starting with the user's selected video folder.
+     * Loads the recorded sequence of upright camera frames for a race so that Replay plays a real moving video.
      */
+    fun loadRecordedVideoFramesForRace(camVideoUri: String?, photoFinishUri: String?): List<Bitmap> {
+        val loaded = mutableListOf<Bitmap>()
+        try {
+            if (!camVideoUri.isNullOrBlank()) {
+                val videoFile = File(camVideoUri)
+                if (videoFile.exists()) {
+                    val lines = videoFile.readLines()
+                    val framesDirLine = lines.firstOrNull { it.startsWith("FramesDir:") }
+                    val framesDirPath = framesDirLine?.substringAfter("FramesDir:")?.trim()
+                    if (!framesDirPath.isNullOrBlank()) {
+                        val dir = File(framesDirPath)
+                        if (dir.exists() && dir.isDirectory) {
+                            val jpgs = dir.listFiles { f -> f.name.endsWith(".jpg") || f.name.endsWith(".png") }
+                                ?.sortedBy { it.name }
+                                ?: emptyList()
+                            jpgs.forEach { f ->
+                                BitmapFactory.decodeFile(f.absolutePath)?.let { loaded.add(it) }
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (_: Exception) {}
+
+        if (loaded.isEmpty()) {
+            loadRawCleanFrameForRace(photoFinishUri, null)?.let { loaded.add(it) }
+        }
+        if (loaded.isEmpty() && !photoFinishUri.isNullOrBlank()) {
+            try {
+                val f = File(photoFinishUri)
+                if (f.exists()) {
+                    BitmapFactory.decodeFile(f.absolutePath)?.let { loaded.add(it) }
+                }
+            } catch (_: Exception) {}
+        }
+        return loaded
+    }
+
     fun getAvailableStorageFolders(): List<File> {
         val selected = getSelectedVideoFolder()
         val list = mutableListOf(selected, videosDir, photoFinishDir, exportsDir)
