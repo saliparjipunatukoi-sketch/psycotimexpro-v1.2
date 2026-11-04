@@ -1,0 +1,170 @@
+{
+  "entities": {
+    "CloudAthlete": {
+      "title": "CloudAthlete",
+      "description": "Cloud-synced athlete profile and personal best record owned by an authenticated coach.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the owning coach."
+        },
+        "name": {
+          "type": "string",
+          "description": "Full name of the athlete (1..120 chars)."
+        },
+        "category": {
+          "type": "string",
+          "description": "Event category such as Track or Field (1..40 chars)."
+        },
+        "specificEvent": {
+          "type": "string",
+          "description": "Primary event name such as 100m Sprint (1..60 chars)."
+        },
+        "pbValue": {
+          "type": "string",
+          "description": "Personal best value formatted string (1..40 chars)."
+        },
+        "pbUnit": {
+          "type": "string",
+          "description": "Measurement unit such as Saat (s) or Meter (m) (1..40 chars)."
+        },
+        "clubName": {
+          "type": "string",
+          "description": "Club or school team name (1..120 chars)."
+        },
+        "coachEmail": {
+          "type": "string",
+          "description": "Email address of the coach (1..120 chars)."
+        },
+        "gender": {
+          "type": "string",
+          "description": "Optional gender classification (<= 30 chars)."
+        },
+        "dateOfBirth": {
+          "type": "string",
+          "description": "Optional date of birth string (<= 30 chars)."
+        },
+        "notes": {
+          "type": "string",
+          "description": "Optional coaching notes (<= 500 chars)."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when the athlete document was created. Clients must submit FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when the athlete document was last updated. Clients must submit FieldValue.serverTimestamp()."
+        }
+      },
+      "required": [
+        "userId",
+        "name",
+        "category",
+        "specificEvent",
+        "pbValue",
+        "pbUnit",
+        "clubName",
+        "coachEmail",
+        "createdAt"
+      ]
+    },
+    "CloudRaceRecord": {
+      "title": "CloudRaceRecord",
+      "description": "Cloud-synced electronic timing race result and AI posture biomechanics telemetry.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the owning coach."
+        },
+        "title": {
+          "type": "string",
+          "description": "Race title such as Race 1 (1..120 chars)."
+        },
+        "eventName": {
+          "type": "string",
+          "description": "Event name such as 100m Sprint (1..80 chars)."
+        },
+        "athleteName": {
+          "type": "string",
+          "description": "Athlete name recorded for the race (1..120 chars)."
+        },
+        "recordedTimeMillis": {
+          "type": "integer",
+          "description": "Electronic timing result in milliseconds (>= 0)."
+        },
+        "windReading": {
+          "type": "string",
+          "description": "Wind gauge reading such as +0.8 m/s (1..40 chars)."
+        },
+        "lane": {
+          "type": "integer",
+          "description": "Track lane number (1..12)."
+        },
+        "coachEmail": {
+          "type": "string",
+          "description": "Email address of the coach (1..120 chars)."
+        },
+        "cadenceSpM": {
+          "type": "integer",
+          "description": "Optional cadence in steps per minute."
+        },
+        "strideFreqHz": {
+          "type": "number",
+          "description": "Optional stride frequency in Hz."
+        },
+        "groundContactTimeMs": {
+          "type": "integer",
+          "description": "Optional ground contact time in milliseconds."
+        },
+        "torsoLeanAngleDeg": {
+          "type": "number",
+          "description": "Optional torso lean angle in degrees at finish gate."
+        },
+        "notes": {
+          "type": "string",
+          "description": "Optional race notes (<= 500 chars)."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when the race record was created. Clients must submit FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when the race record was last updated. Clients must submit FieldValue.serverTimestamp()."
+        }
+      },
+      "required": [
+        "userId",
+        "title",
+        "eventName",
+        "athleteName",
+        "recordedTimeMillis",
+        "windReading",
+        "lane",
+        "coachEmail",
+        "createdAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/athletes/{athleteId}": {
+      "schema": {
+        "$ref": "#/entities/CloudAthlete"
+      },
+      "description": "Collection of athlete profiles and personal best records scoped by userId."
+    },
+    "/race_records/{raceId}": {
+      "schema": {
+        "$ref": "#/entities/CloudRaceRecord"
+      },
+      "description": "Collection of electronic timing race results and biomechanical telemetry scoped by userId."
+    }
+  }
+}

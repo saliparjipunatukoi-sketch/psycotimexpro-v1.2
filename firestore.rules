@@ -1,0 +1,107 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 1. Global Safety Net: Default-deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 2. Hardened Global Primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // 3. Entity Validation Blueprints
+    function isValidCloudAthlete(data) {
+      return data.userId is string && data.userId == request.auth.uid &&
+             data.name is string && data.name.size() >= 1 && data.name.size() <= 120 &&
+             data.category is string && data.category.size() >= 1 && data.category.size() <= 40 &&
+             data.specificEvent is string && data.specificEvent.size() >= 1 && data.specificEvent.size() <= 60 &&
+             data.pbValue is string && data.pbValue.size() >= 1 && data.pbValue.size() <= 40 &&
+             data.pbUnit is string && data.pbUnit.size() >= 1 && data.pbUnit.size() <= 40 &&
+             data.clubName is string && data.clubName.size() >= 1 && data.clubName.size() <= 120 &&
+             data.coachEmail is string && data.coachEmail.size() >= 1 && data.coachEmail.size() <= 120 &&
+             (!('gender' in data) || data.gender == null || (data.gender is string && data.gender.size() <= 30)) &&
+             (!('dateOfBirth' in data) || data.dateOfBirth == null || (data.dateOfBirth is string && data.dateOfBirth.size() <= 30)) &&
+             (!('notes' in data) || data.notes == null || (data.notes is string && data.notes.size() <= 500)) &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             (!('updatedAt' in data) || data.updatedAt == null || (data.updatedAt is timestamp && data.updatedAt <= request.time));
+    }
+
+    function isValidCloudRaceRecord(data) {
+      return data.userId is string && data.userId == request.auth.uid &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 120 &&
+             data.eventName is string && data.eventName.size() >= 1 && data.eventName.size() <= 80 &&
+             data.athleteName is string && data.athleteName.size() >= 1 && data.athleteName.size() <= 120 &&
+             data.recordedTimeMillis is int && data.recordedTimeMillis >= 0 && data.recordedTimeMillis <= 86400000 &&
+             data.windReading is string && data.windReading.size() >= 1 && data.windReading.size() <= 40 &&
+             data.lane is int && data.lane >= 1 && data.lane <= 12 &&
+             data.coachEmail is string && data.coachEmail.size() >= 1 && data.coachEmail.size() <= 120 &&
+             (!('cadenceSpM' in data) || data.cadenceSpM == null || (data.cadenceSpM is int && data.cadenceSpM >= 0 && data.cadenceSpM <= 500)) &&
+             (!('strideFreqHz' in data) || data.strideFreqHz == null || (data.strideFreqHz is number && data.strideFreqHz >= 0 && data.strideFreqHz <= 20)) &&
+             (!('groundContactTimeMs' in data) || data.groundContactTimeMs == null || (data.groundContactTimeMs is int && data.groundContactTimeMs >= 0 && data.groundContactTimeMs <= 2000)) &&
+             (!('torsoLeanAngleDeg' in data) || data.torsoLeanAngleDeg == null || (data.torsoLeanAngleDeg is number && data.torsoLeanAngleDeg >= -45 && data.torsoLeanAngleDeg <= 90)) &&
+             (!('notes' in data) || data.notes == null || (data.notes is string && data.notes.size() <= 500)) &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             (!('updatedAt' in data) || data.updatedAt == null || (data.updatedAt is timestamp && data.updatedAt <= request.time));
+    }
+
+    // 4. Collection: /athletes/{athleteId}
+    match /athletes/{athleteId} {
+      allow get: if isSignedIn() && isValidId(athleteId) && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && existing().userId == request.auth.uid;
+
+      allow create: if isSignedIn() &&
+                       isValidId(athleteId) &&
+                       isValidCloudAthlete(incoming()) &&
+                       incoming().keys().hasAll(['userId', 'name', 'category', 'specificEvent', 'pbValue', 'pbUnit', 'clubName', 'coachEmail', 'createdAt']) &&
+                       incoming().keys().hasOnly(['userId', 'name', 'category', 'specificEvent', 'pbValue', 'pbUnit', 'clubName', 'coachEmail', 'gender', 'dateOfBirth', 'notes', 'createdAt', 'updatedAt']);
+
+      allow update: if isSignedIn() &&
+                       isValidCloudAthlete(incoming()) &&
+                       isValidId(athleteId) &&
+                       existing().userId == request.auth.uid &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['name', 'category', 'specificEvent', 'pbValue', 'pbUnit', 'clubName', 'coachEmail', 'gender', 'dateOfBirth', 'notes', 'updatedAt']);
+
+      allow delete: if isSignedIn() && isValidId(athleteId) && existing().userId == request.auth.uid;
+    }
+
+    // 5. Collection: /race_records/{raceId}
+    match /race_records/{raceId} {
+      allow get: if isSignedIn() && isValidId(raceId) && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && existing().userId == request.auth.uid;
+
+      allow create: if isSignedIn() &&
+                       isValidId(raceId) &&
+                       isValidCloudRaceRecord(incoming()) &&
+                       incoming().keys().hasAll(['userId', 'title', 'eventName', 'athleteName', 'recordedTimeMillis', 'windReading', 'lane', 'coachEmail', 'createdAt']) &&
+                       incoming().keys().hasOnly(['userId', 'title', 'eventName', 'athleteName', 'recordedTimeMillis', 'windReading', 'lane', 'coachEmail', 'cadenceSpM', 'strideFreqHz', 'groundContactTimeMs', 'torsoLeanAngleDeg', 'notes', 'createdAt', 'updatedAt']);
+
+      allow update: if isSignedIn() &&
+                       isValidCloudRaceRecord(incoming()) &&
+                       isValidId(raceId) &&
+                       existing().userId == request.auth.uid &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['title', 'eventName', 'athleteName', 'recordedTimeMillis', 'windReading', 'lane', 'coachEmail', 'cadenceSpM', 'strideFreqHz', 'groundContactTimeMs', 'torsoLeanAngleDeg', 'notes', 'updatedAt']);
+
+      allow delete: if isSignedIn() && isValidId(raceId) && existing().userId == request.auth.uid;
+    }
+  }
+}

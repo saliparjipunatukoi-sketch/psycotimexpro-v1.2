@@ -1,13 +1,22 @@
 package com.example.viewmodel
 
 import android.app.Application
+import android.util.Log
+import androidx.credentials.ClearCredentialStateRequest
+import androidx.credentials.CredentialManager
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.R
 import com.example.data.local.AppDatabase
 import com.example.data.model.*
 import com.example.data.repository.AthleteRepository
+import com.example.data.repository.FirestoreSportsRepository
 import com.example.data.repository.SportsRepository
 import com.example.service.*
+import com.google.firebase.Firebase
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.auth
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 
@@ -19,6 +28,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val storageManager = StorageManager(application)
     val webSyncManager = WebSyncManager()
     val bluetoothTriggerManager = BluetoothSelfieTriggerManager(application)
+
+    // Provisioned Firestore Named Database & Repository
+    private val firestoreDatabaseId: String =
+        application.getString(R.string.firestore_database_id)
+    private val firestoreDb: FirebaseFirestore by lazy {
+        FirebaseFirestore.getInstance(firestoreDatabaseId)
+    }
+    val firestoreRepository: FirestoreSportsRepository by lazy {
+        FirestoreSportsRepository(firestoreDb)
+    }
 
     // Current User & Authentication
     val superAdminEmail = "saliparjipun.atukoi@gmail.com"
@@ -114,6 +133,24 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _lastExportedSlitPath = MutableStateFlow<String?>(null)
     val lastExportedSlitPath: StateFlow<String?> = _lastExportedSlitPath.asStateFlow()
 
+    // Firebase AuthStateListener
+    private val authStateListener = FirebaseAuth.AuthStateListener { firebaseAuth ->
+        val user = firebaseAuth.currentUser
+        if (user != null) {
+            val email = (user.email ?: _currentUserEmail.value).ifBlank { "coach@psycotimexpro.my" }
+            val isSuper = email.equals(superAdminEmail, ignoreCase = true)
+            val name = user.displayName ?: _currentUserName.value.ifBlank {
+                if (isSuper) "Coach Salipar Jipun (Superadmin)" else "Jurulatih (${email.substringBefore("@")})"
+            }
+            _currentUserEmail.value = email
+            _currentUserName.value = name
+            _isSuperAdmin.value = isSuper
+            _isLoggedIn.value = true
+        } else {
+            _isLoggedIn.value = false
+        }
+    }
+
     fun updateSelectedVideoFolder(path: String): FolderValidationResult {
         val result = storageManager.saveSelectedVideoFolder(path)
         if (result.isValid) {
@@ -134,7 +171,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         if (isSuper) {
             races
         } else {
-            // Strictly filter races to the logged-in coach or their sub-users
             races.filter { it.coachEmail.equals(email, ignoreCase = true) || it.createdByEmail.equals(email, ignoreCase = true) }
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -160,6 +196,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     init {
+        try {
+            Firebase.auth.addAuthStateListener(authStateListener)
+        } catch (e: Exception) {
+            Log.w("MainViewModel", "Firebase Auth listener registration deferred: ${e.message}")
+        }
         viewModelScope.launch {
             repository.seedSampleDataIfEmpty()
         }
@@ -175,13 +216,31 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             coachEmail = email
         )
         _isLoggedIn.value = true
+
+        // Sync existing local records to Cloud Firestore when authenticated with Firebase
+        if (Firebase.auth.currentUser != null) {
+            syncAllToFirestoreCloud()
+        }
     }
 
     fun logout() {
-        _isLoggedIn.value = false
-        _currentUserEmail.value = ""
-        _currentUserName.value = ""
-        _isSuperAdmin.value = false
+        viewModelScope.launch {
+            try {
+                val credentialManager = CredentialManager.create(getApplication())
+                credentialManager.clearCredentialState(ClearCredentialStateRequest())
+            } catch (e: Exception) {
+                Log.w("MainViewModel", "Failed to clear credential state", e)
+            }
+            try {
+                Firebase.auth.signOut()
+            } catch (e: Exception) {
+                Log.w("MainViewModel", "Firebase signOut error", e)
+            }
+            _isLoggedIn.value = false
+            _currentUserEmail.value = ""
+            _currentUserName.value = ""
+            _isSuperAdmin.value = false
+        }
     }
 
     fun switchUser(email: String, name: String) {
@@ -222,7 +281,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     /**
      * Starts the sprint timer AND simultaneously fires the explosive Electronic Starter Gun sound.
-     *Strictly idempotent: if already running, calling startTimer() again will NOT reset or stop it.
+     * Strictly idempotent: if already running, calling startTimer() again will NOT reset or stop it.
      */
     fun startTimer(fireGunSound: Boolean = true) {
         if (_isTimerRunning.value) return
@@ -258,10 +317,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
         if (_isBluetoothTriggerEnabled.value) {
             if (!_isTimerRunning.value) {
-                // ONLY valid for START button: fire starter gun sound + start timer together!
                 startTimer(fireGunSound = true)
             }
-            // Consume key event even if timer is running so Volume bar doesn't pop up or stop race
             return true
         }
         return false
@@ -304,7 +361,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _isTimerRunning.value = false
         timerJob?.cancel()
 
-        // Generate suggested next title like "Race 1", "Race 2", etc.
         viewModelScope.launch {
             val count = repository.getRaceCount()
             _suggestedRaceTitle.value = "Race ${count + 1}"
@@ -318,10 +374,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _elapsedMillis.value = 0L
     }
 
-    /**
-     * Trigger simulated or camera optical motion detection.
-     * When motion is simulated/detected, computes genuine AI biomechanics.
-     */
     fun setMotionDetection(hasMotion: Boolean, energy: Float, category: String = "Track", eventName: String = "100m Sprint") {
         _isMovementDetected.value = hasMotion
         _motionEnergy.value = energy
@@ -345,7 +397,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     ) {
         val timeMs = _elapsedMillis.value
         viewModelScope.launch {
-            // Create video files in device storage with overlays & custom folder support
             val (cam1Uri, cam2Uri) = storageManager.createRaceVideoPackage(
                 raceTitle = title,
                 recordedTimeFormatted = String.format("%.2f s", timeMs / 1000.0),
@@ -353,7 +404,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 targetFolder = targetFolder
             )
 
-            // Capture real live camera frame if available, else realistic tartan track finish scan
             val liveBmp = com.example.ui.components.CameraFrameHolder.latestLiveFrameBitmap
             val photoFinishUri = storageManager.savePhotoFinishImage(
                 raceTitle = title,
@@ -389,7 +439,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
             repository.insertRace(newRace)
 
-            // Store PerformanceMetrics & PB data locally in Room
+            if (Firebase.auth.currentUser != null) {
+                firestoreRepository.syncLocalRaceToCloud(newRace)
+            }
+
             if (athleteId != null) {
                 val metric = PerformanceMetrics(
                     athleteId = athleteId,
@@ -432,7 +485,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun addAthlete(athlete: AthleteEntity) {
         viewModelScope.launch {
             val id = athleteRepository.insertAthlete(athlete)
-            // If registration fee entered, add fee record
             if (athlete.registrationFee > 0) {
                 repository.insertFee(
                     FeeRecordEntity(
@@ -447,8 +499,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     )
                 )
             }
+            if (Firebase.auth.currentUser != null) {
+                firestoreRepository.syncLocalAthleteToCloud(athlete.copy(id = id))
+            }
             _showAddAthleteDialog.value = false
-            // Auto-sync with web portal whenever a new athlete is registered
             syncWithWeb()
         }
     }
@@ -456,6 +510,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun updateAthlete(athlete: AthleteEntity) {
         viewModelScope.launch {
             athleteRepository.updateAthlete(athlete)
+            if (Firebase.auth.currentUser != null) {
+                firestoreRepository.syncLocalAthleteToCloud(athlete)
+            }
         }
     }
 
@@ -472,7 +529,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             val currentCount = repository.countSubUsers(_currentUserEmail.value)
             if (currentCount >= 10 && !_isSuperAdmin.value) {
-                // Limit to maximum 10 sub-users as required in instruction 1
                 return@launch
             }
             val sub = SubUserEntity(
@@ -534,7 +590,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun deleteRace(race: RaceRecordEntity) {
         viewModelScope.launch {
             repository.deleteRace(race)
-            // Delete associated video / photo files if existing
             race.cam1VideoUri?.let { uri ->
                 try { java.io.File(uri).delete() } catch (_: Exception) {}
             }
@@ -559,7 +614,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun downloadVideoToPhone(race: RaceRecordEntity, isCam2: Boolean) {
-        // StorageManager ensures file is stored in /PsycoTimeXPro/Videos/ and exported to public gallery
         storageManager.createRaceVideoPackage(
             raceTitle = race.title,
             recordedTimeFormatted = race.formattedTime,
@@ -567,11 +621,27 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         )
     }
 
+    private fun syncAllToFirestoreCloud() {
+        viewModelScope.launch {
+            if (Firebase.auth.currentUser == null) return@launch
+            allAthletes.value.forEach { athlete ->
+                firestoreRepository.syncLocalAthleteToCloud(athlete)
+            }
+            allRaces.value.forEach { race ->
+                firestoreRepository.syncLocalRaceToCloud(race)
+            }
+        }
+    }
+
     fun syncWithWeb() {
         viewModelScope.launch {
             _isSyncing.value = true
             val athletesList = allAthletes.value
             val racesList = allRaces.value
+            if (Firebase.auth.currentUser != null) {
+                athletesList.forEach { firestoreRepository.syncLocalAthleteToCloud(it) }
+                racesList.forEach { firestoreRepository.syncLocalRaceToCloud(it) }
+            }
             val result = webSyncManager.syncDataToWeb(
                 athletes = athletesList,
                 races = racesList,
@@ -585,6 +655,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     override fun onCleared() {
         super.onCleared()
+        try {
+            Firebase.auth.removeAuthStateListener(authStateListener)
+        } catch (_: Exception) {}
         audioGunDetector?.stopListening()
         timerJob?.cancel()
     }
