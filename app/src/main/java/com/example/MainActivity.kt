@@ -22,6 +22,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -29,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.data.model.AchievementEntity
+import com.example.service.configureAppCheck
 import com.example.ui.dialogs.*
 import com.example.ui.screens.*
 import com.example.ui.theme.*
@@ -43,6 +45,7 @@ enum class ScreenTab(val title: String, val icon: androidx.compose.ui.graphics.v
     REGISTER_ATHLETE("Daftar Atlit", Icons.Default.PersonAdd),
     FEES("Yuran", Icons.Default.ReceiptLong),
     SUBUSERS("Pegawai", Icons.Default.Group),
+    SPORTS_SCIENCE_AI("Sains AI", Icons.Default.Science),
     WEB_PORTAL("Web Portal", Icons.Default.Public),
     SETTINGS("Tetapan", Icons.Default.Settings),
     VIDEO_STORAGE_SETTINGS("Storan Video", Icons.Default.FolderSpecial)
@@ -66,9 +69,17 @@ class MainActivity : ComponentActivity() {
         return super.dispatchGenericMotionEvent(ev)
     }
 
+    override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+        if (viewModel.handleBluetoothRemoteMotionEvent(ev)) {
+            return true
+        }
+        return super.dispatchTouchEvent(ev)
+    }
+
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        configureAppCheck(this, intent)
         enableEdgeToEdge()
 
         setContent {
@@ -77,6 +88,10 @@ class MainActivity : ComponentActivity() {
                 var showSplash by remember { mutableStateOf(true) }
                 var currentTab by remember { mutableStateOf(ScreenTab.DASHBOARD) }
                 var showLogoutConfirmDialog by remember { mutableStateOf(false) }
+
+                LaunchedEffect(currentTab, isLoggedIn, showSplash) {
+                    viewModel.setTimingTabActive(!showSplash && isLoggedIn && currentTab == ScreenTab.TIMING)
+                }
 
                 if (showSplash) {
                     SplashScreen(
@@ -170,6 +185,7 @@ class MainActivity : ComponentActivity() {
                                         ),
                                         modifier = Modifier
                                             .height(28.dp)
+                                            .focusProperties { canFocus = false }
                                             .clickable { viewModel.setShowBluetoothRemoteSetupDialog(true) }
                                             .testTag("top_bar_bt_trigger_button")
                                     ) {
@@ -193,7 +209,7 @@ class MainActivity : ComponentActivity() {
                                                 modifier = Modifier.size(13.dp)
                                             )
                                             Text(
-                                                text = "BLE-M3",
+                                                text = if (currentTab == ScreenTab.TIMING) "BLE-M3 LOCKED" else "BLE-M3",
                                                 fontSize = 9.sp,
                                                 fontWeight = FontWeight.Black,
                                                 color = if (isBluetoothTriggerEnabled) Color.White else SilverMetallic
@@ -201,14 +217,30 @@ class MainActivity : ComponentActivity() {
                                         }
                                     }
 
-                                    IconButton(onClick = { viewModel.setShowWebSyncDialog(true) }) {
+                                    IconButton(
+                                        onClick = { currentTab = ScreenTab.SUBUSERS },
+                                        modifier = Modifier.focusProperties { canFocus = false }
+                                    ) {
+                                        Icon(
+                                            Icons.Default.Group,
+                                            contentDescription = "Pegawai",
+                                            tint = if (currentTab == ScreenTab.SUBUSERS) FinishLineRed else Color.White
+                                        )
+                                    }
+                                    IconButton(
+                                        onClick = { viewModel.setShowWebSyncDialog(true) },
+                                        modifier = Modifier.focusProperties { canFocus = false }
+                                    ) {
                                         Icon(
                                             Icons.Default.CloudSync,
                                             contentDescription = "Sync Web",
                                             tint = Color.White
                                         )
                                     }
-                                    IconButton(onClick = { currentTab = ScreenTab.SETTINGS }) {
+                                    IconButton(
+                                        onClick = { currentTab = ScreenTab.SETTINGS },
+                                        modifier = Modifier.focusProperties { canFocus = false }
+                                    ) {
                                         Icon(
                                             Icons.Default.Settings,
                                             contentDescription = "Tetapan",
@@ -217,7 +249,9 @@ class MainActivity : ComponentActivity() {
                                     }
                                     IconButton(
                                         onClick = { showLogoutConfirmDialog = true },
-                                        modifier = Modifier.testTag("top_bar_logout_button")
+                                        modifier = Modifier
+                                            .focusProperties { canFocus = false }
+                                            .testTag("top_bar_logout_button")
                                     ) {
                                         Icon(
                                             Icons.Default.ExitToApp,
@@ -234,7 +268,9 @@ class MainActivity : ComponentActivity() {
                         bottomBar = {
                             NavigationBar(
                                 containerColor = StadiumSurface,
-                                modifier = Modifier.testTag("bottom_navigation_bar")
+                                modifier = Modifier
+                                    .focusProperties { canFocus = false }
+                                    .testTag("bottom_navigation_bar")
                             ) {
                                 val tabs = listOf(
                                     ScreenTab.DASHBOARD,
@@ -243,13 +279,14 @@ class MainActivity : ComponentActivity() {
                                     ScreenTab.REPLAY,
                                     ScreenTab.ATHLETES,
                                     ScreenTab.FEES,
-                                    ScreenTab.SUBUSERS
+                                    ScreenTab.SPORTS_SCIENCE_AI
                                 )
                                 tabs.forEach { tab ->
                                     val selected = currentTab == tab
                                     NavigationBarItem(
                                         selected = selected,
                                         onClick = { currentTab = tab },
+                                        modifier = Modifier.focusProperties { canFocus = false },
                                         icon = {
                                             Icon(
                                                 imageVector = tab.icon,
@@ -433,6 +470,28 @@ class MainActivity : ComponentActivity() {
                                     onOpenAddSubUser = { viewModel.setShowAddSubUserDialog(true) },
                                     onDeleteSubUser = {
                                         viewModel.deleteSubUser(it)
+                                    }
+                                )
+
+                                ScreenTab.SPORTS_SCIENCE_AI -> SportsScienceAiHubScreen(
+                                    athletes = athletes,
+                                    races = races,
+                                    sandJumpHistory = sandJumpHistory,
+                                    coachName = currentUserName,
+                                    onApplyDrillToAllAthletes = { drill, _ ->
+                                        athletes.forEach { athlete ->
+                                            viewModel.addAchievement(
+                                                AchievementEntity(
+                                                    athleteId = athlete.id,
+                                                    athleteName = athlete.name,
+                                                    tournamentName = "Program Latihan Rumah AI (${drill.sport.shortLabel})",
+                                                    eventName = drill.title,
+                                                    medal = if (drill.type == SuggestionType.WARM_UP) "WARM-UP RAMP" else "TRAINING AI",
+                                                    resultRecord = drill.setsAndReps,
+                                                    yearOrDate = "2026"
+                                                )
+                                            )
+                                        }
                                     }
                                 )
 

@@ -1,6 +1,8 @@
 package com.example.ui.screens
 
 import android.Manifest
+import android.app.Activity
+import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -13,6 +15,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -33,6 +36,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -45,8 +49,11 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import com.example.data.model.AthleteEntity
 import com.example.service.SandJumpAiAnalysis
+import com.example.ui.components.AiCameraMonitorTelemetryHud
 import com.example.ui.components.CameraFrameHolder
+import com.example.ui.components.HumanSkeletonTelemetry
 import com.example.ui.components.RealCameraPreview
+import com.example.ui.components.drawAiHumanBiomechanicalSkeleton
 import com.example.ui.theme.*
 import kotlinx.coroutines.delay
 import java.io.File
@@ -81,6 +88,7 @@ fun SandJumpAiScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val activity = context as? Activity
 
     var hasCameraPermission by remember {
         mutableStateOf(
@@ -97,6 +105,34 @@ fun SandJumpAiScreen(
         hasCameraPermission = isGranted
     }
 
+    // Natural Screen Rotation State (Camera stays 100% upright & aligned with real world;
+    // the screen itself rotates freely between Portrait & Landscape!)
+    var isFullScreenLandscapeLocked by remember { mutableStateOf(false) }
+    var currentCameraZoom by remember { mutableStateOf(CameraFrameHolder.currentZoomRatio) }
+    var isDemoSkeletonActive by remember { mutableStateOf(CameraFrameHolder.isDemoHumanSkeletonActive) }
+    var liveSkeleton by remember { mutableStateOf(CameraFrameHolder.latestHumanSkeleton) }
+
+    LaunchedEffect(isDemoSkeletonActive) {
+        while (true) {
+            if (CameraFrameHolder.isDemoHumanSkeletonActive) {
+                CameraFrameHolder.latestHumanSkeleton = CameraFrameHolder.buildSimulatedHumanSkeleton(
+                    centerX = CameraFrameHolder.trackedHorizontalCenterRatio,
+                    isJumping = true
+                )
+            }
+            liveSkeleton = CameraFrameHolder.latestHumanSkeleton
+            delay(80L)
+        }
+    }
+
+    DisposableEffect(Unit) {
+        // Allow the screen to auto-rotate naturally when the user rotates their phone
+        activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR
+        onDispose {
+            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        }
+    }
+
     // 1. Sport Category & Athlete Configuration
     val categories = remember {
         listOf(
@@ -109,16 +145,16 @@ fun SandJumpAiScreen(
     var selectedAthlete by remember(athletes) { mutableStateOf(athletes.firstOrNull()) }
     var customAthleteName by remember { mutableStateOf("Atlit Lompat #1") }
 
-    // 2. Digital Measuring Tape Calibration (Papan Anjakan Hujung -> Kotak Garisan Terakhir Pasir)
+    // 2. Digital Measuring Tape Calibration (Papan Lompatan 0.00m Kiri -> Hujung Pasir Penamat Kanan)
     var configuredMaxTapeMeters by remember { mutableStateOf(8.0) }
     var isCalibrationSureApproved by remember { mutableStateOf(false) }
 
-    // Normalized coordinates (0f..1f) on camera viewport:
-    // Point A = Hujung Papan Anjakan (0.00m)
-    var boardStartX by remember { mutableStateOf(0.18f) }
-    var boardStartY by remember { mutableStateOf(0.62f) }
-    // Point B = Garisan Terakhir Kotak Sukatan Pasir (Max Tape Meters)
-    var sandBoxEndX by remember { mutableStateOf(0.86f) }
+    // Normalized coordinates (0f..1f) on wide rotated camera viewport:
+    // Point A = Hujung Papan Lompatan (0.00m di sebelah kiri monitor)
+    var boardStartX by remember { mutableStateOf(0.10f) }
+    var boardStartY by remember { mutableStateOf(0.58f) }
+    // Point B = Hujung Pasir Penamat (Max Tape Meters di sebelah kanan monitor)
+    var sandBoxEndX by remember { mutableStateOf(0.92f) }
     var sandBoxEndY by remember { mutableStateOf(0.58f) }
 
     // AI Detected / Fine-tuned Landing Progress along the calibrated tape (0f..1f)
@@ -186,13 +222,13 @@ fun SandJumpAiScreen(
                     }
                     Column {
                         Text(
-                            text = "AI INTELLIGENCE: LOMPAT JAUH, TRIPLE JUMP & SUKAN PASIR",
+                            text = "LOMPAT AI: MONITOR MELINTANG (PAPAN ➔ HUJUNG PASIR SYNC)",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Black,
                             color = Color.White
                         )
                         Text(
-                            text = "Kesan Papan Anjakan ➔ Pita Pengukur ➔ Kotak Sukatan Pasir Terjauh + Bukti Photo-Finish",
+                            text = "Kamera Rotate Melintang • Lihat & Sukat Terus Dari Papan Lompatan Ke Hujung Pasir Penamat",
                             fontSize = 8.sp,
                             color = TextSecondary
                         )
@@ -204,12 +240,97 @@ fun SandJumpAiScreen(
                     shape = RoundedCornerShape(6.dp)
                 ) {
                     Text(
-                        text = if (isCalibrationSureApproved) "SURE APPROVED ✓" else "PERLU KALIBRASI",
+                        text = if (isCalibrationSureApproved) "SYNC LOCKED ✓" else "PERLU KALIBRASI",
                         fontSize = 8.sp,
                         fontWeight = FontWeight.Black,
                         color = if (isCalibrationSureApproved) SuccessGreen else SpeedAmber,
                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
                     )
+                }
+            }
+        }
+
+        // SCREEN ROTATION & CAMERA ZOOM CONTROL BANNER (CAMERA NEVER SPINS SIDEWAYS WHEN PHONE IS UPRIGHT)
+        Surface(
+            color = SpeedAmber.copy(alpha = 0.14f),
+            shape = RoundedCornerShape(10.dp),
+            border = BorderStroke(1.2.dp, SpeedAmber.copy(alpha = 0.85f)),
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag("rotate_camera_instruction_banner")
+        ) {
+            Column(
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .size(28.dp)
+                            .background(SpeedAmber, CircleShape)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ScreenRotation,
+                            contentDescription = "Skrin Auto-Rotate & Zoom",
+                            tint = Color.Black,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "SKRIN BOLEH ROTATE (PORTRAIT / LANDSCAPE) & ZOOM KEPUTUSAN AKTIF",
+                            fontSize = 9.5.sp,
+                            fontWeight = FontWeight.Black,
+                            color = SpeedAmber
+                        )
+                        Text(
+                            text = "Kamera sentiasa tegak mengikut kedudukan telefon sebenar. Pusing telefon atau tekan 'Skrin Landscape' untuk pandangan lebar dari Papan Lompatan (0.00m) ke Hujung Pasir (${configuredMaxTapeMeters.toInt()}.0m), dan guna Zoom (1x–4x) untuk lihat atlit & keputusan dengan jelas.",
+                            fontSize = 8.5.sp,
+                            color = Color.White,
+                            lineHeight = 11.sp
+                        )
+                    }
+
+                    Surface(
+                        color = if (isFullScreenLandscapeLocked) SuccessGreen else StadiumSurfaceVariant,
+                        shape = RoundedCornerShape(8.dp),
+                        border = BorderStroke(1.dp, if (isFullScreenLandscapeLocked) SuccessGreen else SpeedAmber),
+                        modifier = Modifier
+                            .height(30.dp)
+                            .clickable {
+                                isFullScreenLandscapeLocked = !isFullScreenLandscapeLocked
+                                activity?.requestedOrientation = if (isFullScreenLandscapeLocked) {
+                                    ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+                                } else {
+                                    ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR
+                                }
+                            }
+                            .testTag("toggle_landscape_screen_btn")
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.StayCurrentLandscape,
+                                contentDescription = null,
+                                tint = if (isFullScreenLandscapeLocked) Color.Black else SpeedAmber,
+                                modifier = Modifier.size(13.dp)
+                            )
+                            Text(
+                                text = if (isFullScreenLandscapeLocked) "Tukar Portrait" else "Skrin Landscape",
+                                fontSize = 8.5.sp,
+                                fontWeight = FontWeight.Black,
+                                color = if (isFullScreenLandscapeLocked) Color.Black else SpeedAmber
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -250,11 +371,11 @@ fun SandJumpAiScreen(
             }
         }
 
-        // LIVE CAMERA VIEWPORT WITH INTERACTIVE DRAGGABLE MEASURING TAPE (PITA PENGUKUR AI)
+        // NATURAL UPRIGHT CAMERA MONITOR VIEWPORT (NEVER ARTIFICIALLY SPUN SIDEWAYS!)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(350.dp)
+                .height(355.dp)
                 .clip(RoundedCornerShape(14.dp))
                 .background(Color.Black)
                 .border(
@@ -271,12 +392,13 @@ fun SandJumpAiScreen(
                 RealCameraPreview(
                     isSlitActive = true,
                     onMotionDetected = { hasMotion, energy ->
-                        isMotionDetectedInPit = hasMotion
-                        if (hasMotion) {
+                        // Only accept motion when verified as a real human athlete (never a finger or object!)
+                        val verifiedHuman = CameraFrameHolder.latestHumanSkeleton.isHumanDetected
+                        isMotionDetectedInPit = hasMotion && verifiedHuman
+                        if (hasMotion && verifiedHuman) {
                             liveMotionEnergy = energy
                             if (isRecordingJump) {
-                                // Dynamically refine sand landing detection within calibrated box
-                                val dynamicShift = ((energy - 0.3f) * 0.08f).coerceIn(-0.04f, 0.06f)
+                                val dynamicShift = ((energy - 0.3f) * 0.06f).coerceIn(-0.03f, 0.05f)
                                 landingProgressRatio = (landingProgressRatio + dynamicShift).coerceIn(0.45f, 0.92f)
                             }
                         }
@@ -292,14 +414,14 @@ fun SandJumpAiScreen(
                     verticalArrangement = Arrangement.Center
                 ) {
                     Icon(
-                        imageVector = Icons.Default.CameraAlt,
+                        imageVector = Icons.Default.ScreenRotation,
                         contentDescription = null,
                         tint = SpeedAmber,
                         modifier = Modifier.size(34.dp)
                     )
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
-                        text = "Aktifkan Kamera Menghadap Papan Anjakan & Kotak Pasir",
+                        text = "Putar Kamera Melintang Menghadap Papan Lompatan ➔ Hujung Pasir Penamat",
                         fontWeight = FontWeight.Bold,
                         color = Color.White,
                         fontSize = 12.sp,
@@ -315,9 +437,8 @@ fun SandJumpAiScreen(
                 }
             }
 
-            // INTERACTIVE MEASURING TAPE & SAND PIT BOX OVERLAY CANVAS
-            // Coach drags Handle A (Hujung Papan Anjakan 0.00m), Handle B (Garisan Terakhir Kotak Pasir),
-            // or the Sand Landing Marker directly on the screen!
+            // INTERACTIVE SYNCHRONIZED BOARD-TO-SAND MEASURING TAPE & OPTICAL LASER GRID OVERLAY
+            // Spans continuously from Papan Lompatan (0.00m Left) -> Hujung Pasir Penamat (Max Meters Right)
             Canvas(
                 modifier = Modifier
                     .fillMaxSize()
@@ -334,16 +455,16 @@ fun SandJumpAiScreen(
                             val distToLanding = hypot(touchX - landingPointX, touchY - landingPointY)
 
                             if (!isCalibrationSureApproved) {
-                                // During calibration: drag either Papan Anjakan (0m) or Hujung Kotak Pasir
+                                // During calibration: drag either Papan Lompatan (0m Left) or Hujung Pasir Penamat (Right)
                                 if (distToStart <= distToEnd) {
-                                    boardStartX = (boardStartX + dragAmount.x / w).coerceIn(0.06f, 0.65f)
-                                    boardStartY = (boardStartY + dragAmount.y / h).coerceIn(0.18f, 0.88f)
+                                    boardStartX = (boardStartX + dragAmount.x / w).coerceIn(0.05f, 0.45f)
+                                    boardStartY = (boardStartY + dragAmount.y / h).coerceIn(0.22f, 0.82f)
                                 } else {
-                                    sandBoxEndX = (sandBoxEndX + dragAmount.x / w).coerceIn(0.35f, 0.95f)
-                                    sandBoxEndY = (sandBoxEndY + dragAmount.y / h).coerceIn(0.18f, 0.88f)
+                                    sandBoxEndX = (sandBoxEndX + dragAmount.x / w).coerceIn(0.55f, 0.96f)
+                                    sandBoxEndY = (sandBoxEndY + dragAmount.y / h).coerceIn(0.22f, 0.82f)
                                 }
-                            } else if (distToLanding < 0.25f) {
-                                // After calibration approved: allow fine-tuning the sand break mark along the tape
+                            } else if (distToLanding < 0.28f) {
+                                // After calibration approved: allow fine-tuning the sand break mark along the synchronized ruler
                                 val deltaRatio = (dragAmount.x / w) / (sandBoxEndX - boardStartX).coerceAtLeast(0.2f)
                                 landingProgressRatio = (landingProgressRatio + deltaRatio).coerceIn(0.15f, 0.98f)
                             }
@@ -357,20 +478,20 @@ fun SandJumpAiScreen(
                 val endPx = Offset(sandBoxEndX * w, sandBoxEndY * h)
                 val landPx = Offset(landingPointX * w, landingPointY * h)
 
-                // 1. Draw Sand Pit Measuring Box Zone (Kotak Sukatan Pasir)
-                val pitLeft = minOf(startPx.x, endPx.x) + ( kotlin.math.abs(endPx.x - startPx.x) * 0.14f )
-                val pitRight = maxOf(startPx.x, endPx.x) + 18f
-                val pitTop = minOf(startPx.y, endPx.y) - h * 0.20f
-                val pitBottom = maxOf(startPx.y, endPx.y) + h * 0.16f
+                // 1. Draw Wide Panoramic Sand Pit Zone (Dari Papan Lompatan 0.00m Terus Ke Hujung Pasir Penamat)
+                val pitLeft = minOf(startPx.x, endPx.x)
+                val pitRight = maxOf(startPx.x, endPx.x)
+                val pitTop = minOf(startPx.y, endPx.y) - h * 0.22f
+                val pitBottom = maxOf(startPx.y, endPx.y) + h * 0.18f
 
                 drawRoundRect(
-                    color = SpeedAmber.copy(alpha = 0.10f),
+                    color = SpeedAmber.copy(alpha = 0.09f),
                     topLeft = Offset(pitLeft, pitTop),
                     size = Size((pitRight - pitLeft).coerceAtLeast(40f), (pitBottom - pitTop).coerceAtLeast(40f)),
                     cornerRadius = CornerRadius(12f, 12f)
                 )
                 drawRoundRect(
-                    color = if (isCalibrationSureApproved) SuccessGreen.copy(alpha = 0.7f) else SpeedAmber,
+                    color = if (isCalibrationSureApproved) SuccessGreen.copy(alpha = 0.75f) else SpeedAmber,
                     topLeft = Offset(pitLeft, pitTop),
                     size = Size((pitRight - pitLeft).coerceAtLeast(40f), (pitBottom - pitTop).coerceAtLeast(40f)),
                     cornerRadius = CornerRadius(12f, 12f),
@@ -380,51 +501,82 @@ fun SandJumpAiScreen(
                     )
                 )
 
-                // 2. Draw Take-Off Board Line (Papan Anjakan + Plastisin Foul Line)
-                val boardColor = if (toeToBoardCm >= 0.0) SuccessGreen else FinishLineRed
-                drawLine(
-                    color = boardColor,
-                    start = Offset(startPx.x, startPx.y - h * 0.24f),
-                    end = Offset(startPx.x, startPx.y + h * 0.18f),
-                    strokeWidth = 6f
-                )
-
-                // 3. Draw Garisan Terakhir Kotak Sukatan Pasir (End Line)
-                drawLine(
-                    color = ElectricCyan,
-                    start = Offset(endPx.x, endPx.y - h * 0.24f),
-                    end = Offset(endPx.x, endPx.y + h * 0.18f),
-                    strokeWidth = 5f
-                )
-
-                // 4. Draw Stretched Digital Measuring Tape (Pita Pengukur AI) from Board (0.00m) to Last Sand Box Line
-                drawLine(
-                    color = SpeedAmber,
-                    start = startPx,
-                    end = endPx,
-                    strokeWidth = 5f
-                )
-
-                // Draw Meter Graduation Ticks along the Measuring Tape
+                // 2. Draw Vertical Meter Grid Lines across the entire Sand Pit for continuous visual sync
                 val totalTicks = configuredMaxTapeMeters.toInt().coerceIn(4, 16)
                 for (i in 0..totalTicks) {
                     val t = i.toFloat() / totalTicks.toFloat()
                     val tickX = startPx.x + (endPx.x - startPx.x) * t
                     val tickY = startPx.y + (endPx.y - startPx.y) * t
+
+                    // Full-height subtle optical grid line inside the sand pit box
+                    drawLine(
+                        color = Color.White.copy(alpha = if (i % 2 == 0) 0.28f else 0.14f),
+                        start = Offset(tickX, pitTop),
+                        end = Offset(tickX, pitBottom),
+                        strokeWidth = if (i % 2 == 0) 1.8f else 1f
+                    )
+
+                    // Major meter graduation tick on the tape
                     drawLine(
                         color = Color.White,
-                        start = Offset(tickX, tickY - 10f),
-                        end = Offset(tickX, tickY + 10f),
-                        strokeWidth = 2.5f
+                        start = Offset(tickX, tickY - 12f),
+                        end = Offset(tickX, tickY + 12f),
+                        strokeWidth = 2.8f
                     )
+
+                    // Half-meter (0.5m) sub-tick
+                    if (i < totalTicks) {
+                        val halfT = (i + 0.5f) / totalTicks.toFloat()
+                        val halfX = startPx.x + (endPx.x - startPx.x) * halfT
+                        val halfY = startPx.y + (endPx.y - startPx.y) * halfT
+                        drawLine(
+                            color = SpeedAmber.copy(alpha = 0.85f),
+                            start = Offset(halfX, halfY - 6f),
+                            end = Offset(halfX, halfY + 6f),
+                            strokeWidth = 1.8f
+                        )
+                    }
                 }
 
-                // 5. Draw Parabolic Jump Flight Arc & Tall Vertical AI Landing Box at Furthest Sand Mark
+                // 3. Draw Take-Off Board Line (Papan Lompatan 0.00m + Plastisin Foul Line) on Left
+                val boardColor = if (toeToBoardCm >= 0.0) SuccessGreen else FinishLineRed
+                drawLine(
+                    color = boardColor,
+                    start = Offset(startPx.x, pitTop - 8f),
+                    end = Offset(startPx.x, pitBottom + 8f),
+                    strokeWidth = 6.5f
+                )
+
+                // 4. Draw Hujung Pasir Penamat Line (End of Sand Pit) on Right
+                drawLine(
+                    color = ElectricCyan,
+                    start = Offset(endPx.x, pitTop - 8f),
+                    end = Offset(endPx.x, pitBottom + 8f),
+                    strokeWidth = 5.5f
+                )
+
+                // 5. Draw Synchronized Digital Measuring Tape Base Line (0.00m -> Max Meters)
+                drawLine(
+                    color = SpeedAmber.copy(alpha = 0.55f),
+                    start = startPx,
+                    end = endPx,
+                    strokeWidth = 4f
+                )
+
+                // Draw Active Measured Distance Laser Segment (Papan Lompatan 0.00m -> Kesan Pendaratan Pasir)
+                drawLine(
+                    color = SuccessGreen,
+                    start = startPx,
+                    end = landPx,
+                    strokeWidth = 6f
+                )
+
+                // 6. Draw Parabolic Jump Flight Arc & Vertical AI Landing Box at Furthest Sand Mark
                 if (isCalibrationSureApproved || isRecordingJump) {
                     val flightPath = Path().apply {
                         moveTo(startPx.x, startPx.y)
                         val ctrlX = (startPx.x + landPx.x) / 2f
-                        val ctrlY = minOf(startPx.y, landPx.y) - h * 0.32f
+                        val ctrlY = minOf(startPx.y, landPx.y) - h * 0.34f
                         quadraticTo(ctrlX, ctrlY, landPx.x, landPx.y)
                     }
                     drawPath(
@@ -436,9 +588,17 @@ fun SandJumpAiScreen(
                         )
                     )
 
+                    // Vertical Laser Slit Line at exact Sand Break Mark
+                    drawLine(
+                        color = FinishLineRed,
+                        start = Offset(landPx.x, pitTop - 6f),
+                        end = Offset(landPx.x, pitBottom + 6f),
+                        strokeWidth = 3.5f
+                    )
+
                     // Tall Vertical AI Athlete Landing Box at Sand Mark
-                    val aiBoxW = (w * 0.22f).coerceIn(85f, 150f)
-                    val aiBoxH = (h * 0.56f).coerceAtLeast(140f)
+                    val aiBoxW = (w * 0.18f).coerceIn(76f, 140f)
+                    val aiBoxH = (h * 0.54f).coerceAtLeast(130f)
                     drawRoundRect(
                         color = SuccessGreen.copy(alpha = 0.16f),
                         topLeft = Offset(landPx.x - aiBoxW / 2f, landPx.y - aiBoxH * 0.78f),
@@ -466,7 +626,7 @@ fun SandJumpAiScreen(
                     )
                 }
 
-                // Draggable Calibration Handles (Handle A = 0.00m Papan, Handle B = Kotak Terakhir)
+                // Draggable Calibration Handles (Handle A = 0.00m Papan Lompatan, Handle B = Hujung Pasir Penamat)
                 drawCircle(
                     color = boardColor,
                     radius = 14f,
@@ -477,41 +637,32 @@ fun SandJumpAiScreen(
                     radius = 14f,
                     center = endPx
                 )
+
+                // DRAW 17-KEYPOINT AI HUMAN BIOMECHANICAL SKELETON & JUMP VECTORS (BADAN, TANGAN, LUTUT, KAKI, LONJAKAN)
+                drawAiHumanBiomechanicalSkeleton(
+                    skeleton = liveSkeleton,
+                    isJumpMode = true
+                )
             }
 
-            // Top-Start Calibration / Recording Status Overlay
-            Surface(
-                color = Color.Black.copy(alpha = 0.82f),
-                shape = RoundedCornerShape(8.dp),
+            // Top-Start AI Human Verification, Limb Angles & Live Camera Zoom HUD
+            AiCameraMonitorTelemetryHud(
+                skeleton = liveSkeleton,
+                currentZoom = currentCameraZoom,
+                onSelectZoom = { zoom ->
+                    currentCameraZoom = zoom
+                    CameraFrameHolder.setCameraZoomRatio(zoom)
+                },
+                isDemoSkeletonActive = isDemoSkeletonActive,
+                onToggleDemoSkeleton = {
+                    isDemoSkeletonActive = !isDemoSkeletonActive
+                    CameraFrameHolder.isDemoHumanSkeletonActive = isDemoSkeletonActive
+                },
+                isJumpMode = true,
                 modifier = Modifier
                     .align(Alignment.TopStart)
-                    .padding(8.dp)
-            ) {
-                Column(modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp)) {
-                    Text(
-                        text = if (!isCalibrationSureApproved) {
-                            "LANGKAH 1: TARIK PITA DARI PAPAN (HIJAU) KE HUJUNG KOTAK PASIR (BIRU)"
-                        } else if (isRecordingJump) {
-                            "● REC LOMPATAN AKTIF ($formattedRecTime) • ${CameraFrameHolder.recordedFramesCount} FRAME"
-                        } else {
-                            "✓ PITA DIKUNCI (0m ➔ ${"%.1f".format(configuredMaxTapeMeters)}m) • SEDIA RAKAM ATLIT"
-                        },
-                        fontSize = 9.sp,
-                        fontWeight = FontWeight.Black,
-                        color = when {
-                            isRecordingJump -> FinishLineRed
-                            isCalibrationSureApproved -> SuccessGreen
-                            else -> SpeedAmber
-                        }
-                    )
-                    Text(
-                        text = "Papan: ${if (toeToBoardCm >= 0) "SAH (+${"%.1f".format(toeToBoardCm)}cm)" else "BATAL (${"%.1f".format(toeToBoardCm)}cm)"} • Sukatan Pasir Semasa: ${"%.2f".format(liveMeasuredMeters)} m",
-                        fontSize = 8.sp,
-                        fontFamily = FontFamily.Monospace,
-                        color = Color.White
-                    )
-                }
-            }
+                    .padding(start = 8.dp, top = 8.dp, end = 110.dp)
+            )
 
             // Top-End Live Distance Readout Badge
             Surface(
@@ -534,11 +685,70 @@ fun SandJumpAiScreen(
                         color = if (toeToBoardCm >= 0) SuccessGreen else FinishLineRed
                     )
                     Text(
-                        text = if (toeToBoardCm >= 0) "PAPAN SAH ✓" else "BATAL FOUL ⚠",
+                        text = if (toeToBoardCm >= 0) "SYNC PAPAN➔PASIR ✓" else "BATAL FOUL ⚠",
                         fontSize = 8.sp,
                         fontWeight = FontWeight.Black,
                         color = if (toeToBoardCm >= 0) SuccessGreen else FinishLineRed
                     )
+                }
+            }
+
+            // Bottom Continuous Synchronized Meter Scale Bar (Papan Lompatan 0.00m -> Hujung Pasir Penamat)
+            Surface(
+                color = Color.Black.copy(alpha = 0.86f),
+                shape = RoundedCornerShape(8.dp),
+                border = BorderStroke(1.dp, SpeedAmber.copy(alpha = 0.6f)),
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 6.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "◀ 0.00m PAPAN LOMPATAN",
+                            fontSize = 8.sp,
+                            fontWeight = FontWeight.Black,
+                            color = if (toeToBoardCm >= 0) SuccessGreen else FinishLineRed
+                        )
+                        Text(
+                            text = "KESAN PASIR: ${"%.2f".format(liveMeasuredMeters)}m",
+                            fontSize = 8.5.sp,
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = FontWeight.Black,
+                            color = SpeedAmber
+                        )
+                        Text(
+                            text = "HUJUNG PASIR ${"%.1f".format(configuredMaxTapeMeters)}m ▶",
+                            fontSize = 8.sp,
+                            fontWeight = FontWeight.Black,
+                            color = ElectricCyan
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        val ticks = configuredMaxTapeMeters.toInt().coerceIn(4, 15)
+                        for (m in 0..ticks) {
+                            Text(
+                                text = "${m}m",
+                                fontSize = 7.5.sp,
+                                fontFamily = FontFamily.Monospace,
+                                fontWeight = FontWeight.Bold,
+                                color = if (kotlin.math.abs(liveMeasuredMeters - m) < 0.6) SpeedAmber else SilverMetallic
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -975,14 +1185,123 @@ private fun SandJumpAiResultCard(
                 }
             }
 
-            // PHOTO-FINISH SAND EVIDENCE IMAGE / MOVING REPLAY VIEWPORT
+            // INTERACTIVE ZOOMABLE PHOTO-FINISH SAND EVIDENCE IMAGE / MOVING REPLAY VIEWPORT
+            var resultZoomScale by remember(result.id) { mutableStateOf(1.0f) }
+            var resultPanOffset by remember(result.id) { mutableStateOf(Offset.Zero) }
+
+            // Zoom Control Strip for Result Inspection (1x, 1.5x, 2x, 3x, 4x, Fokus Papan, Fokus Pasir)
+            Surface(
+                color = StadiumSurfaceVariant,
+                shape = RoundedCornerShape(8.dp),
+                border = BorderStroke(1.dp, ElectricCyan.copy(alpha = 0.45f)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 5.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.ZoomIn,
+                            contentDescription = "Zoom Keputusan",
+                            tint = ElectricCyan,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Text(
+                            text = "ZOOM KEPUTUSAN:",
+                            fontSize = 8.5.sp,
+                            fontWeight = FontWeight.Black,
+                            color = Color.White
+                        )
+                        listOf(1.0f, 1.5f, 2.0f, 3.0f, 4.0f).forEach { z ->
+                            val isChosen = kotlin.math.abs(resultZoomScale - z) < 0.1f
+                            Surface(
+                                color = if (isChosen) ElectricCyan else StadiumSurface,
+                                shape = RoundedCornerShape(5.dp),
+                                modifier = Modifier.clickable {
+                                    resultZoomScale = z
+                                    if (z == 1.0f) resultPanOffset = Offset.Zero
+                                }
+                            ) {
+                                Text(
+                                    text = "${z}x",
+                                    fontSize = 8.sp,
+                                    fontWeight = FontWeight.Black,
+                                    color = if (isChosen) Color.Black else Color.White,
+                                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Surface(
+                            color = SuccessGreen.copy(alpha = 0.2f),
+                            shape = RoundedCornerShape(5.dp),
+                            border = BorderStroke(1.dp, SuccessGreen),
+                            modifier = Modifier.clickable {
+                                resultZoomScale = 2.5f
+                                resultPanOffset = Offset(160f, 0f)
+                            }
+                        ) {
+                            Text(
+                                text = "Zoom Papan",
+                                fontSize = 7.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = SuccessGreen,
+                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                            )
+                        }
+                        Surface(
+                            color = SpeedAmber.copy(alpha = 0.2f),
+                            shape = RoundedCornerShape(5.dp),
+                            border = BorderStroke(1.dp, SpeedAmber),
+                            modifier = Modifier.clickable {
+                                resultZoomScale = 2.5f
+                                resultPanOffset = Offset(-140f, 0f)
+                            }
+                        ) {
+                            Text(
+                                text = "Zoom Pasir",
+                                fontSize = 7.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = SpeedAmber,
+                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+                }
+            }
+
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(240.dp)
+                    .height(250.dp)
                     .clip(RoundedCornerShape(10.dp))
                     .background(Color.Black)
                     .border(1.dp, ElectricCyan.copy(alpha = 0.5f), RoundedCornerShape(10.dp))
+                    .pointerInput(result.id) {
+                        detectTransformGestures { _, pan, zoom, _ ->
+                            val newScale = (resultZoomScale * zoom).coerceIn(1.0f, 4.5f)
+                            resultZoomScale = newScale
+                            if (newScale > 1.02f) {
+                                val maxOffsetX = (size.width * (newScale - 1f)) * 0.5f
+                                val maxOffsetY = (size.height * (newScale - 1f)) * 0.5f
+                                resultPanOffset = Offset(
+                                    x = (resultPanOffset.x + pan.x).coerceIn(-maxOffsetX, maxOffsetX),
+                                    y = (resultPanOffset.y + pan.y).coerceIn(-maxOffsetY, maxOffsetY)
+                                )
+                            } else {
+                                resultPanOffset = Offset.Zero
+                            }
+                        }
+                    }
             ) {
                 val activeReplayBmp = if (isPlayingJumpReplay && jumpVideoFrames.isNotEmpty()) {
                     jumpVideoFrames.getOrNull(replayFrameIdx)
@@ -993,9 +1312,37 @@ private fun SandJumpAiResultCard(
                 if (activeReplayBmp != null) {
                     Image(
                         bitmap = activeReplayBmp.asImageBitmap(),
-                        contentDescription = "Bukti Photo-Finish Lompatan Pasir",
+                        contentDescription = "Bukti Photo-Finish Lompatan Pasir (Boleh Zoom)",
                         contentScale = ContentScale.Fit,
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .graphicsLayer {
+                                scaleX = resultZoomScale
+                                scaleY = resultZoomScale
+                                translationX = resultPanOffset.x
+                                translationY = resultPanOffset.y
+                            }
+                    )
+                }
+
+                // Top-Start Hint for Pinch/Pan Zoom on Result Image
+                Surface(
+                    color = Color.Black.copy(alpha = 0.76f),
+                    shape = RoundedCornerShape(6.dp),
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(6.dp)
+                ) {
+                    Text(
+                        text = if (resultZoomScale > 1.05f) {
+                            "🔍 ZOOM ${"%.1f".format(resultZoomScale)}x AKTIF (Seret Jari Untuk Lihat Papan / Pasir)"
+                        } else {
+                            "🔍 Cuba Cubit (Pinch) atau Tekan 2x/3x/4x Untuk Zoom Keputusan"
+                        },
+                        fontSize = 8.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = ElectricCyan,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
                     )
                 }
 

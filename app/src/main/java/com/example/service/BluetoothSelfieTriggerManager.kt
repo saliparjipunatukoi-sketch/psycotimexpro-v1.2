@@ -32,18 +32,18 @@ data class RemoteKeySignal(
 enum class BleM3StartMode(val label: String, val description: String) {
     INSTANT_CLICK(
         "1-Klik Terus Mula (Instant Start)",
-        "Tekan butang BLE-M3 sekali untuk terus membunyikan Starter Gun & memulakan rakaman video."
+        "Tekan butang BLE-M3 sekali di Tab Timing ET untuk terus membunyikan Pistol Pelepas Sebenar & memulakan rakaman."
     ),
     FIVE_SEC_PRESS(
         "Set to Click Start (5 Sec Press)",
-        "Tekan/tahan 5 saat pada BLE-M3 untuk Sync & melepaskan tembakan Starter Gun + Rakaman Video."
+        "Tekan/tahan 5 saat pada BLE-M3 untuk Sync & melepaskan tembakan Pistol Pelepas + Rakaman Video."
     )
 }
 
 /**
  * Manages connection detection, BLE-M3 specific HID key/pointer synchronization,
- * 5-Second Press ("Set to Click Start") calibration, and START-ONLY trigger execution
- * for Bluetooth Camera Remotes including BLE-M3, AB Shutter 3, and BLE HID triggers.
+ * strict Cursor & Trigger Locking to the Timing ET tab only (preventing cursor/focus from jumping to other tabs),
+ * and START-ONLY trigger execution.
  */
 class BluetoothSelfieTriggerManager(private val context: Context) {
 
@@ -55,16 +55,8 @@ class BluetoothSelfieTriggerManager(private val context: Context) {
         private const val KEY_IS_BLE_M3_SYNCED = "is_ble_m3_synced"
         private const val KEY_START_MODE = "ble_m3_start_mode"
         private const val KEY_INTERCEPT_BLE_POINTER = "ble_m3_intercept_pointer"
+        private const val KEY_LOCK_CURSOR_TIMING_TAB_ONLY = "ble_m3_lock_cursor_timing_only"
 
-        /**
-         * Comprehensive set of key codes emitted by BLE-M3 & Bluetooth Camera Selfie Remotes:
-         * - Volume Up/Down (#24, #25)
-         * - Camera Shutter (#27)
-         * - Enter / Numpad Enter / DPAD Center (#66, #160, #23)
-         * - BLE-M3 Directional & Page Keys (DPAD Up/Down/Left/Right #19..22, Page Up/Down #92, #93)
-         * - Media Play/Pause/Next/Prev/Stop/Hook (#85, #87, #88, #86, #79, #126, #127)
-         * - HID Gamepad / Remote Buttons (Button A/B/X/Y/L1/R1/Mode #96..110)
-         */
         val SUPPORTED_REMOTE_KEYCODES = setOf(
             KeyEvent.KEYCODE_VOLUME_UP,
             KeyEvent.KEYCODE_VOLUME_DOWN,
@@ -76,6 +68,7 @@ class BluetoothSelfieTriggerManager(private val context: Context) {
             KeyEvent.KEYCODE_DPAD_DOWN,
             KeyEvent.KEYCODE_DPAD_LEFT,
             KeyEvent.KEYCODE_DPAD_RIGHT,
+            KeyEvent.KEYCODE_TAB,
             KeyEvent.KEYCODE_PAGE_UP,
             KeyEvent.KEYCODE_PAGE_DOWN,
             KeyEvent.KEYCODE_SPACE,
@@ -106,18 +99,18 @@ class BluetoothSelfieTriggerManager(private val context: Context) {
                 KeyEvent.KEYCODE_DPAD_DOWN -> "BLE-M3 DOWN_BUTTON (#20)"
                 KeyEvent.KEYCODE_DPAD_LEFT -> "BLE-M3 LEFT_BUTTON (#21)"
                 KeyEvent.KEYCODE_DPAD_RIGHT -> "BLE-M3 RIGHT_BUTTON (#22)"
+                KeyEvent.KEYCODE_TAB -> "BLE-M3 TAB_LOCKED (#61)"
                 KeyEvent.KEYCODE_PAGE_UP -> "BLE-M3 PAGE_UP (#92)"
                 KeyEvent.KEYCODE_PAGE_DOWN -> "BLE-M3 PAGE_DOWN (#93)"
                 KeyEvent.KEYCODE_SPACE -> "BLE-M3 SPACE_TRIGGER (#62)"
                 KeyEvent.KEYCODE_HEADSETHOOK -> "BLE-M3 HEADSET_TRIGGER (#79)"
                 KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, KeyEvent.KEYCODE_MEDIA_PLAY -> "BLE-M3 MEDIA_CLICK (#85)"
-                -999 -> "BLE-M3 HID TOUCH-CLICK (5s Sync)"
+                -999 -> "BLE-M3 CURSOR LOCKED (Timing ET)"
                 else -> "BLE-M3 ${KeyEvent.keyCodeToString(keyCode)} (#$keyCode)"
             }
         }
     }
 
-    // Track key press start timestamps to detect 5-second press/hold on BLE-M3
     private var activeKeyDownCode: Int = -1
     private var activeKeyDownStartMs: Long = 0L
 
@@ -146,9 +139,12 @@ class BluetoothSelfieTriggerManager(private val context: Context) {
         prefs.edit().putBoolean(KEY_INTERCEPT_BLE_POINTER, enabled).apply()
     }
 
-    /**
-     * Saves the synced BLE-M3 button keycode/signal after a 5-second press or manual sync.
-     */
+    fun isCursorLockedToTimingTabOnly(): Boolean = prefs.getBoolean(KEY_LOCK_CURSOR_TIMING_TAB_ONLY, true)
+
+    fun setCursorLockedToTimingTabOnly(locked: Boolean) {
+        prefs.edit().putBoolean(KEY_LOCK_CURSOR_TIMING_TAB_ONLY, locked).apply()
+    }
+
     fun saveBleM3SyncConfiguration(keyCode: Int, deviceName: String) {
         prefs.edit()
             .putBoolean(KEY_IS_BLE_M3_SYNCED, true)
@@ -177,15 +173,10 @@ class BluetoothSelfieTriggerManager(private val context: Context) {
         }
     }
 
-    /**
-     * Scans active external HID InputDevices (Keyboards, Mice, Consumer Controls, BLE-M3 Touch Clickers),
-     * BLE GATT connected devices, and bonded Bluetooth devices.
-     */
     @SuppressLint("MissingPermission")
     fun getDetectedRemoteDevices(): List<BluetoothRemoteDeviceInfo> {
         val detected = mutableListOf<BluetoothRemoteDeviceInfo>()
 
-        // 1. Check active external InputDevices (BLE-M3 registers as HID Keyboard + HID Mouse/Touchpad)
         try {
             val inputManager = context.getSystemService(Context.INPUT_SERVICE) as? InputManager
             val deviceIds = inputManager?.inputDeviceIds ?: IntArray(0)
@@ -231,7 +222,7 @@ class BluetoothSelfieTriggerManager(private val context: Context) {
                             isConnectedHid = true,
                             isBleM3Model = isBleM3,
                             deviceTypeLabel = when {
-                                isBleM3 -> "BLE-M3 Bluetooth Remote (Disambung & Sync Aktif)"
+                                isBleM3 -> "BLE-M3 Remote (Cursor Locked: Timing ET Sahaja)"
                                 isLikelyShutter -> "Bluetooth Camera Selfie Trigger (HID Aktif)"
                                 else -> "Peranti Input Bluetooth HID Luaran (Aktif)"
                             }
@@ -241,11 +232,9 @@ class BluetoothSelfieTriggerManager(private val context: Context) {
             }
         } catch (_: Exception) {}
 
-        // 2. Check connected BLE GATT devices & bonded Bluetooth devices if permission is granted
         if (hasBluetoothConnectPermission()) {
             try {
                 val btManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
-                // Connected GATT / BLE devices (BLE-M3 uses BLE GATT HID)
                 val gattDevices = try {
                     btManager?.getConnectedDevices(BluetoothProfile.GATT) ?: emptyList()
                 } catch (_: Exception) {
@@ -275,7 +264,7 @@ class BluetoothSelfieTriggerManager(private val context: Context) {
                                 isConnectedHid = isShutterName,
                                 isBleM3Model = isBleM3,
                                 deviceTypeLabel = when {
-                                    isBleM3 -> "BLE-M3 Remote Starter (Synced — Set to Click Start)"
+                                    isBleM3 -> "BLE-M3 Remote Starter (Cursor Locked: Timing ET)"
                                     isShutterName -> "Bluetooth Selfie Remote (Dipasangkan)"
                                     else -> "Peranti Bluetooth Dipasangkan"
                                 }
@@ -290,12 +279,12 @@ class BluetoothSelfieTriggerManager(private val context: Context) {
     }
 
     /**
-     * Checks if an incoming KeyEvent comes from BLE-M3 or any supported Bluetooth Selfie Trigger.
-     * Supports both instant press (ACTION_DOWN) and 5-second press/hold repeat events from BLE-M3!
+     * Checks if a KeyEvent (ACTION_DOWN, ACTION_UP, or ACTION_MULTIPLE) comes from a Bluetooth Remote / BLE-M3.
+     * CRITICAL: Consuming BOTH ACTION_DOWN and ACTION_UP prevents Android's FocusManager from moving the
+     * cursor/focus highlight to the bottom NavigationBar tabs!
      */
-    fun isSupportedTriggerKey(event: KeyEvent): Boolean {
+    fun isRemoteKeyToConsume(event: KeyEvent): Boolean {
         val code = event.keyCode
-        // Never intercept system Back, Home, or Power buttons
         if (code == KeyEvent.KEYCODE_BACK ||
             code == KeyEvent.KEYCODE_HOME ||
             code == KeyEvent.KEYCODE_APP_SWITCH ||
@@ -315,15 +304,23 @@ class BluetoothSelfieTriggerManager(private val context: Context) {
                 devName.contains("Consumer", ignoreCase = true)
 
         val isKnownCode = code in SUPPORTED_REMOTE_KEYCODES || code == getSyncedKeyCode()
-        if (!isKnownCode && !isExternalBleDevice) return false
+        return isKnownCode || isExternalBleDevice
+    }
+
+    /**
+     * Checks if this specific KeyEvent should fire the Starter Gun & Start Timer (only on ACTION_DOWN).
+     */
+    fun isSupportedTriggerKey(event: KeyEvent): Boolean {
+        if (!isRemoteKeyToConsume(event)) return false
 
         if (event.action == KeyEvent.ACTION_DOWN) {
+            val code = event.keyCode
+            val devName = event.device?.name ?: ""
             if (event.repeatCount == 0) {
                 activeKeyDownCode = code
                 activeKeyDownStartMs = System.currentTimeMillis()
                 return true
             } else {
-                // Check if user is performing a 5-second press on BLE-M3
                 val heldDurationMs = System.currentTimeMillis() - activeKeyDownStartMs
                 if (heldDurationMs in 4500L..5600L || (event.flags and KeyEvent.FLAG_LONG_PRESS) != 0) {
                     saveBleM3SyncConfiguration(code, devName.ifBlank { "BLE-M3" })
@@ -335,28 +332,41 @@ class BluetoothSelfieTriggerManager(private val context: Context) {
     }
 
     /**
-     * Detects when a BLE-M3 remote sends an external Bluetooth HID Mouse / Touch-Click event
-     * (BLE-M3 uses HID pointer/touch clicks for camera shutter & TikTok control!).
+     * Detects ANY MotionEvent (cursor move, hover, scroll, or click) coming from an external
+     * Bluetooth HID device (such as BLE-M3's built-in mouse/touchpad cursor) so we can consume it
+     * and lock the cursor strictly inside Timing ET without letting it click other bottom tabs!
      */
-    fun isBleM3ExternalPointerTrigger(event: MotionEvent): Boolean {
+    fun isExternalBleHidMotionEvent(event: MotionEvent): Boolean {
         if (!isBlePointerInterceptEnabled()) return false
-        if (event.actionMasked != MotionEvent.ACTION_DOWN &&
-            event.actionMasked != MotionEvent.ACTION_BUTTON_PRESS
-        ) {
-            return false
-        }
         val dev = event.device ?: return false
         if (dev.isVirtual) return false
 
         val devName = dev.name ?: ""
-        val isBleM3OrExternalHid = devName.contains("BLE-M3", ignoreCase = true) ||
+        val isNamedBleRemote = devName.contains("BLE-M3", ignoreCase = true) ||
                 devName.contains("BLE_M3", ignoreCase = true) ||
                 devName.contains("BLE", ignoreCase = true) ||
                 devName.contains("Shutter", ignoreCase = true) ||
                 devName.contains("Remote", ignoreCase = true) ||
-                ((dev.sources and InputDevice.SOURCE_MOUSE) == InputDevice.SOURCE_MOUSE)
+                devName.contains("Selfie", ignoreCase = true) ||
+                devName.contains("Consumer", ignoreCase = true)
 
-        return isBleM3OrExternalHid
+        val isMouseOrTouchpadSource = (event.source and InputDevice.SOURCE_MOUSE) == InputDevice.SOURCE_MOUSE ||
+                (event.source and InputDevice.SOURCE_TOUCHPAD) == InputDevice.SOURCE_TOUCHPAD ||
+                (dev.sources and InputDevice.SOURCE_MOUSE) == InputDevice.SOURCE_MOUSE
+
+        val isExternalTouchFromBle = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && dev.isExternal) &&
+                isNamedBleRemote
+
+        return isNamedBleRemote || isMouseOrTouchpadSource || isExternalTouchFromBle
+    }
+
+    /**
+     * Returns true only when the external BLE-M3 pointer event is a click/press action that should trigger Start.
+     */
+    fun isBleM3ExternalPointerTrigger(event: MotionEvent): Boolean {
+        if (!isExternalBleHidMotionEvent(event)) return false
+        return event.actionMasked == MotionEvent.ACTION_DOWN ||
+                event.actionMasked == MotionEvent.ACTION_BUTTON_PRESS
     }
 
     fun extractSignal(event: KeyEvent): RemoteKeySignal {

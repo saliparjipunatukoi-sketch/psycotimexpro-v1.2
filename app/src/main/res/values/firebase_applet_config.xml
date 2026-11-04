@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8" standalone="no"?>
 <resources>
     <string name="firestore_database_id" translatable="false">ai-studio-android-psycotim-a304bc49-07bc-45bd-acd2-95fb4cd1006b</string>
+    <string name="recaptcha_site_key" translatable="false">6Ldacw8uAAAAAGgn4S1xh9E1rDlb6WyT0mrOnYuK</string>
 </resources>

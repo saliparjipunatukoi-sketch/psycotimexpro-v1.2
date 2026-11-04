@@ -39,9 +39,13 @@ import androidx.core.content.ContextCompat
 import com.example.service.AiSportsScienceAnalyzer
 import com.example.service.MotionAnalysisResult
 import com.example.service.RemoteKeySignal
+import com.example.ui.components.AiCameraMonitorTelemetryHud
 import com.example.ui.components.CameraFrameHolder
+import com.example.ui.components.HumanSkeletonTelemetry
 import com.example.ui.components.RealCameraPreview
+import com.example.ui.components.drawAiHumanBiomechanicalSkeleton
 import com.example.ui.theme.*
+import kotlinx.coroutines.delay
 
 /**
  * camMode values:
@@ -95,13 +99,30 @@ fun TimingSystemScreen(
     var isPortraitTallExpanded by remember { mutableStateOf(true) }
     var showSlitTuningDrawer by remember { mutableStateOf(false) }
 
+    var currentCameraZoom by remember { mutableStateOf(CameraFrameHolder.currentZoomRatio) }
+    var isDemoSkeletonActive by remember { mutableStateOf(CameraFrameHolder.isDemoHumanSkeletonActive) }
+    var liveSkeleton by remember { mutableStateOf(CameraFrameHolder.latestHumanSkeleton) }
+
+    LaunchedEffect(isDemoSkeletonActive) {
+        while (true) {
+            if (CameraFrameHolder.isDemoHumanSkeletonActive) {
+                CameraFrameHolder.latestHumanSkeleton = CameraFrameHolder.buildSimulatedHumanSkeleton(
+                    centerX = CameraFrameHolder.trackedHorizontalCenterRatio,
+                    isJumping = false
+                )
+            }
+            liveSkeleton = CameraFrameHolder.latestHumanSkeleton
+            delay(80L)
+        }
+    }
+
     // Auto-trigger focus on runner when timer starts in 1-Phone 100M AI Mode or Cam 1
     LaunchedEffect(isTimerRunning, camMode) {
         if (isTimerRunning && (camMode == 1 || camMode == 3)) {
             CameraFrameHolder.triggerRunnerFocusAnd100mTrack(
                 zoomRatioLinear = if (camMode == 3) 0.18f else 0.08f
             )
-        } else if (!isTimerRunning) {
+        } else if (!isTimerRunning && currentCameraZoom <= 1.05f) {
             CameraFrameHolder.resetCameraZoom()
         }
     }
@@ -266,6 +287,48 @@ fun TimingSystemScreen(
                         )
                     }
                 }
+            }
+        }
+
+        // BLE-M3 TAB LOCK & REAL .38 CAL STARTER PISTOL STATUS STRIP
+        Surface(
+            color = StadiumSurfaceVariant,
+            shape = RoundedCornerShape(8.dp),
+            border = androidx.compose.foundation.BorderStroke(1.dp, SuccessGreen.copy(alpha = 0.5f)),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(5.dp),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(
+                        Icons.Default.Lock,
+                        contentDescription = null,
+                        tint = SuccessGreen,
+                        modifier = Modifier.size(12.dp)
+                    )
+                    Text(
+                        text = "KURSOR & TRIGGER BLE-M3 DIKUNCI DI TAB TIMING ET SAHAJA (TIDAK ALIH TAB)",
+                        fontSize = 8.sp,
+                        fontWeight = FontWeight.Black,
+                        color = SuccessGreen,
+                        maxLines = 1
+                    )
+                }
+                Text(
+                    text = "🔫 PISTOL SEBENAR (.38 CAL)",
+                    fontSize = 8.sp,
+                    fontWeight = FontWeight.Black,
+                    color = SpeedAmber
+                )
             }
         }
 
@@ -714,42 +777,33 @@ fun TimingSystemScreen(
                     strokeWidth = 2f,
                     pathEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 8f), 0f)
                 )
+
+                // DRAW 17-KEYPOINT AI HUMAN BIOMECHANICAL SKELETON & LIMB VECTORS (BADAN, TANGAN, LUTUT, KAKI)
+                drawAiHumanBiomechanicalSkeleton(
+                    skeleton = liveSkeleton,
+                    isJumpMode = false
+                )
             }
 
-            // Top-Start Status Indicator Overlay
-            Surface(
-                color = if (isMovementDetected) SuccessGreen.copy(alpha = 0.92f) else Color.Black.copy(alpha = 0.75f),
-                shape = RoundedCornerShape(8.dp),
+            // Top-Start AI Human Verification, Limb Angles & Camera Zoom HUD
+            AiCameraMonitorTelemetryHud(
+                skeleton = liveSkeleton,
+                currentZoom = currentCameraZoom,
+                onSelectZoom = { zoom ->
+                    currentCameraZoom = zoom
+                    CameraFrameHolder.setCameraZoomRatio(zoom)
+                },
+                isDemoSkeletonActive = isDemoSkeletonActive,
+                onToggleDemoSkeleton = {
+                    isDemoSkeletonActive = !isDemoSkeletonActive
+                    CameraFrameHolder.isDemoHumanSkeletonActive = isDemoSkeletonActive
+                    onTriggerMotion(isDemoSkeletonActive, if (isDemoSkeletonActive) 0.85f else 0.02f)
+                },
+                isJumpMode = false,
                 modifier = Modifier
                     .align(Alignment.TopStart)
                     .padding(8.dp)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                ) {
-                    Icon(
-                        imageVector = if (isMovementDetected) Icons.Default.CheckCircle else Icons.Default.Visibility,
-                        contentDescription = null,
-                        tint = if (isMovementDetected) Color.Black else ElectricCyan,
-                        modifier = Modifier.size(13.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = when {
-                            isMovementDetected && camMode == 2 -> "TORSO PEMENANG DIKESAN (AUTO PHOTO-FINISH)"
-                            isMovementDetected && camMode == 3 -> "PELARI DIJEJAK ➔ GARISAN PENAMAT 100M AI"
-                            isMovementDetected -> "KOTAK AI MENEGAK: PELARI DIKESAN"
-                            camMode == 3 -> "MOD 1 FON: GARISAN MULA ➔ 100M AI AKTIF"
-                            camMode == 2 -> "CAM 2: PENANGKAP TORSO GARISAN PENAMAT"
-                            else -> "CAM 1 PORTRAIT: KOTAK AI BESAR MENEGAK"
-                        },
-                        fontSize = 9.sp,
-                        fontWeight = FontWeight.Black,
-                        color = if (isMovementDetected) Color.Black else Color.White
-                    )
-                }
-            }
+            )
 
             // Top-End Live Video Recording Indicator Badge
             if (isRecordingVideo || isTimerRunning) {
@@ -859,7 +913,7 @@ fun TimingSystemScreen(
                 ) {
                     Icon(Icons.Default.Campaign, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text("MULA RAKAM + BUNYI GUN", fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color.White)
+                    Text("MULA RAKAM + BUNYI PISTOL SEBENAR", fontSize = 11.sp, fontWeight = FontWeight.Black, color = Color.White)
                 }
             } else {
                 Button(

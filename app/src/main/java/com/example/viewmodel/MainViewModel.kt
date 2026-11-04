@@ -93,6 +93,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _lastRemoteKeySignal = MutableStateFlow<RemoteKeySignal?>(null)
     val lastRemoteKeySignal: StateFlow<RemoteKeySignal?> = _lastRemoteKeySignal.asStateFlow()
 
+    // Strict Tab Lock: Lock Remote Cursor & Trigger to Timing ET tab only
+    private val _isTimingTabActive = MutableStateFlow(false)
+    val isTimingTabActive: StateFlow<Boolean> = _isTimingTabActive.asStateFlow()
+
+    fun setTimingTabActive(isActive: Boolean) {
+        _isTimingTabActive.value = isActive
+    }
+
     // Real Motion & AI Detection
     private val _motionEnergy = MutableStateFlow(0.0f)
     val motionEnergy: StateFlow<Float> = _motionEnergy.asStateFlow()
@@ -329,46 +337,57 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     /**
      * Handles incoming hardware KeyEvent from a connected BLE-M3 Remote or Bluetooth Camera Selfie Trigger.
-     * STRICT RULE: Only valid for the START action!
+     * STRICT RULES:
+     * 1. Consumes BOTH ACTION_DOWN and ACTION_UP (returns true) for all remote keys so Android's
+     *    FocusManager NEVER moves the focus cursor to other bottom navigation tabs!
+     * 2. Trigger is strictly locked to the Timing ET tab (_isTimingTabActive == true) and START action only!
      */
     fun handleBluetoothRemoteKeyEvent(event: KeyEvent): Boolean {
-        if (!bluetoothTriggerManager.isSupportedTriggerKey(event)) return false
-        val signal = bluetoothTriggerManager.extractSignal(event)
-        _lastRemoteKeySignal.value = signal
+        if (!bluetoothTriggerManager.isRemoteKeyToConsume(event)) return false
 
-        if (_showBluetoothRemoteSetupDialog.value) {
-            ElectronicStarterGunAudio.playExplosiveStarterGunShot(viewModelScope)
-            return true
-        }
+        val shouldFire = bluetoothTriggerManager.isSupportedTriggerKey(event)
+        if (shouldFire) {
+            val signal = bluetoothTriggerManager.extractSignal(event)
+            _lastRemoteKeySignal.value = signal
 
-        if (_isBluetoothTriggerEnabled.value) {
-            if (!_isTimerRunning.value) {
-                startTimer(fireGunSound = true)
+            if (_showBluetoothRemoteSetupDialog.value) {
+                ElectronicStarterGunAudio.playExplosiveStarterGunShot(viewModelScope)
+                return true
             }
-            return true
+
+            if (_isBluetoothTriggerEnabled.value && _isTimingTabActive.value) {
+                if (!_isTimerRunning.value) {
+                    startTimer(fireGunSound = true)
+                }
+            }
         }
-        return false
+        // Always consume the remote key event (including ACTION_UP & D-Pad) so cursor NEVER jumps to other tabs!
+        return _isBluetoothTriggerEnabled.value || _showBluetoothRemoteSetupDialog.value
     }
 
     /**
-     * Handles incoming external Bluetooth HID Pointer / Touch-Click events from BLE-M3 remotes
-     * (BLE-M3 uses HID pointer/touch clicks when in Camera/TikTok mode).
+     * Handles incoming external Bluetooth HID Pointer / Touch-Click / Cursor Move events from BLE-M3 remotes.
+     * Consumes all external BLE-M3 cursor movement & click events so the cursor stays locked in Timing ET
+     * and never clicks on other tabs!
      */
     fun handleBluetoothRemoteMotionEvent(event: MotionEvent): Boolean {
-        if (!bluetoothTriggerManager.isBleM3ExternalPointerTrigger(event)) return false
-        val signal = bluetoothTriggerManager.extractPointerSignal(event)
-        _lastRemoteKeySignal.value = signal
+        if (!bluetoothTriggerManager.isExternalBleHidMotionEvent(event)) return false
 
-        if (_showBluetoothRemoteSetupDialog.value) {
-            ElectronicStarterGunAudio.playExplosiveStarterGunShot(viewModelScope)
-            return true
-        }
+        if (bluetoothTriggerManager.isBleM3ExternalPointerTrigger(event)) {
+            val signal = bluetoothTriggerManager.extractPointerSignal(event)
+            _lastRemoteKeySignal.value = signal
 
-        if (_isBluetoothTriggerEnabled.value && !_isTimerRunning.value) {
-            startTimer(fireGunSound = true)
-            return true
+            if (_showBluetoothRemoteSetupDialog.value) {
+                ElectronicStarterGunAudio.playExplosiveStarterGunShot(viewModelScope)
+                return true
+            }
+
+            if (_isBluetoothTriggerEnabled.value && _isTimingTabActive.value && !_isTimerRunning.value) {
+                startTimer(fireGunSound = true)
+            }
         }
-        return false
+        // Always consume external BLE-M3 cursor motion/click so it never moves to or clicks other tabs!
+        return _isBluetoothTriggerEnabled.value || _showBluetoothRemoteSetupDialog.value
     }
 
     fun toggleBluetoothTrigger(enabled: Boolean) {
