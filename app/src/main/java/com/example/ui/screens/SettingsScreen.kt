@@ -1,6 +1,10 @@
 package com.example.ui.screens
 
+import android.Manifest
+import android.content.Intent
 import android.net.Uri
+import android.os.Build
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -19,14 +23,19 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.data.model.ClubProfile
+import com.example.service.BluetoothSelfieTriggerManager
+import com.example.service.RemoteKeySignal
 import com.example.ui.theme.*
 
 @Composable
@@ -38,12 +47,18 @@ fun SettingsScreen(
     deviceStorageDirs: List<String>,
     selectedVideoFolderPath: String = "",
     onOpenVideoStorageSettings: () -> Unit = {},
+    bluetoothTriggerManager: BluetoothSelfieTriggerManager? = null,
+    isBluetoothTriggerEnabled: Boolean = true,
+    lastRemoteSignal: RemoteKeySignal? = null,
+    onToggleBluetoothTrigger: (Boolean) -> Unit = {},
+    onOpenBluetoothRemoteSetup: () -> Unit = {},
     onSwitchUser: (email: String, name: String) -> Unit,
     onUpdateClubInfo: (name: String, logoUri: String?, coachName: String, phone: String, photoUri: String?) -> Unit,
     onOpenWebSync: () -> Unit,
     onLogout: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     var clubNameInput by remember(clubProfile) { mutableStateOf(clubProfile.clubName) }
     var coachNameInput by remember(clubProfile) { mutableStateOf(clubProfile.coachName) }
     var coachPhoneInput by remember(clubProfile) { mutableStateOf(clubProfile.coachPhone) }
@@ -51,7 +66,20 @@ fun SettingsScreen(
     var selectedCoachPhotoUri by remember(clubProfile) { mutableStateOf(clubProfile.coachPhotoUri) }
     var storageStatusMessage by remember { mutableStateOf<String?>(null) }
 
-    // Logo picker launcher (Item 12)
+    var hasBtPermission by remember {
+        mutableStateOf(bluetoothTriggerManager?.hasBluetoothConnectPermission() ?: false)
+    }
+    var pairedDevices by remember(hasBtPermission) {
+        mutableStateOf(bluetoothTriggerManager?.getDetectedRemoteDevices() ?: emptyList())
+    }
+
+    val btPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        hasBtPermission = granted
+        pairedDevices = bluetoothTriggerManager?.getDetectedRemoteDevices() ?: emptyList()
+    }
+
     val logoPicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri: Uri? ->
@@ -61,7 +89,6 @@ fun SettingsScreen(
         }
     }
 
-    // Coach profile photo picker (Item 11)
     val coachPhotoPicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri: Uri? ->
@@ -88,10 +115,220 @@ fun SettingsScreen(
                 color = Color.White
             )
             Text(
-                text = "Profil kelab, akaun superadmin, storan folder peranti dan integrasi web.",
+                text = "Pengurusan Bluetooth Selfie Trigger, profil kelab, storan video dan integrasi web.",
                 style = MaterialTheme.typography.bodySmall,
                 color = TextSecondary
             )
+        }
+
+        // BLUETOOTH SELFIE TRIGGER & STARTER GUN PAIRING / MANAGEMENT SECTION
+        Card(
+            colors = CardDefaults.cardColors(containerColor = StadiumSurface),
+            shape = RoundedCornerShape(16.dp),
+            border = androidx.compose.foundation.BorderStroke(
+                1.dp,
+                if (isBluetoothTriggerEnabled) ElectricCyan.copy(alpha = 0.6f) else StadiumBorder
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag("settings_bluetooth_trigger_card")
+        ) {
+            Column(
+                modifier = Modifier.padding(14.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier
+                                .size(38.dp)
+                                .background(
+                                    if (isBluetoothTriggerEnabled) ElectricCyan.copy(alpha = 0.16f) else StadiumSurfaceVariant,
+                                    CircleShape
+                                )
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.SettingsRemote,
+                                contentDescription = null,
+                                tint = if (isBluetoothTriggerEnabled) ElectricCyan else TextMuted,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Column {
+                            Text(
+                                text = "Bluetooth Selfie Trigger & Starter Gun",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Black,
+                                color = Color.White
+                            )
+                            Text(
+                                text = "Mula rakaman video + bunyi tembakan pistol serta-merta (Sah untuk START sahaja)",
+                                fontSize = 11.sp,
+                                color = TextSecondary
+                            )
+                        }
+                    }
+
+                    Switch(
+                        checked = isBluetoothTriggerEnabled,
+                        onCheckedChange = onToggleBluetoothTrigger,
+                        modifier = Modifier
+                            .scale(0.85f)
+                            .testTag("settings_bt_trigger_switch")
+                    )
+                }
+
+                // Live incoming signal status pill
+                Surface(
+                    color = StadiumSurfaceVariant,
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp)
+                                    .background(
+                                        if (lastRemoteSignal != null) SuccessGreen else ElectricCyan,
+                                        CircleShape
+                                    )
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = if (lastRemoteSignal != null) {
+                                    "Isyarat Terakhir: ${lastRemoteSignal.keyName}"
+                                } else {
+                                    "Menunggu isyarat Bluetooth Shutter (Volume Up / Enter / Camera)"
+                                },
+                                fontSize = 11.sp,
+                                fontFamily = FontFamily.Monospace,
+                                color = if (lastRemoteSignal != null) SuccessGreen else Color.White
+                            )
+                        }
+                    }
+                }
+
+                // Paired Devices List inside Settings
+                if (!hasBtPermission && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    OutlinedButton(
+                        onClick = { btPermissionLauncher.launch(Manifest.permission.BLUETOOTH_CONNECT) },
+                        shape = RoundedCornerShape(10.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, ElectricCyan),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.Bluetooth, contentDescription = null, tint = ElectricCyan, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Benarkan Akses Senarai Peranti Bluetooth", fontSize = 11.sp, color = ElectricCyan, fontWeight = FontWeight.Bold)
+                    }
+                } else if (pairedDevices.isNotEmpty()) {
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(
+                            text = "Peranti Bluetooth Berpasangan (${pairedDevices.size}):",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = SilverMetallic
+                        )
+                        pairedDevices.take(3).forEach { device ->
+                            Surface(
+                                color = StadiumSurfaceVariant,
+                                shape = RoundedCornerShape(8.dp),
+                                border = androidx.compose.foundation.BorderStroke(
+                                    1.dp,
+                                    if (device.isConnectedHid) ElectricCyan.copy(alpha = 0.5f) else StadiumBorder
+                                ),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(
+                                            imageVector = if (device.isConnectedHid) Icons.Default.Camera else Icons.Default.BluetoothConnected,
+                                            contentDescription = null,
+                                            tint = if (device.isConnectedHid) ElectricCyan else SilverMetallic,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Column {
+                                            Text(device.name, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                            Text(device.addressOrDescriptor, fontSize = 10.sp, fontFamily = FontFamily.Monospace, color = TextSecondary)
+                                        }
+                                    }
+                                    if (device.isConnectedHid) {
+                                        Surface(
+                                            color = SuccessGreen.copy(alpha = 0.2f),
+                                            shape = RoundedCornerShape(4.dp)
+                                        ) {
+                                            Text(
+                                                text = "SHUTTER",
+                                                fontSize = 9.sp,
+                                                fontWeight = FontWeight.Black,
+                                                color = SuccessGreen,
+                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Action Buttons: Pair in System Bluetooth Settings & Open Signal Tester
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = {
+                            try {
+                                context.startActivity(Intent(Settings.ACTION_BLUETOOTH_SETTINGS))
+                            } catch (_: Exception) {}
+                        },
+                        shape = RoundedCornerShape(10.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, SilverBorder),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(Icons.Default.BluetoothSearching, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Pair Bluetooth", fontSize = 11.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                    }
+
+                    Button(
+                        onClick = {
+                            pairedDevices = bluetoothTriggerManager?.getDetectedRemoteDevices() ?: emptyList()
+                            onOpenBluetoothRemoteSetup()
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = ElectricCyan),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .testTag("settings_open_bt_modal_button")
+                    ) {
+                        Icon(Icons.Default.Tune, contentDescription = null, tint = Color.Black, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Urus & Uji Trigger", fontSize = 11.sp, color = Color.Black, fontWeight = FontWeight.Black)
+                    }
+                }
+            }
         }
 
         // ACCOUNT & ROLE SWITCHER (Item 2)
@@ -197,13 +434,11 @@ fun SettingsScreen(
                     color = Color.White
                 )
 
-                // Upload Logos and Coach Photo (Item 11 & 12)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Club Logo Picker
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Box(
                             contentAlignment = Alignment.Center,
@@ -233,7 +468,6 @@ fun SettingsScreen(
                         Text("Logo Kelab", fontSize = 10.sp, color = ElectricCyan, fontWeight = FontWeight.Bold)
                     }
 
-                    // Coach Photo Picker (Item 11)
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Box(
                             contentAlignment = Alignment.Center,
@@ -341,7 +575,7 @@ fun SettingsScreen(
                         Text(
                             text = "📁 ...${path.takeLast(40)}",
                             fontSize = 11.sp,
-                            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                            fontFamily = FontFamily.Monospace,
                             color = ElectricCyanGlow,
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
                         )
@@ -365,7 +599,7 @@ fun SettingsScreen(
                             Text(
                                 text = selectedVideoFolderPath,
                                 fontSize = 11.sp,
-                                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                                fontFamily = FontFamily.Monospace,
                                 color = Color.White
                             )
                         }
@@ -433,7 +667,7 @@ fun SettingsScreen(
             }
         }
 
-        // PAKEJ LANGGANAN BULANAN & STRUKTUR YURAN RASMI (Item Semakan Yuran)
+        // PAKEJ LANGGANAN BULANAN & STRUKTUR YURAN RASMI
         Card(
             colors = CardDefaults.cardColors(containerColor = StadiumSurface),
             shape = RoundedCornerShape(16.dp),
@@ -460,9 +694,7 @@ fun SettingsScreen(
                     }
                 }
 
-                // Grid 4 Pakej Rasmi
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    // Pakej RM30
                     Surface(
                         color = StadiumSurfaceVariant,
                         shape = RoundedCornerShape(10.dp),
@@ -483,7 +715,6 @@ fun SettingsScreen(
                         }
                     }
 
-                    // Pakej RM40
                     Surface(
                         color = StadiumSurfaceVariant,
                         shape = RoundedCornerShape(10.dp),
@@ -504,7 +735,6 @@ fun SettingsScreen(
                         }
                     }
 
-                    // Pakej RM60
                     Surface(
                         color = StadiumSurfaceVariant,
                         shape = RoundedCornerShape(10.dp),
@@ -525,7 +755,6 @@ fun SettingsScreen(
                         }
                     }
 
-                    // Pakej RM80
                     Surface(
                         color = StadiumSurfaceVariant,
                         shape = RoundedCornerShape(10.dp),

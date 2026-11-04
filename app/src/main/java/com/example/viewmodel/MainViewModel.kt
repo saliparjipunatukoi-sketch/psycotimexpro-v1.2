@@ -13,6 +13,7 @@ import com.example.data.repository.AthleteRepository
 import com.example.data.repository.FirestoreSportsRepository
 import com.example.data.repository.SportsRepository
 import com.example.service.*
+import com.example.ui.components.CameraFrameHolder
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
@@ -57,9 +58,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _clubProfile = MutableStateFlow(ClubProfile())
     val clubProfile: StateFlow<ClubProfile> = _clubProfile.asStateFlow()
 
-    // Electronic Stopwatch & Timing Engine
+    // Electronic Stopwatch, Live Video Recording & Timing Engine
     private val _isTimerRunning = MutableStateFlow(false)
     val isTimerRunning: StateFlow<Boolean> = _isTimerRunning.asStateFlow()
+
+    private val _isRecordingVideo = MutableStateFlow(false)
+    val isRecordingVideo: StateFlow<Boolean> = _isRecordingVideo.asStateFlow()
 
     private val _elapsedMillis = MutableStateFlow(0L)
     val elapsedMillis: StateFlow<Long> = _elapsedMillis.asStateFlow()
@@ -175,6 +179,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     val subUsers: StateFlow<List<SubUserEntity>> = _currentUserEmail.flatMapLatest { email ->
         if (email.equals(superAdminEmail, ignoreCase = true)) {
             repository.getAllSubUsers()
@@ -217,7 +222,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         )
         _isLoggedIn.value = true
 
-        // Sync existing local records to Cloud Firestore when authenticated with Firebase
         if (Firebase.auth.currentUser != null) {
             syncAllToFirestoreCloud()
         }
@@ -280,7 +284,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     /**
-     * Starts the sprint timer AND simultaneously fires the explosive Electronic Starter Gun sound.
+     * Immediately starts the sprint timer, starts live race video recording, AND fires
+     * the explosive Electronic Starter Gun sound simultaneously.
      * Strictly idempotent: if already running, calling startTimer() again will NOT reset or stop it.
      */
     fun startTimer(fireGunSound: Boolean = true) {
@@ -288,6 +293,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         if (fireGunSound) {
             ElectronicStarterGunAudio.playExplosiveStarterGunShot(viewModelScope)
         }
+        CameraFrameHolder.startLiveRecordingSession()
+        _isRecordingVideo.value = true
         _isTimerRunning.value = true
         timerStartTime = System.currentTimeMillis() - _elapsedMillis.value
         timerJob = viewModelScope.launch(Dispatchers.Default) {
@@ -299,10 +306,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     /**
-     * Handles hardware KeyEvent from a connected Bluetooth Camera Selfie Trigger
+     * Handles incoming hardware KeyEvent from a connected Bluetooth Camera Selfie Trigger
      * (e.g. AB Shutter 3 / Bluetooth Remote Shutter).
-     * STRICT RULE: Only valid for the START button!
-     * - If timer is NOT running: fires Starter Gun sound and starts the sprint timer.
+     * STRICT RULE: Only valid for the START action!
+     * - If timer is NOT running: immediately fires Starter Gun sound + starts video recording + starts sprint timer.
      * - If timer IS already running: consumes the event without stopping the race.
      */
     fun handleBluetoothRemoteKeyEvent(event: android.view.KeyEvent): Boolean {
@@ -342,8 +349,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun exportSlitImageFromAnalyticsTable(race: RaceRecordEntity, onExported: ((String) -> Unit)? = null) {
         viewModelScope.launch {
             val posture = AiSportsScienceAnalyzer.analyzePostureForRace(race)
-            val liveBmp = com.example.ui.components.CameraFrameHolder.latestFinishFrameBitmap
-                ?: com.example.ui.components.CameraFrameHolder.latestLiveFrameBitmap
+            val liveBmp = CameraFrameHolder.latestFinishFrameBitmap
+                ?: CameraFrameHolder.latestLiveFrameBitmap
             val exportedPath = withContext(Dispatchers.IO) {
                 storageManager.exportPhotoFinishSlitForRace(
                     race = race,
@@ -359,6 +366,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun stopTimer() {
         _isTimerRunning.value = false
+        _isRecordingVideo.value = false
+        CameraFrameHolder.stopLiveRecordingSession()
         timerJob?.cancel()
 
         viewModelScope.launch {
@@ -370,6 +379,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun resetTimer() {
         _isTimerRunning.value = false
+        _isRecordingVideo.value = false
+        CameraFrameHolder.stopLiveRecordingSession()
         timerJob?.cancel()
         _elapsedMillis.value = 0L
     }
@@ -404,7 +415,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 targetFolder = targetFolder
             )
 
-            val liveBmp = com.example.ui.components.CameraFrameHolder.latestLiveFrameBitmap
+            val liveBmp = CameraFrameHolder.latestFinishFrameBitmap ?: CameraFrameHolder.latestLiveFrameBitmap
             val photoFinishUri = storageManager.savePhotoFinishImage(
                 raceTitle = title,
                 athleteName = athleteName,

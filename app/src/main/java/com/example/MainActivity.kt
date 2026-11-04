@@ -6,17 +6,19 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
@@ -71,7 +73,6 @@ class MainActivity : ComponentActivity() {
                         onDismissSplash = { showSplash = false }
                     )
                 } else if (!isLoggedIn) {
-                    // MUST LOGIN FIRST: Does NOT enter Superadmin automatically
                     AuthScreen(
                         onLoginSuccess = { email, name, club, isSuper ->
                             viewModel.login(email, name, club, isSuper)
@@ -80,7 +81,6 @@ class MainActivity : ComponentActivity() {
                         }
                     )
                 } else {
-                    // State collection for logged-in user
                     val clubProfile by viewModel.clubProfile.collectAsStateWithLifecycle()
                     val athletes by viewModel.allAthletes.collectAsStateWithLifecycle()
                     val races by viewModel.allRaces.collectAsStateWithLifecycle()
@@ -94,6 +94,7 @@ class MainActivity : ComponentActivity() {
                     val isSuperAdmin by viewModel.isSuperAdmin.collectAsStateWithLifecycle()
 
                     val isTimerRunning by viewModel.isTimerRunning.collectAsStateWithLifecycle()
+                    val isRecordingVideo by viewModel.isRecordingVideo.collectAsStateWithLifecycle()
                     val elapsedMillis by viewModel.elapsedMillis.collectAsStateWithLifecycle()
                     val camMode by viewModel.camMode.collectAsStateWithLifecycle()
                     val isAudioGunEnabled by viewModel.isAudioGunEnabled.collectAsStateWithLifecycle()
@@ -101,7 +102,6 @@ class MainActivity : ComponentActivity() {
                     val motionEnergy by viewModel.motionEnergy.collectAsStateWithLifecycle()
                     val latestAiAnalysis by viewModel.latestAiAnalysis.collectAsStateWithLifecycle()
 
-                    // Dialog states
                     val showSaveRaceDialog by viewModel.showSaveRaceDialog.collectAsStateWithLifecycle()
                     val suggestedRaceTitle by viewModel.suggestedRaceTitle.collectAsStateWithLifecycle()
                     val showAddAthleteDialog by viewModel.showAddAthleteDialog.collectAsStateWithLifecycle()
@@ -118,7 +118,6 @@ class MainActivity : ComponentActivity() {
                     val selectedRaceForPostureAi by viewModel.selectedRaceForPostureAi.collectAsStateWithLifecycle()
                     val lastExportedSlitPath by viewModel.lastExportedSlitPath.collectAsStateWithLifecycle()
 
-                    // Back navigation handler
                     BackHandler(enabled = currentTab != ScreenTab.DASHBOARD) {
                         currentTab = if (currentTab == ScreenTab.VIDEO_STORAGE_SETTINGS) {
                             ScreenTab.SETTINGS
@@ -135,7 +134,7 @@ class MainActivity : ComponentActivity() {
                                         Text(
                                             text = "Psyco Time X Pro",
                                             fontWeight = FontWeight.Black,
-                                            fontSize = 18.sp,
+                                            fontSize = 17.sp,
                                             color = Color.White
                                         )
                                         Text(
@@ -146,6 +145,47 @@ class MainActivity : ComponentActivity() {
                                     }
                                 },
                                 actions = {
+                                    // COMPACT PRO BLUETOOTH REMOTE TRIGGER BUTTON NEXT TO TOP MENU
+                                    Surface(
+                                        color = if (isBluetoothTriggerEnabled) ElectricCyan.copy(alpha = 0.16f) else StadiumSurfaceVariant,
+                                        shape = RoundedCornerShape(16.dp),
+                                        border = androidx.compose.foundation.BorderStroke(
+                                            1.dp,
+                                            if (isBluetoothTriggerEnabled) ElectricCyan.copy(alpha = 0.65f) else StadiumBorder
+                                        ),
+                                        modifier = Modifier
+                                            .height(30.dp)
+                                            .clickable { viewModel.setShowBluetoothRemoteSetupDialog(true) }
+                                            .testTag("top_bar_bt_trigger_button")
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(horizontal = 8.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(6.dp)
+                                                    .background(
+                                                        if (isBluetoothTriggerEnabled) SuccessGreen else TextMuted,
+                                                        CircleShape
+                                                    )
+                                            )
+                                            Icon(
+                                                Icons.Default.SettingsRemote,
+                                                contentDescription = "Bluetooth Remote Starter",
+                                                tint = if (isBluetoothTriggerEnabled) ElectricCyan else SilverMetallic,
+                                                modifier = Modifier.size(14.dp)
+                                            )
+                                            Text(
+                                                text = "BT",
+                                                fontSize = 10.sp,
+                                                fontWeight = FontWeight.Black,
+                                                color = if (isBluetoothTriggerEnabled) Color.White else SilverMetallic
+                                            )
+                                        }
+                                    }
+
                                     IconButton(onClick = { viewModel.setShowWebSyncDialog(true) }) {
                                         Icon(
                                             Icons.Default.CloudSync,
@@ -160,7 +200,6 @@ class MainActivity : ComponentActivity() {
                                             tint = if (currentTab == ScreenTab.SETTINGS) FinishLineRed else Color.White
                                         )
                                     }
-                                    // CLEAR LOGOUT BUTTON IN TOP APP BAR
                                     IconButton(
                                         onClick = { showLogoutConfirmDialog = true },
                                         modifier = Modifier.testTag("top_bar_logout_button")
@@ -272,6 +311,7 @@ class MainActivity : ComponentActivity() {
                                     },
                                     onOpenQrPair = { viewModel.setShowQrPairDialog(true) },
                                     isBluetoothTriggerEnabled = isBluetoothTriggerEnabled,
+                                    isRecordingVideo = isRecordingVideo,
                                     lastRemoteSignal = lastRemoteKeySignal,
                                     onOpenBluetoothRemoteSetup = { viewModel.setShowBluetoothRemoteSetupDialog(true) }
                                 )
@@ -353,6 +393,11 @@ class MainActivity : ComponentActivity() {
                                     deviceStorageDirs = viewModel.storageManager.ensureDirectoriesExist(),
                                     selectedVideoFolderPath = selectedVideoFolderPath,
                                     onOpenVideoStorageSettings = { currentTab = ScreenTab.VIDEO_STORAGE_SETTINGS },
+                                    bluetoothTriggerManager = viewModel.bluetoothTriggerManager,
+                                    isBluetoothTriggerEnabled = isBluetoothTriggerEnabled,
+                                    lastRemoteSignal = lastRemoteKeySignal,
+                                    onToggleBluetoothTrigger = { viewModel.toggleBluetoothTrigger(it) },
+                                    onOpenBluetoothRemoteSetup = { viewModel.setShowBluetoothRemoteSetupDialog(true) },
                                     onSwitchUser = { email, name -> viewModel.switchUser(email, name) },
                                     onUpdateClubInfo = { name, logo, coach, phone, photo ->
                                         viewModel.updateClubInfo(name, logo, coach, phone, photo)
@@ -487,7 +532,6 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
-                    // LOGOUT CONFIRMATION DIALOG
                     if (showLogoutConfirmDialog) {
                         AlertDialog(
                             onDismissRequest = { showLogoutConfirmDialog = false },

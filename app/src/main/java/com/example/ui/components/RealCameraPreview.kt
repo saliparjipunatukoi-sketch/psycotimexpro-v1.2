@@ -8,7 +8,6 @@ import androidx.camera.view.PreviewView
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -17,8 +16,9 @@ import java.util.concurrent.Executors
 import kotlin.math.abs
 
 /**
- * Global holder for real live camera frames and real optical posture telemetry captured
- * from the physical CameraX sensor during Starting (Cam 1) and Finishing (Cam 2).
+ * Global holder for real live camera frames, active race video recording state,
+ * and real optical posture telemetry captured from the physical CameraX sensor
+ * during Starting (Cam 1) and Finishing (Cam 2).
  */
 object CameraFrameHolder {
     @Volatile
@@ -29,6 +29,12 @@ object CameraFrameHolder {
 
     @Volatile
     var latestFinishFrameBitmap: Bitmap? = null
+
+    @Volatile
+    var isRecordingActive: Boolean = false
+
+    @Volatile
+    var recordedFramesCount: Int = 0
 
     // Optical Posture Telemetry read from live camera spatial zones
     @Volatile
@@ -45,12 +51,25 @@ object CameraFrameHolder {
 
     @Volatile
     var opticalPostureReadCount: Int = 0
+
+    fun startLiveRecordingSession() {
+        isRecordingActive = true
+        recordedFramesCount = 0
+        latestLiveFrameBitmap?.let { frame ->
+            latestStartFrameBitmap = frame
+        }
+    }
+
+    fun stopLiveRecordingSession() {
+        isRecordingActive = false
+        latestLiveFrameBitmap?.let { frame ->
+            latestFinishFrameBitmap = frame
+        }
+    }
 }
 
 /**
- * Real CameraX Live Preview with Optical Motion / Torso Gate & AI Body Posture Reader.
- * Analyzes frame-by-frame luminance across upper (head/shoulders), middle (chest/torso),
- * and lower (hip/knee drive) spatial bands to detect movement AND estimate real body lean angles.
+ * Real CameraX Live Preview with Optical Motion / Torso Gate, Active Race Recording & AI Body Posture Reader.
  */
 @Composable
 fun RealCameraPreview(
@@ -144,7 +163,6 @@ fun RealCameraPreview(
                                 val driveRatio = ((lowerDiff + 1f) / (upperDiff + 1f)).coerceIn(0.5f, 2.2f)
 
                                 if (!isSlitActive) {
-                                    // Cam 1: Starting Block / Acceleration Drive Posture Reading
                                     val rawStartAngle = 36.0 + (driveRatio * 9.5) + ((energy - 0.2f) * 6.0)
                                     CameraFrameHolder.measuredStartBodyAngleDeg =
                                         (rawStartAngle * 10.0).toInt() / 10.0
@@ -153,7 +171,6 @@ fun RealCameraPreview(
                                     CameraFrameHolder.measuredRearKneeAngleDeg =
                                         (116 + (driveRatio * 9.0).toInt()).coerceIn(108, 142)
                                 } else {
-                                    // Cam 2: Finish Line Torso Dip Posture Reading
                                     val rawFinishLean = 9.5 + (torsoVsUpperRatio * 5.2) + (energy * 3.5)
                                     CameraFrameHolder.measuredFinishTorsoAngleDeg =
                                         ((rawFinishLean.coerceIn(6.5, 24.5)) * 10.0).toInt() / 10.0
@@ -161,7 +178,6 @@ fun RealCameraPreview(
                                 CameraFrameHolder.opticalPostureReadCount++
                             }
 
-                            // Threshold: motion energy > 0.18f indicates athlete body / torso crossing
                             if (energy > 0.18f) {
                                 onMotionDetected(true, energy)
                             } else {
@@ -178,11 +194,17 @@ fun RealCameraPreview(
                         previousLowerLuma = curLower
                     }
 
-                    // Capture real camera bitmap so user gets actual camera photo finish & posture frame
+                    // Capture real camera bitmap for race video recording & photo-finish slit
                     try {
                         val bmp = imageProxy.toBitmap()
                         CameraFrameHolder.latestLiveFrameBitmap = bmp
-                        if (isSlitActive) {
+                        if (CameraFrameHolder.isRecordingActive) {
+                            if (CameraFrameHolder.recordedFramesCount == 0) {
+                                CameraFrameHolder.latestStartFrameBitmap = bmp
+                            }
+                            CameraFrameHolder.recordedFramesCount++
+                            CameraFrameHolder.latestFinishFrameBitmap = bmp
+                        } else if (isSlitActive) {
                             CameraFrameHolder.latestFinishFrameBitmap = bmp
                         } else {
                             CameraFrameHolder.latestStartFrameBitmap = bmp

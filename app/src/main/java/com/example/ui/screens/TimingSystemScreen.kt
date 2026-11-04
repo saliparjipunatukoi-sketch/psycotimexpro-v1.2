@@ -4,9 +4,11 @@ import android.Manifest
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -32,7 +34,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import com.example.service.AiSportsScienceAnalyzer
-import com.example.service.ElectronicStarterGunAudio
 import com.example.service.MotionAnalysisResult
 import com.example.service.RemoteKeySignal
 import com.example.ui.components.CameraFrameHolder
@@ -56,14 +57,13 @@ fun TimingSystemScreen(
     onTriggerMotion: (hasMotion: Boolean, energy: Float) -> Unit,
     onOpenQrPair: () -> Unit,
     isBluetoothTriggerEnabled: Boolean = true,
+    isRecordingVideo: Boolean = false,
     lastRemoteSignal: RemoteKeySignal? = null,
     onOpenBluetoothRemoteSetup: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val coroutineScope = rememberCoroutineScope()
 
-    // Runtime Permission for Camera
     var hasCameraPermission by remember {
         mutableStateOf(
             ContextCompat.checkSelfPermission(
@@ -79,12 +79,12 @@ fun TimingSystemScreen(
         hasCameraPermission = isGranted
     }
 
-    // Finishing Line Customization Options
+    // Finishing Line Customization Options (Collapsed by default for a clean pro broadcast layout)
     var showRedFinishLine by remember { mutableStateOf(true) }
-    var finishLinePosition by remember { mutableStateOf(0.65f) } // 0.35f = Kiri, 0.5f = Tengah, 0.65f = Kanan
+    var finishLinePosition by remember { mutableStateOf(0.65f) }
     var isCameraRotatedFullscreen by remember { mutableStateOf(false) }
+    var showSlitTuningDrawer by remember { mutableStateOf(false) }
 
-    // High-Precision Electronic Timing Format: 0:00:00:000 (Hours:Minutes:Seconds:Milliseconds)
     val hours = (elapsedMillis / 3600000).toInt()
     val minutes = ((elapsedMillis % 3600000) / 60000).toInt()
     val seconds = ((elapsedMillis % 60000) / 1000).toInt()
@@ -96,184 +96,222 @@ fun TimingSystemScreen(
             .fillMaxSize()
             .background(TrackDarkNavy)
             .verticalScroll(rememberScrollState())
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+            .padding(horizontal = 14.dp, vertical = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        // TOP CONTROLS: CAM 1 vs CAM 2 & QR PAIRING
+        // COMPACT PROFESSIONAL TOP TOOLBAR: CAM 1/2 + COMPACT BLUETOOTH PILL + QR + SLIT TUNE
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Camera Mode Toggle (Cam 1 Starter vs Cam 2 Finisher)
+            // Compact Cam 1 / Cam 2 Segmented Selector
             Row(
                 modifier = Modifier
-                    .background(StadiumSurfaceVariant, RoundedCornerShape(20.dp))
-                    .padding(3.dp)
-            ) {
-                FilterChip(
-                    selected = camMode == 1,
-                    onClick = { onSetCamMode(1) },
-                    label = { Text("CAM 1 (Start)", fontSize = 11.sp) },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = FinishLineRed,
-                        selectedLabelColor = Color.White
-                    )
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                FilterChip(
-                    selected = camMode == 2,
-                    onClick = { onSetCamMode(2) },
-                    label = { Text("CAM 2 (Torso Gate)", fontSize = 11.sp) },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = LaserOrange,
-                        selectedLabelColor = Color.White
-                    )
-                )
-            }
-
-            // QR Link Button for Phone Backup as Cam 2
-            FilledTonalButton(
-                onClick = onOpenQrPair,
-                colors = ButtonDefaults.filledTonalButtonColors(containerColor = StadiumSurfaceVariant),
-                shape = RoundedCornerShape(12.dp),
-                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
-                modifier = Modifier.testTag("open_qr_pair_button")
-            ) {
-                Icon(Icons.Default.QrCodeScanner, contentDescription = null, tint = SilverMetallic, modifier = Modifier.size(18.dp))
-                Spacer(modifier = Modifier.width(6.dp))
-                Text("Link Cam 2 QR", fontSize = 11.sp, color = Color.White, fontWeight = FontWeight.Bold)
-            }
-        }
-
-        // BLUETOOTH CAMERA SELFIE REMOTE STARTER TRIGGER BAR (START ONLY + GUN SOUND)
-        Surface(
-            color = StadiumSurface,
-            shape = RoundedCornerShape(14.dp),
-            border = androidx.compose.foundation.BorderStroke(
-                1.dp,
-                if (isBluetoothTriggerEnabled) ElectricCyan.copy(alpha = 0.6f) else StadiumBorder
-            ),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 10.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                    .background(StadiumSurfaceVariant, RoundedCornerShape(10.dp))
+                    .border(1.dp, StadiumBorder, RoundedCornerShape(10.dp))
+                    .padding(2.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.weight(1f)
+                Surface(
+                    color = if (camMode == 1) FinishLineRed else Color.Transparent,
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.clickable { onSetCamMode(1) }
                 ) {
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier
-                            .size(34.dp)
-                            .background(
-                                if (isBluetoothTriggerEnabled) ElectricCyan.copy(alpha = 0.15f) else StadiumSurfaceVariant,
-                                CircleShape
-                            )
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.BluetoothConnected,
-                            contentDescription = null,
-                            tint = if (isBluetoothTriggerEnabled) ElectricCyan else TextMuted,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Column {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = "Bluetooth Selfie Remote Starter",
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Black,
-                                color = Color.White
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Surface(
-                                color = if (isBluetoothTriggerEnabled) SuccessGreen.copy(alpha = 0.2f) else TextMuted.copy(alpha = 0.2f),
-                                shape = RoundedCornerShape(4.dp)
-                            ) {
-                                Text(
-                                    text = if (isBluetoothTriggerEnabled) "START + GUN AKTIF" else "MATI",
-                                    fontSize = 9.sp,
-                                    fontWeight = FontWeight.Black,
-                                    color = if (isBluetoothTriggerEnabled) SuccessGreen else TextMuted,
-                                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
-                                )
-                            }
-                        }
-                        Text(
-                            text = if (lastRemoteSignal != null) {
-                                "Isyarat Remote: ${lastRemoteSignal.keyName} • Sah untuk MULA sahaja"
-                            } else {
-                                "Sah untuk butang START sahaja • Serentak bunyi Tembakan Starter Gun"
-                            },
-                            fontSize = 10.sp,
-                            color = if (lastRemoteSignal != null) ElectricCyan else TextSecondary
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.width(8.dp))
-
-                FilledTonalButton(
-                    onClick = onOpenBluetoothRemoteSetup,
-                    colors = ButtonDefaults.filledTonalButtonColors(
-                        containerColor = ElectricCyan.copy(alpha = 0.2f)
-                    ),
-                    shape = RoundedCornerShape(10.dp),
-                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
-                    modifier = Modifier.testTag("open_bluetooth_remote_setup_button")
-                ) {
-                    Icon(
-                        Icons.Default.SettingsRemote,
-                        contentDescription = null,
-                        tint = ElectricCyan,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        "Setup Remote",
+                        text = "CAM 1 Start",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
-                        color = ElectricCyan
+                        color = Color.White,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
                     )
+                }
+                Surface(
+                    color = if (camMode == 2) LaserOrange else Color.Transparent,
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.clickable { onSetCamMode(2) }
+                ) {
+                    Text(
+                        text = "CAM 2 Gate",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                    )
+                }
+            }
+
+            // Right-side compact utility pills next to menu (BT Trigger + QR + Slit Config)
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Compact Professional Bluetooth Selfie Trigger Pill Button
+                Surface(
+                    color = if (isBluetoothTriggerEnabled) ElectricCyan.copy(alpha = 0.14f) else StadiumSurfaceVariant,
+                    shape = RoundedCornerShape(10.dp),
+                    border = androidx.compose.foundation.BorderStroke(
+                        1.dp,
+                        if (isBluetoothTriggerEnabled) ElectricCyan.copy(alpha = 0.65f) else StadiumBorder
+                    ),
+                    modifier = Modifier
+                        .height(32.dp)
+                        .clickable { onOpenBluetoothRemoteSetup() }
+                        .testTag("open_bluetooth_remote_setup_button")
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 9.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(5.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(7.dp)
+                                .background(
+                                    if (isBluetoothTriggerEnabled) SuccessGreen else TextMuted,
+                                    CircleShape
+                                )
+                        )
+                        Icon(
+                            imageVector = Icons.Default.BluetoothConnected,
+                            contentDescription = "Bluetooth Selfie Trigger",
+                            tint = if (isBluetoothTriggerEnabled) ElectricCyan else TextSecondary,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Text(
+                            text = if (lastRemoteSignal != null) "BT ✓" else "BT Start",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isBluetoothTriggerEnabled) Color.White else TextSecondary
+                        )
+                    }
+                }
+
+                // Compact QR Pair Icon Pill
+                Surface(
+                    color = StadiumSurfaceVariant,
+                    shape = RoundedCornerShape(10.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, StadiumBorder),
+                    modifier = Modifier
+                        .height(32.dp)
+                        .clickable { onOpenQrPair() }
+                        .testTag("open_qr_pair_button")
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.QrCodeScanner,
+                            contentDescription = "Link Cam 2 QR",
+                            tint = SilverMetallic,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Text("QR", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    }
+                }
+
+                // Compact Slit Line Tuning Toggle Icon
+                Surface(
+                    color = if (showSlitTuningDrawer) FinishLineRed.copy(alpha = 0.2f) else StadiumSurfaceVariant,
+                    shape = RoundedCornerShape(10.dp),
+                    border = androidx.compose.foundation.BorderStroke(
+                        1.dp,
+                        if (showSlitTuningDrawer) FinishLineRed else StadiumBorder
+                    ),
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clickable { showSlitTuningDrawer = !showSlitTuningDrawer }
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            Icons.Default.Tune,
+                            contentDescription = "Tetapan Garisan Slit",
+                            tint = if (showSlitTuningDrawer) FinishLineRed else SilverMetallic,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
                 }
             }
         }
 
-        // PANDUAN PENGGUNAAN DWI-TELEFON
-        Surface(
-            color = StadiumSurfaceVariant,
-            shape = RoundedCornerShape(12.dp),
-            border = androidx.compose.foundation.BorderStroke(1.dp, SilverBorder.copy(alpha = 0.3f)),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Row(
-                modifier = Modifier.padding(10.dp),
-                verticalAlignment = Alignment.CenterVertically
+        // COLLAPSIBLE SLIT LINE TUNING BAR (Only visible when user taps the Tune icon)
+        AnimatedVisibility(visible = showSlitTuningDrawer) {
+            Surface(
+                color = StadiumSurface,
+                shape = RoundedCornerShape(12.dp),
+                border = androidx.compose.foundation.BorderStroke(1.dp, StadiumBorder),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Icon(Icons.Default.Info, contentDescription = null, tint = LaserOrange, modifier = Modifier.size(20.dp))
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "Cadangan Sistem Terbaik: Gunakan dua telefon pintar. Telefon 1 di Garisan Permulaan (Cam 1 Starter Gun) dan Telefon 2 di Garisan Penamat (Cam 2 Torso Timing Gate).",
-                    fontSize = 11.sp,
-                    color = Color.White,
-                    lineHeight = 15.sp
-                )
+                Column(
+                    modifier = Modifier.padding(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Garisan Penamat Slit & Orientasi",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 11.sp,
+                            color = Color.White
+                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = if (showRedFinishLine) "Garis Aktif" else "Sembunyi",
+                                fontSize = 10.sp,
+                                color = if (showRedFinishLine) FinishLineRed else TextMuted
+                            )
+                            Switch(
+                                checked = showRedFinishLine,
+                                onCheckedChange = { showRedFinishLine = it },
+                                modifier = Modifier.scale(0.65f)
+                            )
+                        }
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        listOf("Kiri 35%" to 0.35f, "Tengah 50%" to 0.50f, "Kanan 65%" to 0.65f).forEach { (label, pos) ->
+                            FilterChip(
+                                selected = kotlin.math.abs(finishLinePosition - pos) < 0.05f,
+                                onClick = { finishLinePosition = pos },
+                                label = { Text(label, fontSize = 10.sp) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = FinishLineRed,
+                                    selectedLabelColor = Color.White
+                                )
+                            )
+                        }
+                        Spacer(modifier = Modifier.weight(1f))
+                        IconButton(
+                            onClick = { isCameraRotatedFullscreen = !isCameraRotatedFullscreen },
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.ScreenRotation,
+                                contentDescription = "Putar Kamera",
+                                tint = if (isCameraRotatedFullscreen) FinishLineRed else SilverMetallic,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+                }
             }
         }
 
-        // BIG ELECTRONIC DIGITAL STOPWATCH TIMER DISPLAY
+        // ELECTRONIC DIGITAL STOPWATCH CONSOLE
         Card(
             colors = CardDefaults.cardColors(containerColor = StadiumSurface),
-            shape = RoundedCornerShape(20.dp),
+            shape = RoundedCornerShape(16.dp),
             border = androidx.compose.foundation.BorderStroke(
-                2.dp,
+                1.5.dp,
                 if (isTimerRunning) FinishLineRed else StadiumBorder
             ),
             modifier = Modifier.fillMaxWidth()
@@ -281,7 +319,7 @@ fun TimingSystemScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 14.dp, horizontal = 14.dp),
+                    .padding(vertical = 10.dp, horizontal = 12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Row(
@@ -289,39 +327,62 @@ fun TimingSystemScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "CATATAN MASA ELEKTRONIK (ET)",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Black,
-                        color = Color.White,
-                        letterSpacing = 1.sp
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text(
+                            text = "STOPWATCH ELEKTRONIK (ET)",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Black,
+                            color = SilverMetallic,
+                            letterSpacing = 0.8.sp
+                        )
+                        if (isRecordingVideo || isTimerRunning) {
+                            Surface(
+                                color = FinishLineRed.copy(alpha = 0.2f),
+                                shape = RoundedCornerShape(4.dp)
+                            ) {
+                                Text(
+                                    text = "● REC VIDEO + GUN",
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Black,
+                                    color = FinishLineRed,
+                                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
+                                )
+                            }
+                        }
+                    }
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = "Gun Sound",
-                            fontSize = 11.sp,
+                            text = "Audio Gun",
+                            fontSize = 10.sp,
                             color = if (isAudioGunEnabled) SuccessGreen else TextSecondary
                         )
                         Switch(
                             checked = isAudioGunEnabled,
                             onCheckedChange = onToggleAudioGun,
-                            modifier = Modifier.scale(0.7f).testTag("audio_gun_switch")
+                            modifier = Modifier.scale(0.65f).testTag("audio_gun_switch")
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(6.dp))
-
-                // One-Row Scaled High-Precision Digital Electronic Stopwatch Display
                 Surface(
                     color = Color.Black,
-                    shape = RoundedCornerShape(12.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, if (isTimerRunning) FinishLineRed else SilverBorder.copy(alpha = 0.3f)),
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+                    shape = RoundedCornerShape(10.dp),
+                    border = androidx.compose.foundation.BorderStroke(
+                        1.dp,
+                        if (isTimerRunning) FinishLineRed else SilverBorder.copy(alpha = 0.25f)
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp)
                 ) {
                     Row(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 10.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp, vertical = 8.dp),
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -339,106 +400,25 @@ fun TimingSystemScreen(
                     }
                 }
 
-                Text(
-                    text = if (camMode == 1) "CAM 1 TIMING GATE HOST • KELAJUAN RAKAMAN 120 FPS" else "CAM 2 FINISHER GATE • AI SLIT SCAN TORSO DETECTOR",
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = TextSecondary
-                )
-            }
-        }
-
-        // KONFIGURASI GARIS MERAH PENAMAT & ROTASI KAMERA
-        Card(
-            colors = CardDefaults.cardColors(containerColor = StadiumSurface),
-            shape = RoundedCornerShape(16.dp),
-            border = androidx.compose.foundation.BorderStroke(1.dp, StadiumBorder),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Tune, contentDescription = null, tint = FinishLineRed, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = "Konfigurasi Garisan Penamat Merah",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 12.sp,
-                            color = Color.White
-                        )
-                    }
-
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = if (showRedFinishLine) "Aktif" else "Tutup",
-                            fontSize = 11.sp,
-                            color = if (showRedFinishLine) FinishLineRed else TextMuted
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Switch(
-                            checked = showRedFinishLine,
-                            onCheckedChange = { showRedFinishLine = it },
-                            modifier = Modifier.scale(0.7f)
-                        )
-                    }
-                }
-
-                // Posisi Garisan Penamat
-                if (showRedFinishLine) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("Posisi Slit:", fontSize = 11.sp, color = TextSecondary)
-                        listOf("Kiri (35%)" to 0.35f, "Tengah (50%)" to 0.50f, "Kanan (65%)" to 0.65f).forEach { (label, pos) ->
-                            FilterChip(
-                                selected = kotlin.math.abs(finishLinePosition - pos) < 0.05f,
-                                onClick = { finishLinePosition = pos },
-                                label = { Text(label, fontSize = 10.sp) },
-                                colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = FinishLineRed,
-                                    selectedLabelColor = Color.White
-                                )
-                            )
-                        }
-                    }
-                }
-
-                // Butang Putar Kamera / Fullscreen Penamat
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Button(
-                        onClick = { isCameraRotatedFullscreen = !isCameraRotatedFullscreen },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (isCameraRotatedFullscreen) FinishLineRed else StadiumSurfaceVariant
-                        ),
-                        shape = RoundedCornerShape(10.dp),
-                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
-                    ) {
-                        Icon(Icons.Default.ScreenRotation, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = if (isCameraRotatedFullscreen) "Mod Potret Biasa" else "Putar Kamera Skrin Penuh (Finishing)",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
-                    }
-
                     Text(
-                        text = "Sejajarkan garis merah dengan garis penamat trek",
+                        text = if (camMode == 1) "CAM 1 START GATE • 120 FPS" else "CAM 2 TORSO SLIT GATE • AI",
                         fontSize = 9.sp,
-                        color = TextSecondary,
-                        modifier = Modifier.weight(1f).padding(start = 8.dp)
+                        fontWeight = FontWeight.Bold,
+                        color = TextSecondary
                     )
+                    if (lastRemoteSignal != null) {
+                        Text(
+                            text = "BT Trigger: ${lastRemoteSignal.keyName}",
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = ElectricCyan
+                        )
+                    }
                 }
             }
         }
@@ -447,13 +427,12 @@ fun TimingSystemScreen(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(if (isCameraRotatedFullscreen) 320.dp else 220.dp)
+                .height(if (isCameraRotatedFullscreen) 320.dp else 230.dp)
                 .clip(RoundedCornerShape(16.dp))
                 .background(Color.Black)
-                .border(2.dp, if (camMode == 2) FinishLineRed else StadiumBorder, RoundedCornerShape(16.dp))
+                .border(2.dp, if (isTimerRunning || camMode == 2) FinishLineRed else StadiumBorder, RoundedCornerShape(16.dp))
         ) {
             if (hasCameraPermission) {
-                // Real Live Camera Feed via CameraX
                 RealCameraPreview(
                     isSlitActive = camMode == 2,
                     onMotionDetected = { hasMotion, energy ->
@@ -462,7 +441,6 @@ fun TimingSystemScreen(
                     modifier = Modifier.fillMaxSize()
                 )
             } else {
-                // Camera Permission Request Placeholder
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -504,7 +482,6 @@ fun TimingSystemScreen(
                 val w = size.width
                 val h = size.height
 
-                // Track lane guide lines
                 for (i in 1..4) {
                     val y = i * (h / 5f)
                     drawLine(
@@ -515,24 +492,20 @@ fun TimingSystemScreen(
                     )
                 }
 
-                // Finishing Line Slit Beam (Garisan Penamat Merah)
                 if (showRedFinishLine) {
                     val slitX = w * finishLinePosition
-                    // Laser Beam
                     drawLine(
                         color = FinishLineRed,
                         start = Offset(slitX, 0f),
                         end = Offset(slitX, h),
                         strokeWidth = 4f
                     )
-                    // Sensor head indicator
                     drawCircle(
                         color = if (isMovementDetected) SuccessGreen else FinishLineRed,
                         radius = 10f,
                         center = Offset(slitX, 25f)
                     )
 
-                    // Kotak AI Intelligent Torso Detection
                     if (isMovementDetected) {
                         val boxW = 80f
                         val boxH = 130f
@@ -549,7 +522,7 @@ fun TimingSystemScreen(
                 }
             }
 
-            // Status Indicator Overlay
+            // Top-Start Status Indicator Overlay
             Surface(
                 color = if (isMovementDetected) SuccessGreen.copy(alpha = 0.95f) else Color.Black.copy(alpha = 0.75f),
                 shape = RoundedCornerShape(8.dp),
@@ -569,11 +542,40 @@ fun TimingSystemScreen(
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = if (isMovementDetected) "KOTAK AI: TORSO DIKESAN DI GARISAN!" else "KAMERA AKTIF (MENUNGGU TORSO)",
+                        text = if (isMovementDetected) "TORSO DIKESAN DI GARISAN!" else "KAMERA AKTIF",
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
                         color = if (isMovementDetected) Color.Black else Color.White
                     )
+                }
+            }
+
+            // Top-End Live Video Recording Indicator Badge when started via Bluetooth or Start Button
+            if (isRecordingVideo || isTimerRunning) {
+                Surface(
+                    color = FinishLineRed.copy(alpha = 0.92f),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(8.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(7.dp)
+                                .background(Color.White, CircleShape)
+                        )
+                        Spacer(modifier = Modifier.width(5.dp))
+                        Text(
+                            text = "REC VIDEO",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Black,
+                            color = Color.White
+                        )
+                    }
                 }
             }
 
@@ -602,17 +604,14 @@ fun TimingSystemScreen(
             }
         }
 
-        // TIMER PRIMARY CONTROLS (MULA, BERHENTI, RESET)
+        // TIMER PRIMARY CONTROLS (MULA + RAKAMAN + GUN, BERHENTI, RESET)
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             if (!isTimerRunning) {
                 Button(
-                    onClick = {
-                        // Start button in the app ALWAYS plays Starter Gun sound together with starting sprint timer
-                        onStartTimer()
-                    },
+                    onClick = { onStartTimer() },
                     colors = ButtonDefaults.buttonColors(containerColor = FinishLineRed),
                     shape = RoundedCornerShape(14.dp),
                     modifier = Modifier
@@ -622,7 +621,7 @@ fun TimingSystemScreen(
                 ) {
                     Icon(Icons.Default.Campaign, contentDescription = null, tint = Color.White)
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text("MULA TIMING + BUNYI GUN", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color.White)
+                    Text("MULA RAKAM + BUNYI GUN", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color.White)
                 }
             } else {
                 Button(
@@ -636,7 +635,7 @@ fun TimingSystemScreen(
                 ) {
                     Icon(Icons.Default.Stop, contentDescription = null, tint = Color.White)
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text("TAMAT / RAKAM HASIL", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color.White)
+                    Text("TAMAT / SIMPAN RAKAMAN", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color.White)
                 }
             }
 
@@ -645,7 +644,7 @@ fun TimingSystemScreen(
                 shape = RoundedCornerShape(14.dp),
                 border = androidx.compose.foundation.BorderStroke(1.dp, SilverBorder),
                 modifier = Modifier
-                    .weight(0.7f)
+                    .weight(0.65f)
                     .height(52.dp)
                     .testTag("reset_timer_button")
             ) {
@@ -722,7 +721,6 @@ fun TimingSystemScreen(
                         groundContactTimeMs = contactTime
                     )
 
-                    // Metrics Grid (4 Boxes: Start Angle, Finish Torso, GCT, Cadence)
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -757,7 +755,6 @@ fun TimingSystemScreen(
                         )
                     }
 
-                    // CAM 1 STARTING POSTURE: CORRECT VS WRONG + NEXT STEPS
                     Surface(
                         color = StadiumSurfaceVariant,
                         shape = RoundedCornerShape(10.dp),
@@ -811,7 +808,6 @@ fun TimingSystemScreen(
                         }
                     }
 
-                    // CAM 2 FINISHING POSTURE: CORRECT VS WRONG + NEXT STEPS
                     Surface(
                         color = StadiumSurfaceVariant,
                         shape = RoundedCornerShape(10.dp),
@@ -865,27 +861,26 @@ fun TimingSystemScreen(
                         }
                     }
                 } else {
-                    // IF NO HUMAN DETECTED: TEXT NO DETECTION SAVE AS REQUESTED
                     Surface(
                         color = Color.Black.copy(alpha = 0.6f),
                         shape = RoundedCornerShape(8.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(
-                            modifier = Modifier.padding(12.dp),
+                            modifier = Modifier.padding(10.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
                                 text = "No detection save",
-                                fontSize = 13.sp,
+                                fontSize = 12.sp,
                                 fontWeight = FontWeight.Black,
                                 color = TextMuted,
                                 fontFamily = FontFamily.Monospace
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = "Tiada manusia tertangkap oleh kotak sensor AI buat masa ini. Sensor bersedia membaca postur badan Permulaan (Cam 1) dan Penamat (Cam 2) secara langsung.",
-                                fontSize = 11.sp,
+                                text = "Sensor AI sedia membaca postur badan Permulaan (Cam 1) dan Penamat (Cam 2) secara langsung.",
+                                fontSize = 10.sp,
                                 color = TextSecondary,
                                 textAlign = TextAlign.Center
                             )
