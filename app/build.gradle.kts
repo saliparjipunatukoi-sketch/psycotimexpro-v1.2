@@ -161,3 +161,43 @@ tasks.withType<Test> {
     events("passed", "failed", "skipped")
   }
 }
+
+tasks.register<Copy>("publishApkToPublic") {
+  dependsOn("assembleDebug")
+  from(layout.buildDirectory.file("outputs/apk/debug/app-debug.apk"))
+  into(rootProject.file("htdocs"))
+  rename { "PsycoTimeXPro-Latest.apk" }
+}
+
+tasks.register<Copy>("publishApkToPublicFolder") {
+  dependsOn("assembleDebug")
+  from(layout.buildDirectory.file("outputs/apk/debug/app-debug.apk"))
+  into(rootProject.file("public"))
+  rename { "PsycoTimeXPro-Latest.apk" }
+}
+
+tasks.register<Zip>("packageTrainingManagementZip") {
+  mustRunAfter("publishApkToPublic")
+  from(rootProject.file("htdocs/training-management"))
+  destinationDirectory.set(rootProject.file("htdocs"))
+  archiveFileName.set("training-management-ready.zip")
+}
+
+tasks.register<Copy>("prepareIndexNew") {
+  mustRunAfter("publishApkToPublicFolder")
+  from(rootProject.file("public/assets/aistudio/index_fc69d9a2.php"))
+  into(rootProject.file("htdocs/index new"))
+  rename { "index.php" }
+}
+
+tasks.register<Zip>("packageIndexNewZip") {
+  mustRunAfter("prepareIndexNew")
+  mustRunAfter("publishApkToPublic")
+  from(rootProject.file("htdocs/index new"))
+  destinationDirectory.set(rootProject.file("htdocs"))
+  archiveFileName.set("index-new.zip")
+}
+
+
+
+

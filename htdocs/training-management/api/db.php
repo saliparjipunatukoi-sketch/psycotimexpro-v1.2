@@ -43,37 +43,42 @@ $SUBSCRIPTION_PLANS = [
     'trial' => [
         'name' => 'Percubaan Percuma (7 Hari)',
         'price' => 0,
+        'price_usd' => 0,
         'max_athletes' => 10,
         'max_sub_coaches' => 1,
         'duration_days' => 7
     ],
     'plan_rm30' => [
-        'name' => 'Pakej Asas (RM30)',
+        'name' => 'Pakej Asas (RM30 / USD $7)',
         'price' => 30,
+        'price_usd' => 7,
         'max_athletes' => 30,
         'max_sub_coaches' => 2,
         'duration_days' => 30,
         'description' => '30 Atlit (1 Bulan) + 2 Sub Coach'
     ],
     'plan_rm40' => [
-        'name' => 'Pakej Standard (RM40)',
+        'name' => 'Pakej Standard (RM40 / USD $10)',
         'price' => 40,
+        'price_usd' => 10,
         'max_athletes' => 50,
         'max_sub_coaches' => 2,
         'duration_days' => 30,
         'description' => '50 Atlit (1 Bulan) + 2 Sub Coach'
     ],
     'plan_rm60' => [
-        'name' => 'Pakej Pro (RM60)',
+        'name' => 'Pakej Pro (RM60 / USD $15)',
         'price' => 60,
+        'price_usd' => 15,
         'max_athletes' => 80,
         'max_sub_coaches' => 3,
         'duration_days' => 30,
         'description' => '80 Atlit (1 Bulan) + 3 Sub Coach'
     ],
     'plan_rm80' => [
-        'name' => 'Pakej Elite (RM80)',
+        'name' => 'Pakej Elite (RM80 / USD $20)',
         'price' => 80,
+        'price_usd' => 20,
         'max_athletes' => 100,
         'max_sub_coaches' => 5,
         'duration_days' => 30,
@@ -123,7 +128,9 @@ if (!file_exists($usersFile) || count(readJsonFile($usersFile)) === 0) {
             'email' => 'saliparjipun.atukoi@gmail.com',
             'password' => 'admin123',
             'role' => 'superadmin',
-            'phone' => '601112345678',
+            'phone' => '60195326399',
+            'country' => 'Malaysia',
+            'currency' => 'MYR',
             'club_name' => 'Psyco Track & Field Elite Malaysia',
             'plan' => 'plan_rm80',
             'plan_name' => 'Superadmin Unlimited',

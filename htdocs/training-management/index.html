@@ -58,6 +58,39 @@
 </head>
 <body class="bg-track text-gray-100 font-sans antialiased min-h-screen flex flex-col selection:bg-cyanAccent selection:text-black">
 
+    <!-- TOP SYSTEM & LANGUAGE BAR -->
+    <div class="bg-black/95 border-b border-gray-800/80 py-1.5 px-4 text-xs">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center space-x-3">
+                <span class="inline-flex items-center gap-1.5 text-[11px] font-mono text-emerald-400 font-bold">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                    <span id="sysBarStatusText" data-i18n="sys_bar_status">STATUS SISTEM: ONLINE • SERVER CLOUD & APK v2.4</span>
+                </span>
+                <span class="hidden sm:inline text-gray-600">|</span>
+                <a href="https://wa.me/60195326399?text=Salam%20Admin%20Psyco%20Time%20X%20Pro%20(%2B6019-5326399)" target="_blank" class="hidden sm:inline-flex items-center gap-1 text-[11px] text-cyanAccent hover:underline font-semibold">
+                    <i class="fa-brands fa-whatsapp text-emerald-400"></i>
+                    <span data-i18n="sys_bar_admin">Admin Support: +6019-5326399</span>
+                </a>
+            </div>
+
+            <!-- LANGUAGE TOGGLE COMPONENT (BM / EN / JP / ZH) -->
+            <div class="flex items-center space-x-1 bg-surfaceLight/90 p-1 rounded-full border border-gray-700" id="languageToggleBar">
+                <button type="button" onclick="window.psycoLangHook.setLanguage('ms')" data-lang-btn="ms" class="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold transition bg-cyanAccent text-black">
+                    🇲🇾 BM
+                </button>
+                <button type="button" onclick="window.psycoLangHook.setLanguage('en')" data-lang-btn="en" class="px-2.5 py-0.5 rounded-full text-[11px] font-bold text-gray-300 hover:text-white transition">
+                    🇬🇧 EN
+                </button>
+                <button type="button" onclick="window.psycoLangHook.setLanguage('ja')" data-lang-btn="ja" class="px-2.5 py-0.5 rounded-full text-[11px] font-bold text-gray-300 hover:text-white transition">
+                    🇯🇵 日本語
+                </button>
+                <button type="button" onclick="window.psycoLangHook.setLanguage('zh')" data-lang-btn="zh" class="px-2.5 py-0.5 rounded-full text-[11px] font-bold text-gray-300 hover:text-white transition">
+                    🇨🇳 中文
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- TOP NAVIGATION BAR -->
     <nav class="sticky top-0 z-50 bg-trackDark/90 backdrop-blur-md border-b border-gray-800">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -74,28 +107,28 @@
                             <span class="font-teko text-3xl font-bold tracking-wider text-white uppercase">PSYCO TIME</span>
                             <span class="px-2 py-0.5 rounded text-xs font-black bg-gradient-to-r from-orangeLaser to-finishRed text-white uppercase tracking-widest">X PRO</span>
                         </div>
-                        <p class="text-[10px] text-cyanAccent font-medium tracking-wider uppercase -mt-1">Training Management Cloud & APK Server</p>
+                        <p class="text-[10px] text-cyanAccent font-medium tracking-wider uppercase -mt-1" data-i18n="sys_subtitle">Training Management Cloud & APK Server</p>
                     </div>
                 </div>
 
                 <!-- Desktop Navigation Links -->
                 <div class="hidden md:flex items-center space-x-5 text-sm font-semibold">
-                    <a href="#iklan" class="hover:text-cyanAccent transition">Sistem Latihan</a>
-                    <a href="#cara-pakai" class="hover:text-cyanAccent transition">Panduan APK</a>
+                    <a href="#iklan" class="hover:text-cyanAccent transition" data-i18n="nav_system">Sistem Latihan</a>
+                    <a href="#cara-pakai" class="hover:text-cyanAccent transition" data-i18n="nav_guide">Panduan APK</a>
                     <a href="#trend-prestasi" class="text-yellow-400 hover:text-yellow-300 transition flex items-center gap-1 font-bold">
-                        <i class="fa-solid fa-chart-line text-xs"></i> Trend Prestasi D3
+                        <i class="fa-solid fa-chart-line text-xs"></i> <span data-i18n="nav_d3">Trend Prestasi D3</span>
                     </a>
                     <a href="/sports-management/" class="text-cyanAccent hover:text-cyan-300 transition flex items-center gap-1 font-bold">
-                        <i class="fa-solid fa-medal text-xs"></i> Sports Management
+                        <i class="fa-solid fa-medal text-xs"></i> <span data-i18n="nav_sports">Sports Management</span>
                     </a>
                     <a href="#download-apk" class="text-emerald-400 hover:text-emerald-300 transition flex items-center gap-1.5 font-bold">
-                        <i class="fa-brands fa-android text-base"></i> APK
+                        <i class="fa-brands fa-android text-base"></i> <span data-i18n="nav_apk">APK</span>
                     </a>
                     <a href="#langganan" class="text-orangeLaser hover:text-orange-400 transition flex items-center gap-1.5">
-                        <i class="fa-solid fa-crown text-xs"></i> Yuran
+                        <i class="fa-solid fa-crown text-xs"></i> <span data-i18n="nav_pricing">Yuran</span>
                     </a>
                     <a href="cam2.html" class="text-gray-300 hover:text-white transition flex items-center gap-1 bg-surfaceLight px-2.5 py-1 rounded-lg border border-gray-700 text-xs">
-                        <i class="fa-solid fa-camera text-orangeLaser"></i> Gate Cam 2
+                        <i class="fa-solid fa-camera text-orangeLaser"></i> <span data-i18n="nav_cam2">Gate Cam 2</span>
                     </a>
                 </div>
 
@@ -103,15 +136,15 @@
                 <div class="flex items-center space-x-3">
                     <a href="#download-apk" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-successGreen to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-black font-extrabold text-xs shadow-md shadow-successGreen/20 transition flex items-center gap-1.5">
                         <i class="fa-brands fa-android text-sm"></i>
-                        <span>Muat Turun APK</span>
+                        <span data-i18n="btn_download_apk">Muat Turun APK</span>
                     </a>
                     <button onclick="openLoginModal()" class="px-4 py-2 rounded-xl bg-surfaceLight hover:bg-gray-700 text-white font-bold text-sm border border-gray-700 transition flex items-center gap-2">
                         <i class="fa-solid fa-arrow-right-to-bracket text-cyanAccent"></i>
-                        <span>Log Masuk</span>
+                        <span data-i18n="btn_login">Daftar / Log Masuk</span>
                     </button>
                     <a href="dashboard.html" class="hidden sm:inline-flex px-4 py-2 rounded-xl bg-gradient-to-r from-cyanAccent to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-black font-extrabold text-sm shadow-lg shadow-cyanAccent/25 transition items-center gap-2">
                         <i class="fa-solid fa-chart-line"></i>
-                        <span>Portal Jurulatih</span>
+                        <span data-i18n="btn_coach_portal">Portal Jurulatih</span>
                     </a>
                 </div>
             </div>
@@ -127,14 +160,15 @@
                 <!-- Left Details -->
                 <div class="lg:col-span-7 space-y-6">
                     <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-cyanAccent/10 border border-cyanAccent/30 text-cyanAccent text-xs font-bold tracking-wide">
-                        <i class="fa-solid fa-bolt text-orangeLaser animate-pulse"></i> REVOLUSI SUKATAN MASA ELEKTRONIK BALAPAN & PADANG
+                        <i class="fa-solid fa-bolt text-orangeLaser animate-pulse"></i>
+                        <span data-i18n="hero_badge">REVOLUSI SUKATAN MASA ELEKTRONIK BALAPAN & PADANG</span>
                     </div>
                     
-                    <h1 class="font-teko text-5xl sm:text-7xl lg:text-8xl font-bold leading-none uppercase text-white tracking-tight">
+                    <h1 class="font-teko text-5xl sm:text-7xl lg:text-8xl font-bold leading-none uppercase text-white tracking-tight" data-i18n="hero_title">
                         SUKATAN MASA ELEKTRONIK <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyanAccent via-orangeLaser to-yellow-400">SEPERTI OLYMPIC</span> DI HUJUNG JARI
                     </h1>
 
-                    <p class="text-gray-300 text-base sm:text-lg max-w-2xl leading-relaxed">
+                    <p class="text-gray-300 text-base sm:text-lg max-w-2xl leading-relaxed" data-i18n="hero_desc">
                         Tingkatkan prestasi kelab & atlit anda dengan <strong class="text-white">Psyco Time X Pro</strong>. Dilengkapi sistem pengesanan torso automatik (AI Torso Detection), dwi-kamera gerbang (Cam 1 Starter & Cam 2 Finisher Gate), serta pelayan cloud automatik yang menyegerakan bacaan PB terus ke portal web anda.
                     </p>
 
@@ -143,21 +177,21 @@
                         <div class="p-3 bg-surface/80 rounded-xl border border-gray-800 flex items-center space-x-3">
                             <i class="fa-solid fa-bullseye text-orangeLaser text-xl"></i>
                             <div>
-                                <p class="text-xs font-bold text-white">Ketepatan 100%</p>
+                                <p class="text-xs font-bold text-white" data-i18n="hero_feat1">Ketepatan 100%</p>
                                 <p class="text-[10px] text-gray-400">0:00:00:000 ms</p>
                             </div>
                         </div>
                         <div class="p-3 bg-surface/80 rounded-xl border border-gray-800 flex items-center space-x-3">
                             <i class="fa-solid fa-video text-cyanAccent text-xl"></i>
                             <div>
-                                <p class="text-xs font-bold text-white">Dual-Cam Gate</p>
+                                <p class="text-xs font-bold text-white" data-i18n="hero_feat2">Dual-Cam Gate</p>
                                 <p class="text-[10px] text-gray-400">Cam 1 + Cam 2 QR Link</p>
                             </div>
                         </div>
                         <div class="p-3 bg-surface/80 rounded-xl border border-gray-800 flex items-center space-x-3">
                             <i class="fa-solid fa-cloud-arrow-up text-successGreen text-xl"></i>
                             <div>
-                                <p class="text-xs font-bold text-white">Auto Sync Web</p>
+                                <p class="text-xs font-bold text-white" data-i18n="hero_feat3">Auto Sync Web</p>
                                 <p class="text-[10px] text-gray-400">Database Berpusat</p>
                             </div>
                         </div>
@@ -168,17 +202,17 @@
                         <a href="#download-apk" class="px-8 py-4 rounded-xl bg-gradient-to-r from-successGreen via-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-black font-black text-base shadow-xl shadow-successGreen/25 transition flex items-center gap-3 transform hover:-translate-y-0.5">
                             <i class="fa-brands fa-android text-2xl"></i>
                             <div>
-                                <span class="block leading-none text-xs uppercase tracking-wider font-bold">Pasang Pada Telefon Anda</span>
-                                <span class="text-sm sm:text-base font-black">Muat Turun APK Rasmi</span>
+                                <span class="block leading-none text-xs uppercase tracking-wider font-bold" data-i18n="hero_cta_sub">Pasang Pada Telefon Anda</span>
+                                <span class="text-sm sm:text-base font-black" data-i18n="hero_cta_main">Muat Turun APK Rasmi</span>
                             </div>
                         </a>
-                        <a href="#langganan" class="px-7 py-4 rounded-xl bg-gradient-to-r from-orangeLaser to-finishRed hover:from-orange-500 hover:to-red-600 text-white font-extrabold text-sm sm:text-base shadow-xl shadow-orangeLaser/20 transition flex items-center gap-2.5">
+                        <button onclick="openLoginModal()" class="px-7 py-4 rounded-xl bg-gradient-to-r from-orangeLaser to-finishRed hover:from-orange-500 hover:to-red-600 text-white font-extrabold text-sm sm:text-base shadow-xl shadow-orangeLaser/20 transition flex items-center gap-2.5">
                             <i class="fa-solid fa-gift"></i>
-                            <span>Cuba Percuma 7 Hari</span>
-                        </a>
-                        <a href="#cara-pakai" class="px-5 py-4 rounded-xl bg-surfaceLight hover:bg-gray-700 text-white font-bold text-sm border border-gray-700 transition flex items-center gap-2">
-                            <i class="fa-solid fa-circle-play text-cyanAccent"></i>
-                            <span>Panduan Penggunaan</span>
+                            <span data-i18n="hero_cta_trial">Daftar & Cuba Percuma 7 Hari</span>
+                        </button>
+                        <a href="https://wa.me/60195326399?text=Salam%20Admin%20Psyco%20Time%20X%20Pro%20(%2B6019-5326399)%2C%20saya%20ingin%20bertanya%20mengenai%20APK%20%26%20Langganan." target="_blank" class="px-5 py-4 rounded-xl bg-surfaceLight hover:bg-gray-700 text-emerald-400 font-bold text-sm border border-emerald-500/40 transition flex items-center gap-2">
+                            <i class="fa-brands fa-whatsapp text-lg"></i>
+                            <span data-i18n="hero_cta_admin">Hubungi Admin (+6019-5326399)</span>
                         </a>
                     </div>
                 </div>
@@ -196,7 +230,7 @@
 
                         <!-- Big Digital Stopwatch Numbers -->
                         <div class="py-8 text-center bg-trackDark rounded-2xl my-4 border border-gray-800">
-                            <p class="text-xs text-gray-400 uppercase tracking-widest mb-1 font-semibold">Masa Rasmi Larian</p>
+                            <p class="text-xs text-gray-400 uppercase tracking-widest mb-1 font-semibold" data-i18n="hero_official_time">Masa Rasmi Larian</p>
                             <div id="liveStopwatch" class="font-mono text-5xl sm:text-6xl font-black text-yellow-400 timer-glow tracking-wider">
                                 0:00:10:180
                             </div>
@@ -206,9 +240,9 @@
                         <!-- Simulated Torso Laser Line Graphic -->
                         <div class="p-4 rounded-xl bg-surfaceLight border border-gray-800 space-y-3">
                             <div class="flex justify-between text-xs font-semibold">
-                                <span class="text-gray-300">Pengesanan Garisan Torso:</span>
+                                <span class="text-gray-300" data-i18n="hero_torso_label">Pengesanan Garisan Torso:</span>
                                 <span class="text-successGreen font-bold flex items-center gap-1">
-                                    <i class="fa-solid fa-circle-check"></i> TORSO DIKESAN
+                                    <i class="fa-solid fa-circle-check"></i> <span data-i18n="hero_torso_detected">TORSO DIKESAN</span>
                                 </span>
                             </div>
                             <div class="h-3 w-full bg-trackDark rounded-full overflow-hidden relative">
@@ -224,7 +258,7 @@
 
                         <!-- Sync Status -->
                         <div class="mt-4 flex items-center justify-between text-xs text-gray-400 px-2">
-                            <span>Status Server: <strong class="text-successGreen">Tersambung (Online)</strong></span>
+                            <span>Status Server: <strong class="text-successGreen" data-i18n="sys_online_short">Tersambung (Online)</strong></span>
                             <span>Sync ke: psycotimexpro.my</span>
                         </div>
                     </div>
@@ -531,22 +565,35 @@
         </div>
     </section>
 
-    <!-- PAKEJ LANGGANAN & STRUKTUR YURAN (SUBSCRIPTION APK) -->
+    <!-- PAKEJ LANGGANAN & STRUKTUR YURAN (SUBSCRIPTION APK: RM FOR MALAYSIA / USD $ FOR OTHER COUNTRIES) -->
     <section id="langganan" class="py-20 bg-track border-b border-gray-800 relative">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center max-w-3xl mx-auto mb-16 space-y-3">
+            <div class="text-center max-w-3xl mx-auto mb-10 space-y-3">
                 <span class="text-xs font-black uppercase text-orangeLaser tracking-widest bg-orangeLaser/10 px-3 py-1 rounded-full border border-orangeLaser/20">PELAN HARGA & KELAYAKAN</span>
-                <h2 class="font-teko text-5xl sm:text-6xl font-bold uppercase text-white tracking-wide">
+                <h2 class="font-teko text-5xl sm:text-6xl font-bold uppercase text-white tracking-wide" data-i18n="pricing_title">
                     PILIHAN PAKEJ LANGGANAN APK
                 </h2>
-                <p class="text-gray-300 text-sm sm:text-base">
-                    Setiap pendaftaran baru diberi <strong class="text-cyanAccent">Akses Percuma Penuh selama 7 Hari</strong>. Selepas tamat tempoh percubaan, hubungi Admin melalui WhatsApp untuk mengaktifkan pakej bulanan mengikut saiz kelab anda.
+                <p class="text-gray-300 text-sm sm:text-base" data-i18n="pricing_subtitle">
+                    Setiap pendaftaran baru diberi <strong class="text-cyanAccent">Akses Percuma Penuh selama 7 Hari</strong>. Selepas tamat tempoh percubaan, langganan akan diatur oleh Admin mengikut negara & saiz kelab anda.
                 </p>
+
+                <!-- COUNTRY CURRENCY SWITCHER (MALAYSIA RM vs ALL OTHER COUNTRIES USD $) -->
+                <div class="pt-4 flex flex-col items-center gap-2">
+                    <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Pilih Negara / Mata Wang Langganan (Select Country Currency):</span>
+                    <div class="inline-flex rounded-2xl bg-surface p-1.5 border border-gray-700 shadow-lg">
+                        <button type="button" id="btnCurrencyMYR" onclick="setSubscriptionCurrency('Malaysia')" class="px-5 py-2.5 rounded-xl text-xs font-black transition bg-cyanAccent text-black shadow">
+                            🇲🇾 Malaysia (RM30 / RM40 / RM60 / RM80)
+                        </button>
+                        <button type="button" id="btnCurrencyUSD" onclick="setSubscriptionCurrency('International')" class="px-5 py-2.5 rounded-xl text-xs font-bold text-gray-300 hover:text-white transition">
+                            🌏 International / Negara Lain (USD $7 / $10 / $15 / $20)
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <!-- Pricing Cards Grid -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <!-- RM30 = 30 atlit for 1 Month user + 2 Sub Coach -->
+                <!-- RM30 / USD $7 = 30 atlit for 1 Month user + 2 Sub Coach -->
                 <div class="rounded-3xl bg-gradient-to-b from-surface to-trackDark p-7 border-2 border-cyanAccent shadow-xl shadow-cyanAccent/10 flex flex-col justify-between relative">
                     <div class="absolute -top-3.5 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-cyanAccent to-blue-600 text-black text-[10px] font-black uppercase tracking-widest px-4 py-1 rounded-full shadow">
                         ASAS KELAB
@@ -556,9 +603,9 @@
                             <span class="text-xs font-bold px-3 py-1 bg-cyanAccent/20 text-cyanAccent rounded-full">PAKEJ ASAS</span>
                             <span class="text-xs text-cyanAccent font-semibold">1 Bulan</span>
                         </div>
-                        <h3 class="font-teko text-3xl font-bold text-white uppercase tracking-wide">PELAN RM30</h3>
+                        <h3 id="title_plan_30" class="font-teko text-3xl font-bold text-white uppercase tracking-wide">PELAN RM30</h3>
                         <div class="my-3">
-                            <span class="text-5xl font-extrabold text-white">RM 30</span>
+                            <span id="price_plan_30" class="text-5xl font-extrabold text-white">RM 30</span>
                             <span class="text-xs text-gray-400">/ Bulan</span>
                         </div>
                         <p class="text-xs text-gray-400 mb-5">Sesuai untuk jurulatih sekolah dan kelab pembangunan bakat baharu.</p>
@@ -572,23 +619,23 @@
                         </ul>
                     </div>
                     <div class="pt-6">
-                        <button onclick="requestPlanUpgrade('plan_rm30', 'Pakej Asas (30 Atlit + 2 Sub Coach)', 30, 30, 2)" class="w-full py-3.5 rounded-xl bg-cyanAccent hover:bg-cyan-400 text-black font-extrabold text-sm shadow-lg shadow-cyanAccent/20 transition flex items-center justify-center gap-2">
+                        <button onclick="requestPlanUpgrade('plan_rm30', 'Pakej Asas (30 Atlit + 2 Sub Coach)', 30, 7, 30, 2)" class="w-full py-3.5 rounded-xl bg-cyanAccent hover:bg-cyan-400 text-black font-extrabold text-sm shadow-lg shadow-cyanAccent/20 transition flex items-center justify-center gap-2">
                             <i class="fa-brands fa-whatsapp text-lg"></i>
-                            <span>Langgan RM30 via WhatsApp</span>
+                            <span id="btn_plan_30">Langgan RM30 via WhatsApp</span>
                         </button>
                     </div>
                 </div>
 
-                <!-- RM40 = 50 Atlit for 1 month user + 2 Sub Coach -->
+                <!-- RM40 / USD $10 = 50 Atlit for 1 month user + 2 Sub Coach -->
                 <div class="rounded-3xl bg-surface p-7 border border-gray-800 flex flex-col justify-between hover:border-orangeLaser transition">
                     <div>
                         <div class="flex justify-between items-center mb-4">
                             <span class="text-xs font-bold px-3 py-1 bg-orangeLaser/20 text-orangeLaser rounded-full">POPULAR</span>
                             <span class="text-xs text-gray-400">1 Bulan</span>
                         </div>
-                        <h3 class="font-teko text-3xl font-bold text-white uppercase tracking-wide">PELAN RM40</h3>
+                        <h3 id="title_plan_40" class="font-teko text-3xl font-bold text-white uppercase tracking-wide">PELAN RM40</h3>
                         <div class="my-3">
-                            <span class="text-5xl font-extrabold text-white">RM 40</span>
+                            <span id="price_plan_40" class="text-5xl font-extrabold text-white">RM 40</span>
                             <span class="text-xs text-gray-400">/ Bulan</span>
                         </div>
                         <p class="text-xs text-gray-400 mb-5">Pilihan terbaik untuk skuad olahraga sekolah menengah dan kelab daerah.</p>
@@ -602,23 +649,23 @@
                         </ul>
                     </div>
                     <div class="pt-6">
-                        <button onclick="requestPlanUpgrade('plan_rm40', 'Pakej Standard (50 Atlit + 2 Sub Coach)', 40, 50, 2)" class="w-full py-3 rounded-xl bg-surfaceLight hover:bg-orangeLaser hover:text-black text-white font-bold text-sm border border-gray-700 transition flex items-center justify-center gap-2">
+                        <button onclick="requestPlanUpgrade('plan_rm40', 'Pakej Standard (50 Atlit + 2 Sub Coach)', 40, 10, 50, 2)" class="w-full py-3 rounded-xl bg-surfaceLight hover:bg-orangeLaser hover:text-black text-white font-bold text-sm border border-gray-700 transition flex items-center justify-center gap-2">
                             <i class="fa-brands fa-whatsapp text-lg text-green-400"></i>
-                            <span>Langgan RM40 via WhatsApp</span>
+                            <span id="btn_plan_40">Langgan RM40 via WhatsApp</span>
                         </button>
                     </div>
                 </div>
 
-                <!-- RM60 = 80 atlit for 1 Month User + 3 Subcoach -->
+                <!-- RM60 / USD $15 = 80 atlit for 1 Month User + 3 Subcoach -->
                 <div class="rounded-3xl bg-surface p-7 border border-gray-800 flex flex-col justify-between hover:border-yellow-400 transition">
                     <div>
                         <div class="flex justify-between items-center mb-4">
                             <span class="text-xs font-bold px-3 py-1 bg-yellow-400/20 text-yellow-400 rounded-full">PRO KONTINJEN</span>
                             <span class="text-xs text-gray-400">1 Bulan</span>
                         </div>
-                        <h3 class="font-teko text-3xl font-bold text-white uppercase tracking-wide">PELAN RM60</h3>
+                        <h3 id="title_plan_60" class="font-teko text-3xl font-bold text-white uppercase tracking-wide">PELAN RM60</h3>
                         <div class="my-3">
-                            <span class="text-5xl font-extrabold text-white">RM 60</span>
+                            <span id="price_plan_60" class="text-5xl font-extrabold text-white">RM 60</span>
                             <span class="text-xs text-gray-400">/ Bulan</span>
                         </div>
                         <p class="text-xs text-gray-400 mb-5">Direka khas bagi kontinjen MSSD, IPT, atau akademi berbilang jurulatih.</p>
@@ -632,23 +679,23 @@
                         </ul>
                     </div>
                     <div class="pt-6">
-                        <button onclick="requestPlanUpgrade('plan_rm60', 'Pakej Pro (80 Atlit + 3 Sub Coach)', 60, 80, 3)" class="w-full py-3 rounded-xl bg-surfaceLight hover:bg-yellow-400 hover:text-black text-white font-bold text-sm border border-gray-700 transition flex items-center justify-center gap-2">
+                        <button onclick="requestPlanUpgrade('plan_rm60', 'Pakej Pro (80 Atlit + 3 Sub Coach)', 60, 15, 80, 3)" class="w-full py-3 rounded-xl bg-surfaceLight hover:bg-yellow-400 hover:text-black text-white font-bold text-sm border border-gray-700 transition flex items-center justify-center gap-2">
                             <i class="fa-brands fa-whatsapp text-lg text-green-400"></i>
-                            <span>Langgan RM60 via WhatsApp</span>
+                            <span id="btn_plan_60">Langgan RM60 via WhatsApp</span>
                         </button>
                     </div>
                 </div>
 
-                <!-- RM80 = 100 Atlit for 1 month user + 5 Sub Coach -->
+                <!-- RM80 / USD $20 = 100 Atlit for 1 month user + 5 Sub Coach -->
                 <div class="rounded-3xl bg-surface p-7 border border-gray-800 flex flex-col justify-between hover:border-emerald-400 transition">
                     <div>
                         <div class="flex justify-between items-center mb-4">
                             <span class="text-xs font-bold px-3 py-1 bg-emerald-400/20 text-emerald-400 rounded-full">ELITE MAXIMUM</span>
                             <span class="text-xs text-gray-400">1 Bulan</span>
                         </div>
-                        <h3 class="font-teko text-3xl font-bold text-white uppercase tracking-wide">PELAN RM80</h3>
+                        <h3 id="title_plan_80" class="font-teko text-3xl font-bold text-white uppercase tracking-wide">PELAN RM80</h3>
                         <div class="my-3">
-                            <span class="text-5xl font-extrabold text-white">RM 80</span>
+                            <span id="price_plan_80" class="text-5xl font-extrabold text-white">RM 80</span>
                             <span class="text-xs text-gray-400">/ Bulan</span>
                         </div>
                         <p class="text-xs text-gray-400 mb-5">Kapasiti terbesar untuk kejohanan terbuka, MSSN & program sukan negeri.</p>
@@ -662,25 +709,34 @@
                         </ul>
                     </div>
                     <div class="pt-6">
-                        <button onclick="requestPlanUpgrade('plan_rm80', 'Pakej Elite (100 Atlit + 5 Sub Coach)', 80, 100, 5)" class="w-full py-3 rounded-xl bg-surfaceLight hover:bg-emerald-400 hover:text-black text-white font-bold text-sm border border-gray-700 transition flex items-center justify-center gap-2">
+                        <button onclick="requestPlanUpgrade('plan_rm80', 'Pakej Elite (100 Atlit + 5 Sub Coach)', 80, 20, 100, 5)" class="w-full py-3 rounded-xl bg-surfaceLight hover:bg-emerald-400 hover:text-black text-white font-bold text-sm border border-gray-700 transition flex items-center justify-center gap-2">
                             <i class="fa-brands fa-whatsapp text-lg text-green-400"></i>
-                            <span>Langgan RM80 via WhatsApp</span>
+                            <span id="btn_plan_80">Langgan RM80 via WhatsApp</span>
                         </button>
                     </div>
                 </div>
             </div>
-            <!-- Syarat & Mekanisma Upgrade (Peraturan Sistem) -->
-            <div class="mt-12 p-6 rounded-2xl bg-surfaceLight/60 border border-gray-800 text-xs text-gray-300 space-y-2 max-w-4xl mx-auto">
-                <div class="flex items-center space-x-2 text-cyanAccent font-bold">
-                    <i class="fa-solid fa-info-circle text-base"></i>
-                    <span>MEKANISMA UPGRADE & PELANJUTAN BULANAN:</span>
+
+            <!-- Syarat & Bantuan Langganan / Ralat Sistem (Hubungi Admin +6019-5326399) -->
+            <div class="mt-12 p-6 rounded-2xl bg-surfaceLight/60 border border-emerald-500/40 text-xs text-gray-300 space-y-4 max-w-4xl mx-auto">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div class="space-y-1.5">
+                        <div class="flex items-center space-x-2 text-cyanAccent font-bold">
+                            <i class="fa-solid fa-headset text-base text-emerald-400"></i>
+                            <span>PENGURUSAN LANGGANAN & BANTUAN RALAT OLEH ADMIN (+6019-5326399):</span>
+                        </div>
+                        <p>
+                            Langganan diatur oleh Admin. Sekiranya terdapat sebarang ralat, kekeliruan pembayaran atau masalah pengaktifan akaun (Malaysia dalam RM / Negara lain dalam USD $), sila klik butang di sebelah untuk terus berhubung dengan WhatsApp Admin <strong>+6019-5326399</strong>.
+                        </p>
+                        <p class="text-gray-400">
+                            Superadmin: <strong class="text-white">Coach Salipar Jipun</strong> (<a href="mailto:saliparjipun.atukoi@gmail.com" class="text-cyanAccent underline">saliparjipun.atukoi@gmail.com</a>).
+                        </p>
+                    </div>
+                    <a href="https://wa.me/60195326399?text=Salam%20Admin%20Psyco%20Time%20X%20Pro%20(%2B6019-5326399)%2C%20saya%20memerlukan%20bantuan%20mengenai%20langganan%20%2F%20ralat%20sistem." target="_blank" class="shrink-0 px-6 py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-black text-xs sm:text-sm shadow-lg shadow-emerald-500/20 transition flex items-center gap-2">
+                        <i class="fa-brands fa-whatsapp text-lg"></i>
+                        <span>Contact Admin (+6019-5326399)</span>
+                    </a>
                 </div>
-                <p>
-                    Sekiranya anda menaik taraf pakej dalam bulan yang sama, anda hanya perlu menekan butang <strong>Upgrade</strong> dan menjelaskan yuran penuh. Sistem pelayan akan secara automatik <strong>menganjakkan tarikh luput langganan anda 30 hari ke hadapan</strong> bermula daripada tarikh transaksi upgrade tersebut dijalankan!
-                </p>
-                <p class="text-gray-400">
-                    Akaun Superadmin diuruskan oleh <strong class="text-white">Coach Salipar Jipun</strong> (<a href="mailto:saliparjipun.atukoi@gmail.com" class="text-cyanAccent underline">saliparjipun.atukoi@gmail.com</a>).
-                </p>
             </div>
         </div>
     </section>
@@ -890,10 +946,10 @@
                     </ul>
                 </div>
                 <div>
-                    <h5 class="text-white font-bold text-xs uppercase tracking-wider mb-3">Bantuan & Hubungi</h5>
-                    <p class="text-xs text-gray-400 mb-2">Sebarang pertanyaan pembayaran dan sokongan teknikal APK:</p>
-                    <a href="https://api.whatsapp.com/send?phone=601112345678&text=Salam%20Admin%20PsycoTimeXPro" class="inline-flex items-center gap-2 text-xs font-bold text-successGreen hover:underline">
-                        <i class="fa-brands fa-whatsapp text-sm"></i> WhatsApp Coach Salipar Jipun
+                    <h5 class="text-white font-bold text-xs uppercase tracking-wider mb-3">Bantuan & Hubungi Admin</h5>
+                    <p class="text-xs text-gray-400 mb-2">Sebarang pertanyaan langganan, ralat dan sokongan teknikal APK:</p>
+                    <a href="https://wa.me/60195326399?text=Salam%20Admin%20Psyco%20Time%20X%20Pro%20(%2B6019-5326399)" target="_blank" class="inline-flex items-center gap-2 text-xs font-bold text-successGreen hover:underline">
+                        <i class="fa-brands fa-whatsapp text-sm"></i> WhatsApp Admin (+6019-5326399)
                     </a>
                 </div>
             </div>
@@ -904,53 +960,354 @@
         </div>
     </footer>
 
-    <!-- MODAL: LOGIN USER / JURULATIH -->
-    <div id="loginModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-surface border border-gray-700 w-full max-w-md rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl relative">
+    <!-- MODAL: DAFTAR & LOG MASUK JURULATIH (WAJIB NAMA PENUH & NOMBOR IKUT NEGARA +60/+62/DSB) -->
+    <div id="loginModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden overflow-y-auto">
+        <div class="bg-surface border border-gray-700 w-full max-w-lg rounded-3xl p-6 sm:p-8 space-y-5 shadow-2xl relative my-8">
             <button onclick="closeLoginModal()" class="absolute top-5 right-5 text-gray-400 hover:text-white text-xl">
                 <i class="fa-solid fa-xmark"></i>
             </button>
 
             <div class="text-center space-y-1">
-                <div class="w-12 h-12 bg-cyanAccent/10 text-cyanAccent rounded-2xl mx-auto flex items-center justify-center text-2xl font-bold mb-3 border border-cyanAccent/30">
-                    <i class="fa-solid fa-user-lock"></i>
+                <div class="w-12 h-12 bg-cyanAccent/10 text-cyanAccent rounded-2xl mx-auto flex items-center justify-center text-2xl font-bold mb-2 border border-cyanAccent/30">
+                    <i class="fa-solid fa-user-check"></i>
                 </div>
-                <h3 class="font-teko text-3xl font-bold text-white uppercase tracking-wide">LOG MASUK PORTAL JURULATIH</h3>
-                <p class="text-xs text-gray-400">Gunakan email yang didaftarkan di dalam APK Psyco Time X Pro</p>
+                <h3 class="font-teko text-3xl font-bold text-white uppercase tracking-wide" data-i18n="modal_title">PENDAFTARAN & LOG MASUK JURULATIH</h3>
+                <p class="text-xs text-emerald-400 font-bold" data-i18n="modal_subtitle">Percubaan Percuma 7 Hari Diaktifkan Secara Automatik!</p>
             </div>
 
-            <form onsubmit="handleLogin(event)" class="space-y-4">
+            <form onsubmit="handleLogin(event)" class="space-y-3.5">
+                <!-- Wajib: Nama Penuh -->
                 <div>
-                    <label class="block text-xs font-semibold text-gray-300 mb-1">Email Akaun</label>
-                    <input type="email" id="loginEmail" required placeholder="saliparjipun.atukoi@gmail.com" class="w-full px-4 py-3 rounded-xl bg-trackDark border border-gray-700 text-white text-sm focus:outline-none focus:border-cyanAccent transition">
+                    <label class="block text-xs font-bold text-gray-200 mb-1" data-i18n="field_fullname">Nama Penuh Jurulatih (Wajib) *</label>
+                    <input type="text" id="loginFullName" required placeholder="Cth: Coach Ahmad bin Razak / Kenji Tanaka" class="w-full px-4 py-2.5 rounded-xl bg-trackDark border border-gray-700 text-white text-sm focus:outline-none focus:border-cyanAccent transition">
                 </div>
 
+                <!-- Wajib: Email Google -->
                 <div>
-                    <label class="block text-xs font-semibold text-gray-300 mb-1">Kata Laluan</label>
-                    <input type="password" id="loginPassword" required placeholder="••••••••" class="w-full px-4 py-3 rounded-xl bg-trackDark border border-gray-700 text-white text-sm focus:outline-none focus:border-cyanAccent transition">
+                    <label class="block text-xs font-bold text-gray-200 mb-1">Email Google Akaun (Wajib) *</label>
+                    <input type="email" id="loginEmail" required placeholder="coach@gmail.com" class="w-full px-4 py-2.5 rounded-xl bg-trackDark border border-gray-700 text-white text-sm focus:outline-none focus:border-cyanAccent transition">
                 </div>
 
-                <div class="flex justify-between items-center text-xs">
-                    <label class="flex items-center text-gray-400 gap-1.5 cursor-pointer">
-                        <input type="checkbox" checked class="rounded border-gray-700 text-cyanAccent focus:ring-0">
-                        <span>Ingat saya</span>
-                    </label>
-                    <a href="mailto:saliparjipun.atukoi@gmail.com?subject=Lupa%20Katalaluan%20PsycoTimeXPro" class="text-cyanAccent hover:underline">Lupa kata laluan?</a>
+                <!-- Wajib: Negara & Kod Panggilan (+60 / +62 / +65 / +81 / +94 / +86) -->
+                <div class="grid grid-cols-1 sm:grid-cols-12 gap-3">
+                    <div class="sm:col-span-5">
+                        <label class="block text-xs font-bold text-gray-200 mb-1" data-i18n="field_country">Negara & Kod *</label>
+                        <select id="loginCountrySelect" onchange="onModalCountryChange()" class="w-full px-3 py-2.5 rounded-xl bg-trackDark border border-gray-700 text-white text-xs font-bold focus:outline-none focus:border-cyanAccent">
+                            <option value="Malaysia" data-dial="+60">🇲🇾 Malaysia (+60)</option>
+                            <option value="Indonesia" data-dial="+62">🇮🇩 Indonesia (+62)</option>
+                            <option value="Singapore" data-dial="+65">🇸🇬 Singapore (+65)</option>
+                            <option value="Japan" data-dial="+81">🇯🇵 Japan (+81)</option>
+                            <option value="Sri Lanka" data-dial="+94">🇱🇰 Sri Lanka (+94)</option>
+                            <option value="China" data-dial="+86">🇨🇳 China (+86)</option>
+                            <option value="Thailand" data-dial="+66">🇹🇭 Thailand (+66)</option>
+                            <option value="Brunei" data-dial="+673">🇧🇳 Brunei (+673)</option>
+                            <option value="Philippines" data-dial="+63">🇵🇭 Philippines (+63)</option>
+                            <option value="United States" data-dial="+1">🇺🇸 USA / Canada (+1)</option>
+                            <option value="Other" data-dial="+">🌐 Other Country (+)</option>
+                        </select>
+                    </div>
+                    <div class="sm:col-span-7">
+                        <label class="block text-xs font-bold text-gray-200 mb-1" data-i18n="field_phone">Nombor Contact WhatsApp (Wajib) *</label>
+                        <div class="flex">
+                            <span id="modalDialPrefix" class="inline-flex items-center px-3 rounded-l-xl bg-surfaceLight border border-r-0 border-gray-700 text-cyanAccent font-mono text-xs font-extrabold">
+                                +60
+                            </span>
+                            <input type="tel" id="loginPhone" required placeholder="19-5326399 / 812-345678" class="w-full px-3 py-2.5 rounded-r-xl bg-trackDark border border-gray-700 text-white text-sm focus:outline-none focus:border-cyanAccent transition">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Nama Kelab & Sijil Kejurulatihan -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-200 mb-1" data-i18n="field_club">Nama Kelab / Sekolah *</label>
+                        <input type="text" id="loginClub" required placeholder="Kelab Olahraga / Sekolah" class="w-full px-3.5 py-2.5 rounded-xl bg-trackDark border border-gray-700 text-white text-xs focus:outline-none focus:border-cyanAccent">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-200 mb-1" data-i18n="field_cert">Sijil Kejurulatihan</label>
+                        <select id="loginCert" class="w-full px-3 py-2.5 rounded-xl bg-trackDark border border-gray-700 text-white text-xs focus:outline-none focus:border-cyanAccent">
+                            <option value="World Athletics Level 1">World Athletics Level 1</option>
+                            <option value="World Athletics Level 2">World Athletics Level 2</option>
+                            <option value="Sports Science Level 1">Sains Sukan Tahap 1</option>
+                            <option value="Sports Science Level 2">Sains Sukan Tahap 2</option>
+                            <option value="Sports Science Level 3">Sains Sukan Tahap 3</option>
+                            <option value="School Coach">Jurulatih Sekolah (MSSD/MSSM)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Paparan Kadar Yuran Automatik Mengikut Negara -->
+                <div id="modalCurrencyNotice" class="p-3 rounded-xl bg-trackDark border border-cyanAccent/40 text-[11px] text-gray-200 flex items-center justify-between">
+                    <span>Kadar Langganan Negara Anda:</span>
+                    <strong id="modalRatePreview" class="text-cyanAccent font-mono">🇲🇾 RM30 / RM40 / RM60 / RM80</strong>
                 </div>
 
                 <button type="submit" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-cyanAccent to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-black font-extrabold text-sm shadow-lg shadow-cyanAccent/20 transition">
-                    Masuk ke Dashboard
+                    Daftar & Masuk ke Dashboard (7 Hari Percuma)
                 </button>
             </form>
 
-            <div class="text-center text-xs text-gray-400 border-t border-gray-800 pt-4">
-                <span>Belum ada akaun? Buka aplikasi <strong>Psyco Time X Pro APK</strong> di telefon anda untuk mendaftar secara percuma atau hubungi Admin.</span>
+            <div class="text-center text-xs text-gray-400 border-t border-gray-800 pt-3 flex flex-col gap-2">
+                <span>Ada sebarang ralat atau kekeliruan langganan?</span>
+                <a href="https://wa.me/60195326399?text=Salam%20Admin%20Psyco%20Time%20X%20Pro%20(%2B6019-5326399)%2C%20saya%20memerlukan%20bantuan%20pendaftaran%20akaun." target="_blank" class="inline-flex items-center justify-center gap-1.5 text-emerald-400 font-bold hover:underline">
+                    <i class="fa-brands fa-whatsapp"></i> Hubungi Admin Terus (+6019-5326399)
+                </a>
             </div>
         </div>
     </div>
 
-    <!-- JAVASCRIPT LOGIK PORTAL & UPGRADE MODAL -->
+    <!-- JAVASCRIPT LOGIK PORTAL, CUSTOM LANGUAGE HOOK & DYNAMIC CURRENCY -->
     <script>
+        const ADMIN_WA_NUMBER = '60195326399';
+        let currentSubscriptionCountry = 'Malaysia';
+
+        // Custom Hook for Multi-Language State Management (BM, EN, JA, ZH)
+        function createLanguageHook() {
+            const dictionary = {
+                ms: {
+                    sys_bar_status: 'STATUS SISTEM: ONLINE • SERVER CLOUD & APK v2.4',
+                    sys_bar_admin: 'Bantuan Admin: +6019-5326399',
+                    sys_subtitle: 'Pelayan Awan Pengurusan Latihan & APK',
+                    sys_online_short: 'Tersambung (Online)',
+                    nav_system: 'Sistem Latihan',
+                    nav_guide: 'Panduan APK',
+                    nav_d3: 'Trend Prestasi D3',
+                    nav_sports: 'Pengurusan Sukan',
+                    nav_apk: 'Muat Turun APK',
+                    nav_pricing: 'Yuran Langganan',
+                    nav_cam2: 'Gate Cam 2',
+                    btn_download_apk: 'Muat Turun APK',
+                    btn_login: 'Daftar / Log Masuk',
+                    btn_coach_portal: 'Portal Jurulatih',
+                    hero_badge: 'REVOLUSI SUKATAN MASA ELEKTRONIK BALAPAN & PADANG',
+                    hero_title: 'SUKATAN MASA ELEKTRONIK <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyanAccent via-orangeLaser to-yellow-400">SEPERTI OLYMPIC</span> DI HUJUNG JARI',
+                    hero_desc: 'Tingkatkan prestasi kelab & atlit anda dengan <strong class="text-white">Psyco Time X Pro</strong>. Dilengkapi sistem pengesanan torso automatik (AI Torso Detection), dwi-kamera gerbang (Cam 1 & Cam 2), serta pelayan cloud automatik.',
+                    hero_feat1: 'Ketepatan 100%',
+                    hero_feat2: 'Gerbang Dwi-Kamera',
+                    hero_feat3: 'Auto Sync Web',
+                    hero_cta_sub: 'Pasang Pada Telefon Anda',
+                    hero_cta_main: 'Muat Turun APK Rasmi',
+                    hero_cta_trial: 'Daftar & Cuba Percuma 7 Hari',
+                    hero_cta_admin: 'Hubungi Admin (+6019-5326399)',
+                    hero_official_time: 'Masa Rasmi Larian',
+                    hero_torso_label: 'Pengesanan Garisan Torso:',
+                    hero_torso_detected: 'TORSO DIKESAN',
+                    pricing_title: 'PILIHAN PAKEJ LANGGANAN APK',
+                    pricing_subtitle: 'Setiap pendaftaran baru diberi Akses Percuma Penuh selama 7 Hari. Malaysia kekal dalam RM, manakala negara lain automatik dalam USD $.',
+                    modal_title: 'PENDAFTARAN & LOG MASUK JURULATIH',
+                    modal_subtitle: 'Percubaan Percuma 7 Hari Diaktifkan Secara Automatik!',
+                    field_fullname: 'Nama Penuh Jurulatih (Wajib) *',
+                    field_country: 'Negara & Kod *',
+                    field_phone: 'Nombor Contact WhatsApp (Wajib) *',
+                    field_club: 'Nama Kelab / Sekolah *',
+                    field_cert: 'Sijil Kejurulatihan'
+                },
+                en: {
+                    sys_bar_status: 'SYSTEM STATUS: ONLINE • CLOUD SERVER & APK v2.4',
+                    sys_bar_admin: 'Admin Support: +6019-5326399',
+                    sys_subtitle: 'Training Management Cloud & APK Server',
+                    sys_online_short: 'Connected (Online)',
+                    nav_system: 'Training System',
+                    nav_guide: 'APK Guide',
+                    nav_d3: 'D3 Performance Trends',
+                    nav_sports: 'Sports Management',
+                    nav_apk: 'Download APK',
+                    nav_pricing: 'Subscription Plans',
+                    nav_cam2: 'Gate Cam 2',
+                    btn_download_apk: 'Download APK',
+                    btn_login: 'Register / Login',
+                    btn_coach_portal: 'Coach Portal',
+                    hero_badge: 'ELECTRONIC TIMING & AI BIOMECHANICS REVOLUTION',
+                    hero_title: 'OLYMPIC-GRADE <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyanAccent via-orangeLaser to-yellow-400">ELECTRONIC TIMING</span> AT YOUR FINGERTIPS',
+                    hero_desc: 'Elevate your athletics club and sprinters with <strong class="text-white">Psyco Time X Pro</strong>. Powered by AI Torso Detection, Dual-Camera Gate Sync (Cam 1 Starter & Cam 2 Finisher), and real-time cloud PB analytics.',
+                    hero_feat1: '100% Precision',
+                    hero_feat2: 'Dual-Cam Gate',
+                    hero_feat3: 'Cloud Auto-Sync',
+                    hero_cta_sub: 'Install on Your Android Phone',
+                    hero_cta_main: 'Download Official APK',
+                    hero_cta_trial: 'Register & Start 7-Day Free Trial',
+                    hero_cta_admin: 'Contact Admin (+6019-5326399)',
+                    hero_official_time: 'Official Race Time',
+                    hero_torso_label: 'AI Torso Gate Detection:',
+                    hero_torso_detected: 'TORSO LOCKED',
+                    pricing_title: 'MONTHLY APK SUBSCRIPTION PLANS',
+                    pricing_subtitle: 'Every new registration receives a 7-Day Free Trial. Malaysia rates in MYR (RM); all other countries in USD ($7 / $10 / $15 / $20).',
+                    modal_title: 'COACH REGISTRATION & LOGIN',
+                    modal_subtitle: 'Auto 7-Day Free Trial Activated upon Registration!',
+                    field_fullname: 'Coach Full Name (Required) *',
+                    field_country: 'Country & Code *',
+                    field_phone: 'WhatsApp Contact Number (Required) *',
+                    field_club: 'Club / School Name *',
+                    field_cert: 'Coaching Certification'
+                },
+                ja: {
+                    sys_bar_status: 'システム状態: オンライン • クラウドサーバー & APK v2.4',
+                    sys_bar_admin: '管理者サポート: +6019-5326399',
+                    sys_subtitle: 'トレーニング管理クラウド & APKサーバー',
+                    sys_online_short: '接続済み (オンライン)',
+                    nav_system: '計時システム',
+                    nav_guide: 'APK使い方',
+                    nav_d3: 'D3成績トレンド分析',
+                    nav_sports: '大会運営システム',
+                    nav_apk: 'APKダウンロード',
+                    nav_pricing: '料金プラン',
+                    nav_cam2: 'ゲートCam 2',
+                    btn_download_apk: 'APKを入手',
+                    btn_login: '新規登録・ログイン',
+                    btn_coach_portal: 'コーチポータル',
+                    hero_badge: '陸上競技の電子計時とAIバイオメカニクス革新',
+                    hero_title: 'オリンピック水準の<span class="text-transparent bg-clip-text bg-gradient-to-r from-cyanAccent via-orangeLaser to-yellow-400">電子計時システム</span>をスマートフォンで',
+                    hero_desc: '<strong class="text-white">Psyco Time X Pro</strong>でクラブと選手の記録を向上。AIトルソー自動検知、デュアルカメラゲート（Cam 1 & Cam 2）、クラウド自己ベスト同期を搭載。',
+                    hero_feat1: '1/1000秒の高精度',
+                    hero_feat2: 'デュアルカメラ同期',
+                    hero_feat3: 'クラウド自動同期',
+                    hero_cta_sub: 'Androidスマホにインストール',
+                    hero_cta_main: '公式APKをダウンロード',
+                    hero_cta_trial: '7日間無料トライアル登録',
+                    hero_cta_admin: '管理者に連絡 (+6019-5326399)',
+                    hero_official_time: '公式レースタイム',
+                    hero_torso_label: 'AIトルソーライン検知:',
+                    hero_torso_detected: 'トルソー検知完了',
+                    pricing_title: '月額サブスクリプションプラン',
+                    pricing_subtitle: '新規登録で7日間無料トライアル自動適用！マレーシア以外は米ドル（USD $7 / $10 / $15 / $20）で決済可能です。',
+                    modal_title: 'コーチ新規登録・ログイン',
+                    modal_subtitle: '登録時に7日間の無料トライアルが自動適用されます！',
+                    field_fullname: 'コーチ氏名（必須） *',
+                    field_country: '国・地域（国番号） *',
+                    field_phone: 'WhatsApp電話番号（必須） *',
+                    field_club: 'クラブ・学校名 *',
+                    field_cert: '指導者資格・ライセンス'
+                },
+                zh: {
+                    sys_bar_status: '系统状态: 在线 • 云端服务器 & APK v2.4',
+                    sys_bar_admin: '管理员支持: +6019-5326399',
+                    sys_subtitle: '训练管理云平台与 APK 服务器',
+                    sys_online_short: '已连接 (在线)',
+                    nav_system: '训练计时系统',
+                    nav_guide: 'APK使用指南',
+                    nav_d3: 'D3成绩趋势分析',
+                    nav_sports: '赛事管理系统',
+                    nav_apk: '下载 APK',
+                    nav_pricing: '订阅套餐',
+                    nav_cam2: '终点相机 Cam 2',
+                    btn_download_apk: '下载 APK',
+                    btn_login: '注册 / 登录',
+                    btn_coach_portal: '教练门户',
+                    hero_badge: '田径电子计时与 AI 生物力学分析革新',
+                    hero_title: '奥运级<span class="text-transparent bg-clip-text bg-gradient-to-r from-cyanAccent via-orangeLaser to-yellow-400">电子计时系统</span>尽在指尖',
+                    hero_desc: '使用 <strong class="text-white">Psyco Time X Pro</strong> 提升俱乐部与运动员表现。配备 AI 躯干撞线识别、双机位同步计时（起点 Cam 1 与终点 Cam 2）及云端 PB 数据同步。',
+                    hero_feat1: '毫秒级精准计时',
+                    hero_feat2: '双机位无线同步',
+                    hero_feat3: '云端自动同步',
+                    hero_cta_sub: '安装至您的安卓手机',
+                    hero_cta_main: '下载官方 APK',
+                    hero_cta_trial: '注册立享 7 天免费试用',
+                    hero_cta_admin: '联系管理员 (+6019-5326399)',
+                    hero_official_time: '官方比赛成绩',
+                    hero_torso_label: 'AI 躯干过线检测:',
+                    hero_torso_detected: '已锁定躯干',
+                    pricing_title: 'APK 月度订阅套餐',
+                    pricing_subtitle: '新注册即享 7 天免费试用。马来西亚地区以 RM 计费，其他所有国家自动切换为美元 (USD $7 / $10 / $15 / $20)。',
+                    modal_title: '教练注册与登录',
+                    modal_subtitle: '注册即自动激活 7 天全功能免费试用！',
+                    field_fullname: '教练全名（必填） *',
+                    field_country: '国家与区号 *',
+                    field_phone: 'WhatsApp 联系电话（必填） *',
+                    field_club: '俱乐部 / 学校名称 *',
+                    field_cert: '教练资质等级'
+                }
+            };
+
+            let currentLang = localStorage.getItem('psyco_web_lang') || 'ms';
+
+            function applyTranslations(lang) {
+                const pack = dictionary[lang] || dictionary.en;
+                document.querySelectorAll('[data-i18n]').forEach(el => {
+                    const key = el.getAttribute('data-i18n');
+                    if (pack[key]) {
+                        el.innerHTML = pack[key];
+                    }
+                });
+                document.querySelectorAll('[data-lang-btn]').forEach(btn => {
+                    if (btn.getAttribute('data-lang-btn') === lang) {
+                        btn.className = 'px-2.5 py-0.5 rounded-full text-[11px] font-extrabold transition bg-cyanAccent text-black';
+                    } else {
+                        btn.className = 'px-2.5 py-0.5 rounded-full text-[11px] font-bold text-gray-300 hover:text-white transition';
+                    }
+                });
+            }
+
+            return {
+                getLanguage: () => currentLang,
+                setLanguage: (lang) => {
+                    currentLang = lang;
+                    localStorage.setItem('psyco_web_lang', lang);
+                    applyTranslations(lang);
+                    if (lang !== 'ms' && currentSubscriptionCountry === 'Malaysia') {
+                        setSubscriptionCurrency('International');
+                    } else if (lang === 'ms') {
+                        setSubscriptionCurrency('Malaysia');
+                    }
+                },
+                init: () => applyTranslations(currentLang)
+            };
+        }
+
+        window.psycoLangHook = createLanguageHook();
+
+        // Dynamic Currency Switcher: Malaysia = RM30/40/60/80, All Other Countries = USD $7/$10/$15/$20
+        function setSubscriptionCurrency(region) {
+            currentSubscriptionCountry = region;
+            const isMy = (region === 'Malaysia');
+            const btnMy = document.getElementById('btnCurrencyMYR');
+            const btnUsd = document.getElementById('btnCurrencyUSD');
+
+            if (btnMy && btnUsd) {
+                btnMy.className = isMy
+                    ? 'px-5 py-2.5 rounded-xl text-xs font-black transition bg-cyanAccent text-black shadow'
+                    : 'px-5 py-2.5 rounded-xl text-xs font-bold text-gray-300 hover:text-white transition';
+                btnUsd.className = !isMy
+                    ? 'px-5 py-2.5 rounded-xl text-xs font-black transition bg-orangeLaser text-black shadow'
+                    : 'px-5 py-2.5 rounded-xl text-xs font-bold text-gray-300 hover:text-white transition';
+            }
+
+            const plans = [
+                { rm: 30, usd: 7 },
+                { rm: 40, usd: 10 },
+                { rm: 60, usd: 15 },
+                { rm: 80, usd: 20 }
+            ];
+
+            plans.forEach(p => {
+                const label = isMy ? `RM ${p.rm}` : `USD $${p.usd}`;
+                const titleEl = document.getElementById(`title_plan_${p.rm}`);
+                const priceEl = document.getElementById(`price_plan_${p.rm}`);
+                const btnEl = document.getElementById(`btn_plan_${p.rm}`);
+                if (titleEl) titleEl.innerText = isMy ? `PELAN RM${p.rm}` : `PLAN USD $${p.usd}`;
+                if (priceEl) priceEl.innerText = label;
+                if (btnEl) btnEl.innerText = isMy ? `Langgan RM${p.rm} via WhatsApp` : `Subscribe USD $${p.usd} via WhatsApp`;
+            });
+        }
+
+        function onModalCountryChange() {
+            const sel = document.getElementById('loginCountrySelect');
+            if (!sel) return;
+            const opt = sel.options[sel.selectedIndex];
+            const country = sel.value;
+            const dial = opt.getAttribute('data-dial') || '+60';
+            const prefixEl = document.getElementById('modalDialPrefix');
+            if (prefixEl) prefixEl.innerText = dial;
+
+            const isMy = (country === 'Malaysia');
+            const ratePreview = document.getElementById('modalRatePreview');
+            if (ratePreview) {
+                ratePreview.innerText = isMy
+                    ? '🇲🇾 RM30 / RM40 / RM60 / RM80'
+                    : '🌏 USD $7 / USD $10 / USD $15 / USD $20';
+            }
+            setSubscriptionCurrency(isMy ? 'Malaysia' : 'International');
+        }
+
         function openLoginModal() {
             document.getElementById('loginModal').classList.remove('hidden');
         }
@@ -960,15 +1317,45 @@
 
         function handleLogin(e) {
             e.preventDefault();
+            const fullName = document.getElementById('loginFullName').value.trim();
             const email = document.getElementById('loginEmail').value.trim();
-            // Simpan sesi tempatan
+            const countrySel = document.getElementById('loginCountrySelect');
+            const country = countrySel ? countrySel.value : 'Malaysia';
+            const dial = countrySel ? (countrySel.options[countrySel.selectedIndex].getAttribute('data-dial') || '+60') : '+60';
+            const phoneRaw = document.getElementById('loginPhone').value.trim().replace(/^0+/, '');
+            const fullPhone = dial + phoneRaw;
+            const club = document.getElementById('loginClub').value.trim();
+            const cert = document.getElementById('loginCert').value;
+
+            if (!fullName || !phoneRaw) {
+                alert('Sila lengkapkan Nama Penuh dan Nombor Telefon mengikut kod negara.');
+                return;
+            }
+
             localStorage.setItem('psyco_logged_email', email);
+            localStorage.setItem('psyco_logged_name', fullName);
+            localStorage.setItem('psyco_logged_country', country);
+            localStorage.setItem('psyco_logged_phone', fullPhone);
+            localStorage.setItem('psyco_logged_club', club);
+
             if (email.toLowerCase() === 'saliparjipun.atukoi@gmail.com') {
                 localStorage.setItem('psyco_role', 'superadmin');
             } else {
                 localStorage.setItem('psyco_role', 'coach');
             }
-            window.location.href = 'dashboard.html?email=' + encodeURIComponent(email);
+
+            // Register / sync coach profile with app-control.php
+            const query = new URLSearchParams({
+                email: email,
+                name: fullName,
+                club: club,
+                country: country,
+                phone: fullPhone,
+                cert: cert
+            });
+            fetch('api/app-control.php?' + query.toString()).finally(() => {
+                window.location.href = 'dashboard.html?email=' + encodeURIComponent(email);
+            });
         }
 
         // PENGURUSAN IKLAN PROMOSI & SHARE POSTER
@@ -976,15 +1363,15 @@
             var liveUrl = window.location.href.split('#')[0];
             return "🏆 *PSYCO TIME X PRO - SISTEM CATATAN MASA ELEKTRONIK & PHOTO FINISH (ET TIMING)* ⚡\n" +
                 "Tingkatkan kualiti latihan dan kejohanan olahraga kelab anda dengan sistem catatan masa dwi-kamera berketepatan tinggi!\n\n" +
-                "🔥 *PAKEJ LANGGANAN TERBARU (BULANAN):*\n" +
-                "• 🥉 *PAKEJ RM30* = 30 Atlit (1 Bulan) + 2 Sub Coach\n" +
-                "• 🥈 *PAKEJ RM40* = 50 Atlit (1 Bulan) + 2 Sub Coach\n" +
-                "• 🥇 *PAKEJ RM60* = 80 Atlit (1 Bulan) + 3 Sub Coach\n" +
-                "• 👑 *PAKEJ RM80* = 100 Atlit (1 Bulan) + 5 Sub Coach\n\n" +
-                "🎁 *Percuma Trial 7 Hari (10 Atlit)* untuk pendaftaran baharu!\n\n" +
+                "🔥 *PAKEJ LANGGANAN BULANAN (MALAYSIA RM / INTERNATIONAL USD $):*\n" +
+                "• 🥉 *PAKEJ ASAS*: RM30 (Malaysia) / USD $7 (International) = 30 Atlit + 2 Sub Coach\n" +
+                "• 🥈 *PAKEJ STANDARD*: RM40 (Malaysia) / USD $10 (International) = 50 Atlit + 2 Sub Coach\n" +
+                "• 🥇 *PAKEJ PRO*: RM60 (Malaysia) / USD $15 (International) = 80 Atlit + 3 Sub Coach\n" +
+                "• 👑 *PAKEJ ELITE*: RM80 (Malaysia) / USD $20 (International) = 100 Atlit + 5 Sub Coach\n\n" +
+                "🎁 *Percuma Trial 7 Hari* untuk pendaftaran baharu!\n\n" +
                 "📲 *Daftar Sekarang & Muat Turun APK:*\n" +
                 liveUrl + "\n\n" +
-                "📞 Hubungi Coach Salipar Jipun untuk sebarang pertanyaan: 011-12345678";
+                "📞 Hubungi WhatsApp Admin (+6019-5326399) untuk pengaktifan & bantuan.";
         }
 
         function initPromoAd() {
@@ -1029,11 +1416,14 @@
 
         document.addEventListener('DOMContentLoaded', function() {
             initPromoAd();
+            if (window.psycoLangHook) window.psycoLangHook.init();
         });
 
-        // Fungsi Permohonan Pakej Langganan Melalui WhatsApp
-        function requestPlanUpgrade(planKey, planName, price, maxAthletes) {
-            const userEmail = prompt("Sila masukkan alamat Email pendaftaran APK anda:", localStorage.getItem('psyco_logged_email') || "saliparjipun.atukoi@gmail.com");
+        // Fungsi Permohonan Pakej Langganan Melalui WhatsApp Admin (+6019-5326399)
+        function requestPlanUpgrade(planKey, planName, rmPrice, usdPrice, maxAthletes, maxSubCoaches) {
+            const isMy = (currentSubscriptionCountry === 'Malaysia');
+            const displayPrice = isMy ? `RM${rmPrice}` : `USD $${usdPrice}`;
+            const userEmail = prompt("Sila masukkan alamat Email pendaftaran APK anda:", localStorage.getItem('psyco_logged_email') || "");
             if (!userEmail) return;
 
             fetch('api/upgrade.php', {
@@ -1042,24 +1432,19 @@
                 body: JSON.stringify({
                     email: userEmail,
                     targetPlan: planKey,
+                    currency: isMy ? 'MYR' : 'USD',
+                    displayPrice: displayPrice,
                     paymentMethod: 'WhatsApp'
                 })
             })
             .then(res => res.json())
             .then(data => {
-                if (data.status === 'success') {
-                    alert(`Permohonan langganan ${planName} berjaya direkodkan!\nNo Rujukan: ${data.receiptId}\nTarikh Luput Baru: ${data.new_expiry_date}\n\nAnda akan dialihkan ke WhatsApp Admin untuk pengesahan.`);
-                    if (data.whatsapp_url) {
-                        window.open(data.whatsapp_url, '_blank');
-                    }
-                } else {
-                    alert(data.message || 'Ralat semasa memproses langganan.');
-                }
+                const msg = encodeURIComponent(`Salam Admin Psyco Time X Pro (+6019-5326399), saya ingin mengaktifkan langganan ${planName} (${displayPrice}/Bulan) untuk akaun: ${userEmail}`);
+                window.open(`https://wa.me/${ADMIN_WA_NUMBER}?text=${msg}`, '_blank');
             })
             .catch(err => {
-                // Fallback direct WhatsApp jika offline
-                const fallbackMsg = encodeURIComponent(`Salam Coach Salipar Jipun, saya ingin melanggan pakej APK Psyco Time X Pro: ${planName} (RM${price}) untuk email: ${userEmail}`);
-                window.open(`https://api.whatsapp.com/send?phone=601112345678&text=${fallbackMsg}`, '_blank');
+                const fallbackMsg = encodeURIComponent(`Salam Admin Psyco Time X Pro (+6019-5326399), saya ingin melanggan pakej APK: ${planName} (${displayPrice}) untuk email: ${userEmail}`);
+                window.open(`https://wa.me/${ADMIN_WA_NUMBER}?text=${fallbackMsg}`, '_blank');
             });
         }
 

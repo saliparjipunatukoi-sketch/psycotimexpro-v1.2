@@ -62,6 +62,8 @@ fun DashboardScreen(
         }
     }
 
+    val langHook = com.example.service.LocalLanguageHook.current
+
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
@@ -70,14 +72,26 @@ fun DashboardScreen(
         contentPadding = PaddingValues(top = 16.dp, bottom = 90.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // TOP OFFICIAL PSYCO TIME X PRO BRAND BANNER
+        // TOP OFFICIAL PSYCO TIME X PRO BRAND BANNER + LANGUAGE TOGGLE HERO BAR
         item {
-            PsycotimexBannerLogo(
-                compact = false,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag("brand_banner_logo")
-            )
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                com.example.service.LanguageToggleBar(
+                    currentLanguage = langHook.currentLanguage,
+                    onLanguageChange = langHook.onLanguageChange,
+                    compact = false
+                )
+
+                PsycotimexBannerLogo(
+                    compact = false,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("brand_banner_logo")
+                )
+            }
         }
 
         // TOP CLUB BANNER WITH LOGO UPLOAD (Item 12)
@@ -129,6 +143,12 @@ fun DashboardScreen(
 
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
+                            text = langHook.t("hero_badge"),
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Black,
+                            color = ElectricCyan
+                        )
+                        Text(
                             text = clubProfile.clubName,
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Black,
@@ -143,7 +163,7 @@ fun DashboardScreen(
                                 shape = RoundedCornerShape(6.dp)
                             ) {
                                 Text(
-                                    text = if (isSuperAdmin) "SUPERADMIN" else "JURULATIH UTAMA",
+                                    text = if (isSuperAdmin) langHook.t("hero_role_superadmin") else langHook.t("hero_role_coach"),
                                     color = if (isSuperAdmin) LaserOrange else ElectricCyan,
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Bold,
@@ -187,16 +207,16 @@ fun DashboardScreen(
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 StatCard(
-                    title = "Atlit Berdaftar",
+                    title = langHook.t("hero_stat_athletes"),
                     value = "${athletes.size}",
-                    subText = "${athletes.count { it.category == "Track" }} Balapan / ${athletes.count { it.category == "Field" }} Padang",
+                    subText = "${athletes.count { it.category == "Track" }} Track / ${athletes.count { it.category == "Field" }} Field",
                     icon = Icons.Default.DirectionsRun,
                     accentColor = ElectricCyan,
                     modifier = Modifier.weight(1f)
                 )
 
                 StatCard(
-                    title = "Jumlah Race ET",
+                    title = langHook.t("hero_stat_races"),
                     value = "${races.size}",
                     subText = "Cam 1 & Cam 2",
                     icon = Icons.Default.Timer,
@@ -216,7 +236,7 @@ fun DashboardScreen(
             ) {
                 Column(modifier = Modifier.padding(14.dp)) {
                     Text(
-                        text = "Tindakan Pantas",
+                        text = langHook.t("hero_quick_actions"),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                         color = TextSecondary
@@ -227,14 +247,14 @@ fun DashboardScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         ActionPill(
-                            title = "Mula Timing ET",
+                            title = langHook.t("hero_btn_start_et"),
                             icon = Icons.Default.PlayArrow,
                             color = ElectricCyan,
                             onClick = onNavigateToTiming,
                             modifier = Modifier.weight(1f)
                         )
                         ActionPill(
-                            title = "Daftar Atlit",
+                            title = langHook.t("hero_btn_add_athlete"),
                             icon = Icons.Default.PersonAdd,
                             color = LaserOrange,
                             onClick = onOpenAddAthlete,
@@ -247,14 +267,14 @@ fun DashboardScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         ActionPill(
-                            title = "Website Rasmi",
+                            title = langHook.t("hero_btn_website"),
                             icon = Icons.Default.Language,
                             color = FinishLineRed,
                             onClick = onOpenWebsite,
                             modifier = Modifier.weight(1f)
                         )
                         ActionPill(
-                            title = "Sync Portal Web",
+                            title = langHook.t("hero_btn_sync"),
                             icon = Icons.Default.CloudSync,
                             color = SuccessGreen,
                             onClick = onOpenWebSync,
@@ -274,20 +294,20 @@ fun DashboardScreen(
             ) {
                 Column {
                     Text(
-                        text = "Senarai Pelatih & Profil Atlit",
+                        text = langHook.t("hero_squad_title"),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
                     )
                     Text(
-                        text = "Termasuk gambar, acara dan Personal Best (PB)",
+                        text = langHook.t("hero_squad_subtitle"),
                         style = MaterialTheme.typography.bodySmall,
                         color = TextSecondary
                     )
                 }
 
                 TextButton(onClick = onNavigateToAthletes) {
-                    Text("Urus Atlit", color = ElectricCyan, fontWeight = FontWeight.Bold)
+                    Text(langHook.t("hero_manage_athletes"), color = ElectricCyan, fontWeight = FontWeight.Bold)
                 }
             }
         }

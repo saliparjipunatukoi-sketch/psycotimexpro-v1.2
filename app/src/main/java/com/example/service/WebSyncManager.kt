@@ -23,18 +23,18 @@ data class SyncResult(
 )
 
 class WebSyncManager(
-    private var syncEndpoint: String = "https://www.psycotimexpro.my/training-management/api/sync"
+    private var syncEndpoint: String = "https://www.psycotimexpro.my/training-management/api/sync.php"
 ) {
     private val client = OkHttpClient.Builder()
-        .connectTimeout(10, TimeUnit.SECONDS)
-        .readTimeout(10, TimeUnit.SECONDS)
+        .connectTimeout(12, TimeUnit.SECONDS)
+        .readTimeout(15, TimeUnit.SECONDS)
         .build()
 
     var lastSyncTimestamp: String = "Belum Disinkronkan"
     var isOnline: Boolean = true
 
     fun setEndpoint(newUrl: String) {
-        syncEndpoint = newUrl
+        syncEndpoint = newUrl.trim()
     }
 
     fun getEndpoint(): String = syncEndpoint
@@ -92,11 +92,17 @@ class WebSyncManager(
 
             val mediaType = "application/json; charset=utf-8".toMediaType()
             val body = root.toString().toRequestBody(mediaType)
+            val targetUrl = if (!syncEndpoint.endsWith(".php") && !syncEndpoint.endsWith("/")) {
+                "$syncEndpoint.php"
+            } else {
+                syncEndpoint
+            }
             val request = Request.Builder()
-                .url(syncEndpoint)
+                .url(targetUrl)
                 .post(body)
                 .addHeader("User-Agent", "PsycoTimeXPro-Android/2.4")
                 .build()
+
 
             // Try executing the web request
             var responseSuccess = false

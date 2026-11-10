@@ -55,6 +55,12 @@ fun SettingsScreen(
     onSwitchUser: (email: String, name: String) -> Unit,
     onUpdateClubInfo: (name: String, logoUri: String?, coachName: String, phone: String, photoUri: String?) -> Unit,
     onOpenWebSync: () -> Unit,
+    remoteAppStatus: com.example.service.RemoteAppStatus? = null,
+    onToggleKillSwitch: (Boolean) -> Unit = {},
+    onApproveUser: (String, Int) -> Unit = { _, _ -> },
+    onBlockUser: (String) -> Unit = {},
+    currentLanguage: com.example.service.AppLanguage = com.example.service.AppLanguage.MALAY,
+    onLanguageChange: (com.example.service.AppLanguage) -> Unit = {},
     onLogout: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -331,6 +337,43 @@ fun SettingsScreen(
             }
         }
 
+        // LANGUAGE SELECTOR CARD
+        Card(
+            colors = CardDefaults.cardColors(containerColor = StadiumSurface),
+            shape = RoundedCornerShape(16.dp),
+            border = androidx.compose.foundation.BorderStroke(1.dp, StadiumBorder),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Language, contentDescription = null, tint = ElectricCyan, modifier = Modifier.size(20.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Bahasa Aplikasi / Language (言語 / 语言)", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 13.sp)
+                }
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    com.example.service.AppLanguage.values().forEach { lang ->
+                        val isSel = currentLanguage == lang
+                        Button(
+                            onClick = { onLanguageChange(lang) },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (isSel) ElectricCyan else StadiumSurfaceVariant
+                            ),
+                            shape = RoundedCornerShape(8.dp),
+                            contentPadding = PaddingValues(horizontal = 6.dp, vertical = 6.dp),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(
+                                text = "${lang.flag} ${lang.displayName.take(7)}",
+                                color = if (isSel) Color.Black else Color.White,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
         // ACCOUNT & ROLE SWITCHER (Item 2)
         Card(
             colors = CardDefaults.cardColors(containerColor = StadiumSurface),
@@ -415,6 +458,184 @@ fun SettingsScreen(
                     Icon(Icons.Default.ExitToApp, contentDescription = null, tint = Color.White)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Log Keluar Akaun (Logout)", fontWeight = FontWeight.Black, color = Color.White, fontSize = 13.sp)
+                }
+            }
+        }
+
+        // MASTER APP CONTROL & REMOTE KILL-SWITCH (FOR COACH SALIPAR JIPUN)
+        if (isSuperAdmin) {
+            var targetEmailInput by remember { mutableStateOf("") }
+            val isKillActive = remoteAppStatus?.killSwitchActive == true
+
+            Card(
+                colors = CardDefaults.cardColors(containerColor = StadiumSurface),
+                shape = RoundedCornerShape(16.dp),
+                border = androidx.compose.foundation.BorderStroke(1.5.dp, if (isKillActive) FinishLineRed else LaserOrange),
+                modifier = Modifier.fillMaxWidth().testTag("master_app_control_card")
+            ) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Surface(
+                            shape = CircleShape,
+                            color = if (isKillActive) FinishLineRed.copy(alpha = 0.2f) else LaserOrange.copy(alpha = 0.2f),
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = if (isKillActive) Icons.Default.Lock else Icons.Default.Security,
+                                    contentDescription = null,
+                                    tint = if (isKillActive) FinishLineRed else LaserOrange,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Column {
+                            Text(
+                                text = "KAWALAN JAUH MASTER APLIKASI",
+                                fontWeight = FontWeight.Black,
+                                fontSize = 13.sp,
+                                color = Color.White
+                            )
+                            Text(
+                                text = "Hentikan / Kunci aplikasi atau luluskan pengguna dari jauh",
+                                fontSize = 11.sp,
+                                color = TextSecondary
+                            )
+                        }
+                    }
+
+                    Surface(
+                        color = if (isKillActive) FinishLineRed.copy(alpha = 0.15f) else StadiumSurfaceVariant,
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Text(
+                                text = if (isKillActive) "STATUS: SEMUA APLIKASI DIKUNCI 🔴" else "STATUS: APLIKASI AKTIF BEROPERASI 🟢",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (isKillActive) FinishLineRed else SuccessGreen
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = if (isKillActive)
+                                    "Semua pengguna luar yang membuka aplikasi kini disekat sepenuhnya di skrin merah AppLock!"
+                                else
+                                    "Aplikasi boleh digunakan oleh akaun yang telah anda luluskan.",
+                                fontSize = 10.sp,
+                                color = TextMuted
+                            )
+                        }
+                    }
+
+                    // Toggle Kill-Switch Button
+                    Button(
+                        onClick = {
+                            onToggleKillSwitch(!isKillActive)
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (isKillActive) SuccessGreen else FinishLineRed
+                        ),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(
+                            imageVector = if (isKillActive) Icons.Default.LockOpen else Icons.Default.Lock,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = if (isKillActive) "BUKA SEMULA KUNCI APLIKASI (UNLOCK)" else "HENTIKAN / KUNCI SEMUA APLIKASI SEKARANG (KILL SWITCH)",
+                            fontWeight = FontWeight.Black,
+                            fontSize = 11.sp,
+                            color = Color.White
+                        )
+                    }
+
+                    HorizontalDivider(color = StadiumBorder, thickness = 1.dp)
+
+                    // Quick User Approval / Block
+                    Text(
+                        text = "Luluskan / Sekat Pengguna Individu:",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+
+                    OutlinedTextField(
+                        value = targetEmailInput,
+                        onValueChange = { targetEmailInput = it },
+                        label = { Text("Emel Google Pengguna (cth: coach@gmail.com)") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Button(
+                                onClick = {
+                                    if (targetEmailInput.isNotBlank()) {
+                                        onApproveUser(targetEmailInput.trim(), 30)
+                                    }
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = ElectricCyan),
+                                shape = RoundedCornerShape(8.dp),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text("Lulus 1 Bulan (30h)", color = Color.Black, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                            }
+
+                            Button(
+                                onClick = {
+                                    if (targetEmailInput.isNotBlank()) {
+                                        onApproveUser(targetEmailInput.trim(), 90)
+                                    }
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = LaserOrange),
+                                shape = RoundedCornerShape(8.dp),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text("Lulus 3 Bulan (90h)", color = Color.Black, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Button(
+                                onClick = {
+                                    if (targetEmailInput.isNotBlank()) {
+                                        onApproveUser(targetEmailInput.trim(), 365)
+                                    }
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = SuccessGreen),
+                                shape = RoundedCornerShape(8.dp),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text("Lulus 1 Tahun (365h)", color = Color.Black, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                            }
+
+                            Button(
+                                onClick = {
+                                    if (targetEmailInput.isNotBlank()) {
+                                        onBlockUser(targetEmailInput.trim())
+                                    }
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = FinishLineRed),
+                                shape = RoundedCornerShape(8.dp),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text("Sekat Akses", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -667,7 +888,15 @@ fun SettingsScreen(
             }
         }
 
-        // PAKEJ LANGGANAN BULANAN & STRUKTUR YURAN RASMI
+        // PAKEJ LANGGANAN BULANAN & STRUKTUR YURAN RASMI (RM UNTUK MALAYSIA / USD $ UNTUK NEGARA LAIN)
+        var settingsPricingRegion by remember(clubProfile.country) {
+            mutableStateOf(
+                if (com.example.service.SubscriptionPricing.isMalaysia(clubProfile.country)) "Malaysia" else "International"
+            )
+        }
+        val isMyRegion = settingsPricingRegion == "Malaysia"
+        val langHook = com.example.service.rememberLanguageHook(currentLanguage, onLanguageChange)
+
         Card(
             colors = CardDefaults.cardColors(containerColor = StadiumSurface),
             shape = RoundedCornerShape(16.dp),
@@ -675,21 +904,64 @@ fun SettingsScreen(
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.WorkspacePremium, contentDescription = null, tint = LaserOrange, modifier = Modifier.size(24.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Column {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                        Icon(Icons.Default.WorkspacePremium, contentDescription = null, tint = LaserOrange, modifier = Modifier.size(24.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Column {
+                            Text(
+                                text = langHook.t("pricing_header"),
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                            Text(
+                                text = if (isMyRegion) "Kadar Malaysia (MYR RM)" else "International Rate (All Other Countries in USD $)",
+                                fontSize = 10.sp,
+                                color = if (isMyRegion) ElectricCyan else LaserOrange,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
+                }
+
+                // Country Currency Selector Toggle (Malaysia RM vs All Other Countries USD $)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        onClick = { settingsPricingRegion = "Malaysia" },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (isMyRegion) ElectricCyan else StadiumSurfaceVariant
+                        ),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
                         Text(
-                            text = "Struktur Pakej Langganan Bulanan",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            text = "🇲🇾 Malaysia (RM)",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Black,
+                            color = if (isMyRegion) Color.Black else Color.White
                         )
+                    }
+                    Button(
+                        onClick = { settingsPricingRegion = "International" },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (!isMyRegion) LaserOrange else StadiumSurfaceVariant
+                        ),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
                         Text(
-                            text = "Kiraan Yuran Rasmi Psyco Time X Pro",
-                            fontSize = 10.sp,
-                            color = LaserOrange,
-                            fontWeight = FontWeight.SemiBold
+                            text = "🌐 Other Countries (USD $)",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Black,
+                            color = if (!isMyRegion) Color.Black else Color.White
                         )
                     }
                 }
@@ -707,11 +979,16 @@ fun SettingsScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column {
-                                Text("PAKEJ ASAS (1 BULAN)", fontSize = 10.sp, fontWeight = FontWeight.Black, color = ElectricCyan)
+                                Text("PAKEJ ASAS / BASIC (1 BULAN)", fontSize = 10.sp, fontWeight = FontWeight.Black, color = ElectricCyan)
                                 Text("30 Atlit + 2 Sub Coach", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
                                 Text("Ideal untuk kelab sekolah & bakat muda", fontSize = 10.sp, color = TextSecondary)
                             }
-                            Text("RM 30", fontSize = 18.sp, fontWeight = FontWeight.Black, color = ElectricCyan)
+                            Text(
+                                text = com.example.service.SubscriptionPricing.formatPrice(30, settingsPricingRegion),
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Black,
+                                color = ElectricCyan
+                            )
                         }
                     }
 
@@ -731,7 +1008,12 @@ fun SettingsScreen(
                                 Text("50 Atlit + 2 Sub Coach", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
                                 Text("Paling popular untuk kontinjen MSSD", fontSize = 10.sp, color = TextSecondary)
                             }
-                            Text("RM 40", fontSize = 18.sp, fontWeight = FontWeight.Black, color = LaserOrange)
+                            Text(
+                                text = com.example.service.SubscriptionPricing.formatPrice(40, settingsPricingRegion),
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Black,
+                                color = LaserOrange
+                            )
                         }
                     }
 
@@ -751,7 +1033,12 @@ fun SettingsScreen(
                                 Text("80 Atlit + 3 Sub Coach", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
                                 Text("Kapasiti besar untuk akademi olahraga", fontSize = 10.sp, color = TextSecondary)
                             }
-                            Text("RM 60", fontSize = 18.sp, fontWeight = FontWeight.Black, color = SpeedAmber)
+                            Text(
+                                text = com.example.service.SubscriptionPricing.formatPrice(60, settingsPricingRegion),
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Black,
+                                color = SpeedAmber
+                            )
                         }
                     }
 
@@ -771,17 +1058,99 @@ fun SettingsScreen(
                                 Text("100 Atlit + 5 Sub Coach", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
                                 Text("Kejohanan terbuka & skuad elit MSSN", fontSize = 10.sp, color = TextSecondary)
                             }
-                            Text("RM 80", fontSize = 18.sp, fontWeight = FontWeight.Black, color = SuccessGreen)
+                            Text(
+                                text = com.example.service.SubscriptionPricing.formatPrice(80, settingsPricingRegion),
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Black,
+                                color = SuccessGreen
+                            )
                         }
                     }
                 }
 
                 Text(
-                    text = "* Pelancong dan pendaftaran baharu diberikan Free Trial 7 Hari (10 Atlit). Admin Coach Salipar Jipun boleh melaraskan tarikh luput terus di portal web.",
+                    text = "* Malaysia: RM30 / RM40 / RM60 / RM80. Semua Negara Lain (International): USD $7 / USD $10 / USD $15 / USD $20. Percubaan Percuma 7 Hari diaktifkan secara automatik.",
                     fontSize = 10.sp,
                     color = TextMuted,
                     lineHeight = 14.sp
                 )
+            }
+        }
+
+        // CONTACT ADMIN SUPPORT CONSOLE (+6019-5326399) FOR SUBSCRIPTION, ERRORS & TROUBLESHOOTING
+        Card(
+            colors = CardDefaults.cardColors(containerColor = StadiumSurface),
+            shape = RoundedCornerShape(16.dp),
+            border = androidx.compose.foundation.BorderStroke(1.5.dp, Color(0xFF25D366).copy(alpha = 0.7f)),
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag("settings_contact_admin_card")
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Surface(
+                        shape = CircleShape,
+                        color = Color(0xFF25D366).copy(alpha = 0.2f),
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Default.SupportAgent,
+                                contentDescription = null,
+                                tint = Color(0xFF25D366),
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Column {
+                        Text(
+                            text = "Bantuan Langganan & Ralat Sistem (Contact Admin)",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Black,
+                            color = Color.White
+                        )
+                        Text(
+                            text = "WhatsApp Rasmi Admin: ${com.example.service.SubscriptionPricing.ADMIN_WHATSAPP_DISPLAY}",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF25D366)
+                        )
+                    }
+                }
+
+                Text(
+                    text = langHook.t("contact_admin_desc"),
+                    fontSize = 11.sp,
+                    color = TextSecondary,
+                    lineHeight = 15.sp
+                )
+
+                Button(
+                    onClick = {
+                        val msg = "Salam Admin Psyco Time X Pro (+6019-5326399), saya memerlukan bantuan pengaktifan langganan / laporan ralat di dalam APK.\nNama: $currentUserName\nEmel: $currentUserEmail\nKelab: ${clubProfile.clubName}\nNegara: ${clubProfile.country}\nTelefon: ${clubProfile.coachPhone}"
+                        val uri = Uri.parse("https://wa.me/${com.example.service.SubscriptionPricing.ADMIN_WHATSAPP_NUMBER}?text=${Uri.encode(msg)}")
+                        context.startActivity(Intent(Intent.ACTION_VIEW, uri))
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366)),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp)
+                        .testTag("settings_contact_admin_button")
+                ) {
+                    Icon(Icons.Default.Chat, contentDescription = null, tint = Color.Black, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = langHook.t("contact_admin_whatsapp"),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Black,
+                        color = Color.Black
+                    )
+                }
             }
         }
 

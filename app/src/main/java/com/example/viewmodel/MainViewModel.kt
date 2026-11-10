@@ -46,6 +46,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     // Current User & Authentication
     val superAdminEmail = "saliparjipun.atukoi@gmail.com"
+    val remoteAppControlManager = RemoteAppControlManager()
+    private val _remoteAppStatus = MutableStateFlow(RemoteAppStatus(isApproved = true))
+    val remoteAppStatus: StateFlow<RemoteAppStatus> = _remoteAppStatus.asStateFlow()
+
+    private val _currentLanguage = MutableStateFlow(AppLanguage.MALAY)
+    val currentLanguage: StateFlow<AppLanguage> = _currentLanguage.asStateFlow()
+
+    fun setLanguage(lang: AppLanguage) {
+        _currentLanguage.value = lang
+    }
+
     private val _isLoggedIn = MutableStateFlow(false)
     val isLoggedIn: StateFlow<Boolean> = _isLoggedIn.asStateFlow()
 
@@ -239,19 +250,73 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun login(email: String, name: String, club: String, isSuper: Boolean) {
+    fun login(
+        email: String,
+        name: String,
+        club: String,
+        country: String = "Malaysia",
+        phone: String = "",
+        cert: String = "",
+        specialization: String = "",
+        isSuper: Boolean
+    ) {
         _currentUserEmail.value = email
         _currentUserName.value = name
         _isSuperAdmin.value = isSuper
         _clubProfile.value = _clubProfile.value.copy(
             clubName = if (club.isNotBlank()) club else _clubProfile.value.clubName,
             coachName = name,
-            coachEmail = email
+            coachEmail = email,
+            coachPhone = if (phone.isNotBlank()) phone else _clubProfile.value.coachPhone,
+            country = if (country.isNotBlank()) country else _clubProfile.value.country,
+            coachCertifications = if (cert.isNotBlank()) cert else _clubProfile.value.coachCertifications,
+            specializationEvent = if (specialization.isNotBlank()) specialization else _clubProfile.value.specializationEvent
         )
         _isLoggedIn.value = true
 
+        checkRemoteAppStatus()
+
         if (Firebase.auth.currentUser != null) {
             syncAllToFirestoreCloud()
+        }
+    }
+
+    fun checkRemoteAppStatus() {
+        viewModelScope.launch {
+            val profile = _clubProfile.value
+            val status = remoteAppControlManager.checkAppStatus(
+                email = _currentUserEmail.value,
+                name = _currentUserName.value,
+                club = profile.clubName,
+                country = profile.country,
+                phone = profile.coachPhone,
+                cert = profile.coachCertifications
+            )
+            _remoteAppStatus.value = status
+        }
+    }
+
+    fun toggleMasterKillSwitch(active: Boolean, message: String = "", onResult: (Boolean, String) -> Unit) {
+        viewModelScope.launch {
+            val result = remoteAppControlManager.toggleKillSwitch(superAdminEmail, active, message)
+            if (result.first) {
+                checkRemoteAppStatus()
+            }
+            onResult(result.first, result.second)
+        }
+    }
+
+    fun approveUserRemotely(targetEmail: String, days: Int = 30, plan: String = "plan_rm30", onResult: (Boolean, String) -> Unit) {
+        viewModelScope.launch {
+            val result = remoteAppControlManager.approveUser(superAdminEmail, targetEmail, days, plan)
+            onResult(result.first, result.second)
+        }
+    }
+
+    fun blockUserRemotely(targetEmail: String, onResult: (Boolean, String) -> Unit) {
+        viewModelScope.launch {
+            val result = remoteAppControlManager.blockUser(superAdminEmail, targetEmail)
+            onResult(result.first, result.second)
         }
     }
 

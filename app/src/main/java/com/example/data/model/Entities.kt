@@ -135,5 +135,10 @@ data class ClubProfile(
     val coachName: String = "Coach Salipar Jipun",
     val coachEmail: String = "saliparjipun.atukoi@gmail.com",
     val coachPhone: String = "+60 12-345 6789",
-    val coachPhotoUri: String? = null
+    val coachPhotoUri: String? = null,
+    val country: String = "Malaysia",
+    val coachCertifications: String = "World Athletics / Sains Sukan Level 1",
+    val specializationEvent: String = "Sprints & Jumps",
+    val registrationDate: String = ""
 )
+

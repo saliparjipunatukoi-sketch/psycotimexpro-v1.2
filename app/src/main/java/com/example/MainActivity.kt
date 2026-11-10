@@ -93,16 +93,52 @@ class MainActivity : ComponentActivity() {
                     viewModel.setTimingTabActive(!showSplash && isLoggedIn && currentTab == ScreenTab.TIMING)
                 }
 
+                val remoteAppStatus by viewModel.remoteAppStatus.collectAsStateWithLifecycle()
+                val currentLanguage by viewModel.currentLanguage.collectAsStateWithLifecycle()
+                val langHook = com.example.service.rememberLanguageHook(currentLanguage) {
+                    viewModel.setLanguage(it)
+                }
+                val isSuperAdminState by viewModel.isSuperAdmin.collectAsStateWithLifecycle()
+                val isAppBlocked = (!isSuperAdminState && (remoteAppStatus.killSwitchActive || !remoteAppStatus.isApproved || remoteAppStatus.userStatus == "blocked" || remoteAppStatus.userStatus == "pending" || remoteAppStatus.userStatus == "expired"))
+
+                CompositionLocalProvider(com.example.service.LocalLanguageHook provides langHook) {
                 if (showSplash) {
                     SplashScreen(
                         onDismissSplash = { showSplash = false }
                     )
                 } else if (!isLoggedIn) {
                     AuthScreen(
-                        onLoginSuccess = { email, name, club, isSuper ->
-                            viewModel.login(email, name, club, isSuper)
+                        currentLanguage = currentLanguage,
+                        onLanguageChange = { viewModel.setLanguage(it) },
+                        onLoginSuccess = { email, name, club, country, phone, cert, spec, isSuper ->
+                            viewModel.login(
+                                email = email,
+                                name = name,
+                                club = club,
+                                country = country,
+                                phone = phone,
+                                cert = cert,
+                                specialization = spec,
+                                isSuper = isSuper
+                            )
                             currentTab = ScreenTab.DASHBOARD
-                            Toast.makeText(this@MainActivity, "Selamat kembali, $name!", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(this@MainActivity, "Welcome, $name!", Toast.LENGTH_SHORT).show()
+                        }
+                    )
+                } else if (isAppBlocked) {
+                    val currentUserEmailState by viewModel.currentUserEmail.collectAsStateWithLifecycle()
+                    val clubProfileState by viewModel.clubProfile.collectAsStateWithLifecycle()
+                    AppLockScreen(
+                        appStatus = remoteAppStatus,
+                        currentUserEmail = currentUserEmailState,
+                        userCountry = clubProfileState.country,
+                        currentLanguage = currentLanguage,
+                        onLanguageChange = { viewModel.setLanguage(it) },
+                        onRefreshCheck = {
+                            viewModel.checkRemoteAppStatus()
+                        },
+                        onLogout = {
+                            viewModel.logout()
                         }
                     )
                 } else {
@@ -164,17 +200,48 @@ class MainActivity : ComponentActivity() {
                                         Text(
                                             text = "Psyco Time X Pro",
                                             fontWeight = FontWeight.Black,
-                                            fontSize = 16.sp,
+                                            fontSize = 15.sp,
                                             color = Color.White
                                         )
                                         Text(
-                                            text = if (isSuperAdmin) "Superadmin: $currentUserName" else "Coach: $currentUserName",
+                                            text = "${if (isSuperAdmin) langHook.t("sys_superadmin") else langHook.t("sys_coach")}: $currentUserName • ${langHook.t("sys_status_online")}",
                                             fontSize = 9.sp,
-                                            color = if (isSuperAdmin) FinishLineRed else SilverMetallic
+                                            color = if (isSuperAdmin) FinishLineRed else SilverMetallic,
+                                            maxLines = 1
                                         )
                                     }
                                 },
                                 actions = {
+                                    // COMPACT SYSTEM BAR LANGUAGE TOGGLE PILL (EN / JP / ZH / BM)
+                                    Surface(
+                                        color = ElectricCyan.copy(alpha = 0.16f),
+                                        shape = RoundedCornerShape(16.dp),
+                                        border = androidx.compose.foundation.BorderStroke(1.dp, ElectricCyan.copy(alpha = 0.65f)),
+                                        modifier = Modifier
+                                            .height(28.dp)
+                                            .padding(end = 4.dp)
+                                            .focusProperties { canFocus = false }
+                                            .clickable {
+                                                val langs = com.example.service.AppLanguage.values()
+                                                val nextIdx = (langs.indexOf(currentLanguage) + 1) % langs.size
+                                                viewModel.setLanguage(langs[nextIdx])
+                                            }
+                                            .testTag("top_bar_language_toggle")
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(horizontal = 8.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(3.dp)
+                                        ) {
+                                            Text(
+                                                text = "${currentLanguage.flag} ${currentLanguage.shortLabel}",
+                                                fontSize = 9.sp,
+                                                fontWeight = FontWeight.Black,
+                                                color = ElectricCyan
+                                            )
+                                        }
+                                    }
+
                                     // COMPACT PRO BLE-M3 / BLUETOOTH REMOTE TRIGGER BUTTON NEXT TO TOP MENU
                                     Surface(
                                         color = if (isBluetoothTriggerEnabled) ElectricCyan.copy(alpha = 0.16f) else StadiumSurfaceVariant,
@@ -209,7 +276,7 @@ class MainActivity : ComponentActivity() {
                                                 modifier = Modifier.size(13.dp)
                                             )
                                             Text(
-                                                text = if (currentTab == ScreenTab.TIMING) "BLE-M3 LOCKED" else "BLE-M3",
+                                                text = if (currentTab == ScreenTab.TIMING) langHook.t("sys_bt_locked") else "BLE-M3",
                                                 fontSize = 9.sp,
                                                 fontWeight = FontWeight.Black,
                                                 color = if (isBluetoothTriggerEnabled) Color.White else SilverMetallic
@@ -243,7 +310,7 @@ class MainActivity : ComponentActivity() {
                                     ) {
                                         Icon(
                                             Icons.Default.Settings,
-                                            contentDescription = "Tetapan",
+                                            contentDescription = langHook.t("tab_settings"),
                                             tint = if (currentTab == ScreenTab.SETTINGS) FinishLineRed else Color.White
                                         )
                                     }
@@ -273,15 +340,15 @@ class MainActivity : ComponentActivity() {
                                     .testTag("bottom_navigation_bar")
                             ) {
                                 val tabs = listOf(
-                                    ScreenTab.DASHBOARD,
-                                    ScreenTab.TIMING,
-                                    ScreenTab.SAND_JUMP_AI,
-                                    ScreenTab.REPLAY,
-                                    ScreenTab.ATHLETES,
-                                    ScreenTab.FEES,
-                                    ScreenTab.SPORTS_SCIENCE_AI
+                                    ScreenTab.DASHBOARD to langHook.t("tab_dashboard"),
+                                    ScreenTab.TIMING to langHook.t("tab_timing"),
+                                    ScreenTab.SAND_JUMP_AI to langHook.t("tab_sand_jump"),
+                                    ScreenTab.REPLAY to langHook.t("tab_replay"),
+                                    ScreenTab.ATHLETES to langHook.t("tab_athletes"),
+                                    ScreenTab.FEES to langHook.t("tab_fees"),
+                                    ScreenTab.SPORTS_SCIENCE_AI to langHook.t("tab_sports_science")
                                 )
-                                tabs.forEach { tab ->
+                                tabs.forEach { (tab, localizedLabel) ->
                                     val selected = currentTab == tab
                                     NavigationBarItem(
                                         selected = selected,
@@ -290,13 +357,13 @@ class MainActivity : ComponentActivity() {
                                         icon = {
                                             Icon(
                                                 imageVector = tab.icon,
-                                                contentDescription = tab.title,
+                                                contentDescription = localizedLabel,
                                                 tint = if (selected) FinishLineRed else SilverBorder
                                             )
                                         },
                                         label = {
                                             Text(
-                                                text = tab.title,
+                                                text = localizedLabel,
                                                 fontSize = 8.sp,
                                                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
                                                 color = if (selected) FinishLineRed else SilverBorder,
@@ -518,6 +585,24 @@ class MainActivity : ComponentActivity() {
                                         viewModel.updateClubInfo(name, logo, coach, phone, photo)
                                     },
                                     onOpenWebSync = { viewModel.setShowWebSyncDialog(true) },
+                                    remoteAppStatus = remoteAppStatus,
+                                    onToggleKillSwitch = { active ->
+                                        viewModel.toggleMasterKillSwitch(active) { success, msg ->
+                                            Toast.makeText(this@MainActivity, msg, Toast.LENGTH_LONG).show()
+                                        }
+                                    },
+                                    onApproveUser = { email, days ->
+                                        viewModel.approveUserRemotely(email, days, "plan_rm30") { success, msg ->
+                                            Toast.makeText(this@MainActivity, msg, Toast.LENGTH_LONG).show()
+                                        }
+                                    },
+                                    onBlockUser = { email ->
+                                        viewModel.blockUserRemotely(email) { success, msg ->
+                                            Toast.makeText(this@MainActivity, msg, Toast.LENGTH_LONG).show()
+                                        }
+                                    },
+                                    currentLanguage = currentLanguage,
+                                    onLanguageChange = { viewModel.setLanguage(it) },
                                     onLogout = { showLogoutConfirmDialog = true }
                                 )
 
@@ -683,6 +768,7 @@ class MainActivity : ComponentActivity() {
                             }
                         )
                     }
+                }
                 }
             }
         }

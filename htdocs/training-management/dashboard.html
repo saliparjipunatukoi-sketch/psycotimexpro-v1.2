@@ -66,8 +66,12 @@
             </div>
 
             <!-- Current User Badge -->
-            <div class="flex items-center space-x-4">
-                <a href="index.html#download-apk" class="px-3 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500 hover:text-black border border-emerald-500 text-emerald-400 font-extrabold text-xs transition flex items-center gap-1.5">
+            <div class="flex items-center space-x-3">
+                <a href="https://wa.me/60195326399?text=Salam%20Admin%20Psyco%20Time%20X%20Pro%20(%2B6019-5326399)%2C%20saya%20memerlukan%20bantuan%20mengenai%20langganan%20%2F%20ralat%20sistem." target="_blank" class="px-3 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500 hover:text-black border border-emerald-500 text-emerald-400 font-extrabold text-xs transition flex items-center gap-1.5">
+                    <i class="fa-brands fa-whatsapp text-sm"></i>
+                    <span class="hidden sm:inline">Contact Admin (+6019-5326399)</span>
+                </a>
+                <a href="index.html#download-apk" class="px-3 py-1.5 rounded-xl bg-cyanAccent/20 hover:bg-cyanAccent hover:text-black border border-cyanAccent text-cyanAccent font-extrabold text-xs transition flex items-center gap-1.5">
                     <i class="fa-brands fa-android text-sm"></i>
                     <span>Download APK</span>
                 </a>
@@ -87,6 +91,71 @@
 
     <!-- MAIN DASHBOARD CONTENT -->
     <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full space-y-8">
+
+        <!-- MASTER APP CONTROL & REMOTE KILL-SWITCH (KHAS COACH SALIPAR JIPUN) -->
+        <div id="masterAdminControlPanel" class="p-6 rounded-3xl bg-gradient-to-r from-red-950/40 via-surface to-trackDark border-2 border-red-600/60 shadow-2xl space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-800 pb-4">
+                <div class="flex items-center space-x-3">
+                    <div class="w-12 h-12 rounded-2xl bg-red-600/20 border border-red-500/50 flex items-center justify-center text-red-500 text-xl">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-red-600 text-white">
+                                SUPERADMIN MASTER COMMAND
+                            </span>
+                            <span id="remoteAppStatusBadge" class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
+                                SISTEM APLIKASI AKTIF 🟢
+                            </span>
+                        </div>
+                        <h2 class="font-teko text-2xl sm:text-3xl font-bold text-white uppercase tracking-wider">
+                            Kawalan Jauh Aplikasi &amp; Kill-Switch Pengguna (APK)
+                        </h2>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-3">
+                    <button id="btnToggleKillSwitch" onclick="triggerKillSwitchToggle()" class="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-black text-xs uppercase tracking-wider transition shadow-lg flex items-center gap-2">
+                        <i class="fa-solid fa-power-off"></i>
+                        <span id="btnKillSwitchText">Hentikan / Kunci Semua Aplikasi (Kill Switch)</span>
+                    </button>
+                    <button onclick="loadSystemUsers()" class="px-4 py-2.5 rounded-xl bg-surfaceLight hover:bg-gray-700 text-white font-bold text-xs transition flex items-center gap-1.5 border border-gray-700">
+                        <i class="fa-solid fa-arrows-rotate"></i>
+                        <span>Muat Semula Senarai</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Users List & Access Approvals Table -->
+            <div class="space-y-3">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xs font-bold uppercase tracking-widest text-gray-300">
+                        Senarai Pengguna / Jurulatih Yang Memuat Turun Aplikasi
+                    </h3>
+                    <span class="text-xs text-gray-400" id="totalUsersCount">Memuatkan...</span>
+                </div>
+                <div class="overflow-x-auto rounded-2xl border border-gray-800 bg-trackDark">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-surface text-gray-400 uppercase font-bold border-b border-gray-800">
+                            <tr>
+                                <th class="px-4 py-3">Jurulatih / Emel Google</th>
+                                <th class="px-4 py-3">Kelab Sukan</th>
+                                <th class="px-4 py-3">Status Akses</th>
+                                <th class="px-4 py-3">Pakej / Luput</th>
+                                <th class="px-4 py-3 text-right">Tindakan Admin</th>
+                            </tr>
+                        </thead>
+                        <tbody id="appUsersTableBody" class="divide-y divide-gray-800/80 text-gray-200">
+                            <tr>
+                                <td colspan="5" class="px-4 py-6 text-center text-gray-400">
+                                    <i class="fa-solid fa-spinner fa-spin mr-2"></i> Sedang menyemak senarai pengguna dari pelayan...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
 
         <!-- STATUS LANGGANAN & MAKLUMAT KELAB BANNER -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -573,63 +642,86 @@
 
     </main>
 
-    <!-- MODAL UPGRADE LANGGANAN -->
+    <!-- MODAL UPGRADE LANGGANAN (MALAYSIA RM & INTERNATIONAL USD $) -->
     <div id="upgradeModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-surface border border-gray-700 w-full max-w-lg rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl relative">
+        <div class="bg-surface border border-gray-700 w-full max-w-lg rounded-3xl p-6 sm:p-8 space-y-5 shadow-2xl relative">
             <button onclick="closeUpgradeModal()" class="absolute top-5 right-5 text-gray-400 hover:text-white text-xl">
                 <i class="fa-solid fa-xmark"></i>
             </button>
 
             <div class="space-y-1">
-                <span class="text-xs text-orangeLaser font-bold uppercase tracking-wider">UPGRADE SISTEM APK</span>
+                <span class="text-xs text-orangeLaser font-bold uppercase tracking-wider">UPGRADE SISTEM APK (MALAYSIA RM / INTERNATIONAL USD $)</span>
                 <h3 class="font-teko text-3xl font-bold text-white uppercase tracking-wide">PILIH PAKEJ NAIK TARAF</h3>
                 <p class="text-xs text-gray-400">Pembayaran penuh akan menganjakkan tarikh luput akaun anda 30 hari ke hadapan bermula hari ini.</p>
             </div>
 
-            <div class="space-y-3">
-                <label class="block p-4 rounded-xl border border-gray-700 hover:border-cyanAccent cursor-pointer bg-trackDark">
+            <!-- Currency Switcher in Modal -->
+            <div class="flex items-center gap-2 bg-trackDark p-1.5 rounded-xl border border-gray-800">
+                <button type="button" id="dashCurrMYR" onclick="setDashUpgradeCurrency('MYR')" class="flex-1 py-2 rounded-lg text-xs font-black bg-cyanAccent text-black transition">
+                    🇲🇾 Malaysia (RM30–RM80)
+                </button>
+                <button type="button" id="dashCurrUSD" onclick="setDashUpgradeCurrency('USD')" class="flex-1 py-2 rounded-lg text-xs font-bold text-gray-400 hover:text-white transition">
+                    🌏 International (USD $7–$20)
+                </button>
+            </div>
+
+            <div class="space-y-2.5">
+                <label class="block p-3.5 rounded-xl border border-gray-700 hover:border-cyanAccent cursor-pointer bg-trackDark">
                     <div class="flex items-center justify-between">
                         <div class="flex items-center gap-3">
-                            <input type="radio" name="upgradePlan" value="basic" checked class="text-cyanAccent focus:ring-0">
+                            <input type="radio" name="upgradePlan" value="plan_rm30" data-rm="30" data-usd="7" checked class="text-cyanAccent focus:ring-0">
                             <div>
-                                <p class="text-sm font-bold text-white">Pakej Asas (25 Orang Atlit)</p>
+                                <p class="text-sm font-bold text-white">Pakej Asas (30 Atlit + 2 Sub Coach)</p>
                                 <p class="text-xs text-gray-400">Sesuai untuk kelab biasa / sekolah</p>
                             </div>
                         </div>
-                        <span class="text-lg font-black text-cyanAccent">RM30/bln</span>
+                        <span id="dashPrice30" class="text-lg font-black text-cyanAccent">RM30/bln</span>
                     </div>
                 </label>
 
-                <label class="block p-4 rounded-xl border border-gray-700 hover:border-orangeLaser cursor-pointer bg-trackDark">
+                <label class="block p-3.5 rounded-xl border border-gray-700 hover:border-orangeLaser cursor-pointer bg-trackDark">
                     <div class="flex items-center justify-between">
                         <div class="flex items-center gap-3">
-                            <input type="radio" name="upgradePlan" value="pro" class="text-orangeLaser focus:ring-0">
+                            <input type="radio" name="upgradePlan" value="plan_rm40" data-rm="40" data-usd="10" class="text-orangeLaser focus:ring-0">
                             <div>
-                                <p class="text-sm font-bold text-white">Pakej Pro (35 Orang Atlit)</p>
-                                <p class="text-xs text-gray-400">Untuk kontinjen daerah & akademi</p>
+                                <p class="text-sm font-bold text-white">Pakej Standard (50 Atlit + 2 Sub Coach)</p>
+                                <p class="text-xs text-gray-400">Untuk skuad olahraga sekolah & daerah</p>
                             </div>
                         </div>
-                        <span class="text-lg font-black text-orangeLaser">RM40/bln</span>
+                        <span id="dashPrice40" class="text-lg font-black text-orangeLaser">RM40/bln</span>
                     </div>
                 </label>
 
-                <label class="block p-4 rounded-xl border border-gray-700 hover:border-yellow-400 cursor-pointer bg-trackDark">
+                <label class="block p-3.5 rounded-xl border border-gray-700 hover:border-yellow-400 cursor-pointer bg-trackDark">
                     <div class="flex items-center justify-between">
                         <div class="flex items-center gap-3">
-                            <input type="radio" name="upgradePlan" value="elite" class="text-yellow-400 focus:ring-0">
+                            <input type="radio" name="upgradePlan" value="plan_rm60" data-rm="60" data-usd="15" class="text-yellow-400 focus:ring-0">
                             <div>
-                                <p class="text-sm font-bold text-white">Pakej Elite (50 Orang Atlit)</p>
+                                <p class="text-sm font-bold text-white">Pakej Pro (80 Atlit + 3 Sub Coach)</p>
+                                <p class="text-xs text-gray-400">Untuk kontinjen MSSD, IPT & akademi</p>
+                            </div>
+                        </div>
+                        <span id="dashPrice60" class="text-lg font-black text-yellow-400">RM60/bln</span>
+                    </div>
+                </label>
+
+                <label class="block p-3.5 rounded-xl border border-gray-700 hover:border-emerald-400 cursor-pointer bg-trackDark">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <input type="radio" name="upgradePlan" value="plan_rm80" data-rm="80" data-usd="20" class="text-emerald-400 focus:ring-0">
+                            <div>
+                                <p class="text-sm font-bold text-white">Pakej Elite (100 Atlit + 5 Sub Coach)</p>
                                 <p class="text-xs text-gray-400">Untuk pusat kejohanan & skuad elit</p>
                             </div>
                         </div>
-                        <span class="text-lg font-black text-yellow-400">RM50/bln</span>
+                        <span id="dashPrice80" class="text-lg font-black text-emerald-400">RM80/bln</span>
                     </div>
                 </label>
             </div>
 
             <button onclick="submitUpgrade()" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-orangeLaser to-finishRed text-white font-black text-sm shadow-lg shadow-orangeLaser/20 transition flex items-center justify-center gap-2">
                 <i class="fa-brands fa-whatsapp text-lg"></i>
-                <span>Sahkan & Hubungi Admin WhatsApp</span>
+                <span>Sahkan & Hubungi Admin WhatsApp (+6019-5326399)</span>
             </button>
         </div>
     </div>
@@ -889,7 +981,7 @@
                     '<td class="p-4 text-right space-x-1 whitespace-nowrap">' +
                         '<button onclick="openEditUserModal('' + u.email + '')" class="px-2.5 py-1 rounded bg-cyanAccent/20 hover:bg-cyanAccent text-cyanAccent hover:text-black font-extrabold text-[11px] transition"><i class="fa-solid fa-pen-to-square"></i> Edit</button>' +
                         '<button onclick="quickExtend('' + u.email + '', 30)" class="px-2.5 py-1 rounded bg-orangeLaser/20 hover:bg-orangeLaser text-orangeLaser hover:text-black font-bold text-[11px] transition">+30 Hari</button>' +
-                        '<a href="https://api.whatsapp.com/send?phone=' + (u.phone || '601112345678') + '&text=Salam%20' + encodeURIComponent(u.name || '') + '" target="_blank" class="px-2.5 py-1 rounded bg-green-600/20 text-green-400 font-bold hover:bg-green-600 hover:text-white transition inline-block text-[11px]"><i class="fa-brands fa-whatsapp"></i></a>' +
+                        '<a href="https://api.whatsapp.com/send?phone=' + (u.phone || '60195326399').replace(/[^0-9]/g, '') + '&text=Salam%20' + encodeURIComponent(u.name || '') + '" target="_blank" class="px-2.5 py-1 rounded bg-green-600/20 text-green-400 font-bold hover:bg-green-600 hover:text-white transition inline-block text-[11px]"><i class="fa-brands fa-whatsapp"></i></a>' +
                     '</td>' +
                 '</tr>';
             }).join('');
@@ -990,7 +1082,30 @@
             renderAthletesTable(filtered);
         }
 
+        let dashUpgradeCurrency = 'MYR';
+
+        function setDashUpgradeCurrency(curr) {
+            dashUpgradeCurrency = curr;
+            const isMy = (curr === 'MYR');
+            const btnMy = document.getElementById('dashCurrMYR');
+            const btnUsd = document.getElementById('dashCurrUSD');
+            if (btnMy && btnUsd) {
+                btnMy.className = isMy
+                    ? 'flex-1 py-2 rounded-lg text-xs font-black bg-cyanAccent text-black transition'
+                    : 'flex-1 py-2 rounded-lg text-xs font-bold text-gray-400 hover:text-white transition';
+                btnUsd.className = !isMy
+                    ? 'flex-1 py-2 rounded-lg text-xs font-black bg-orangeLaser text-black transition'
+                    : 'flex-1 py-2 rounded-lg text-xs font-bold text-gray-400 hover:text-white transition';
+            }
+            document.getElementById('dashPrice30').innerText = isMy ? 'RM30/bln' : 'USD $7/mo';
+            document.getElementById('dashPrice40').innerText = isMy ? 'RM40/bln' : 'USD $10/mo';
+            document.getElementById('dashPrice60').innerText = isMy ? 'RM60/bln' : 'USD $15/mo';
+            document.getElementById('dashPrice80').innerText = isMy ? 'RM80/bln' : 'USD $20/mo';
+        }
+
         function openUpgradeModal() {
+            const savedCountry = localStorage.getItem('psyco_logged_country') || 'Malaysia';
+            setDashUpgradeCurrency(savedCountry === 'Malaysia' ? 'MYR' : 'USD');
             document.getElementById('upgradeModal').classList.remove('hidden');
         }
         function closeUpgradeModal() {
@@ -998,20 +1113,27 @@
         }
 
         function submitUpgrade() {
-            const selectedPlan = document.querySelector('input[name="upgradePlan"]:checked').value;
+            const radio = document.querySelector('input[name="upgradePlan"]:checked');
+            const selectedPlan = radio ? radio.value : 'plan_rm30';
+            const rmVal = radio ? radio.getAttribute('data-rm') : '30';
+            const usdVal = radio ? radio.getAttribute('data-usd') : '7';
+            const displayPrice = (dashUpgradeCurrency === 'USD') ? `USD $${usdVal}` : `RM${rmVal}`;
+
             fetch('api/upgrade.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     email: currentUserEmail,
                     targetPlan: selectedPlan,
+                    currency: dashUpgradeCurrency,
+                    displayPrice: displayPrice,
                     paymentMethod: 'WhatsApp'
                 })
             })
             .then(res => res.json())
             .then(data => {
                 if (data.status === 'success') {
-                    alert('Permohonan berjaya! Anda akan dialihkan ke WhatsApp Superadmin.');
+                    alert('Permohonan berjaya! Anda akan dialihkan ke WhatsApp Admin (+6019-5326399).');
                     closeUpgradeModal();
                     if (data.whatsapp_url) {
                         window.open(data.whatsapp_url, '_blank');
@@ -2037,7 +2159,157 @@
         // Auto load on ready
         document.addEventListener('DOMContentLoaded', () => {
             loadDashboardData();
+            loadSystemUsers();
         });
+
+        // REMOTE APP CONTROL & KILL SWITCH LOGIC (COACH SALIPAR JIPUN)
+        let currentKillSwitchActive = false;
+
+        async function loadSystemUsers() {
+            try {
+                const res = await fetch('api/app-control.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        adminEmail: 'saliparjipun.atukoi@gmail.com',
+                        action: 'get_system_status'
+                    })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    currentKillSwitchActive = !!data.killSwitchActive;
+                    const badge = document.getElementById('remoteAppStatusBadge');
+                    const btn = document.getElementById('btnKillSwitchText');
+                    if (currentKillSwitchActive) {
+                        badge.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-red-600/20 text-red-400 border border-red-600/40';
+                        badge.innerHTML = 'SEMUA APLIKASI DIKUNCI 🔴';
+                        btn.textContent = 'Buka Semula Kunci Aplikasi (Unlock)';
+                    } else {
+                        badge.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/40';
+                        badge.innerHTML = 'SISTEM APLIKASI AKTIF 🟢';
+                        btn.textContent = 'Hentikan / Kunci Semua Aplikasi (Kill Switch)';
+                    }
+
+                    const tbody = document.getElementById('appUsersTableBody');
+                    const users = data.users || [];
+                    document.getElementById('totalUsersCount').textContent = `${users.length} Jurulatih Berdaftar`;
+
+                    if (users.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="5" class="px-4 py-4 text-center text-gray-400">Tiada pengguna luar didaftarkan setakat ini.</td></tr>';
+                        return;
+                    }
+
+                    tbody.innerHTML = users.map(u => {
+                        const isSuper = (u.email && u.email.toLowerCase() === 'saliparjipun.atukoi@gmail.com');
+                        const isPending = (u.status === 'pending');
+                        const isBlocked = (u.status === 'blocked');
+                        let statusBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">AKTIF</span>';
+                        if (isSuper) {
+                            statusBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-orangeLaser/20 text-orangeLaser border border-orangeLaser/40">SUPERADMIN</span>';
+                        } else if (isPending) {
+                            statusBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/40">MENUNGGU KELULUSAN ⏳</span>';
+                        } else if (isBlocked) {
+                            statusBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-600/20 text-red-400 border border-red-600/40">DISEKAT ⛔</span>';
+                        }
+
+                        let actions = '';
+                        if (!isSuper) {
+                            if (isPending || isBlocked) {
+                                actions += `<button onclick="approveUserDirect('${u.email}')" class="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] mr-1.5 transition"><i class="fa-solid fa-check mr-1"></i>Luluskan</button>`;
+                            }
+                            if (!isBlocked) {
+                                actions += `<button onclick="blockUserDirect('${u.email}')" class="px-2.5 py-1 rounded-lg bg-red-600 hover:bg-red-500 text-white font-bold text-[11px] transition"><i class="fa-solid fa-ban mr-1"></i>Sekat</button>`;
+                            }
+                        } else {
+                            actions = '<span class="text-gray-500 text-[11px]">Akaun Utama</span>';
+                        }
+
+                        return `<tr>
+                            <td class="px-4 py-3">
+                                <div class="font-bold text-white">${u.name || 'Jurulatih'}</div>
+                                <div class="text-[11px] text-cyanAccent font-mono">${u.email || '-'}</div>
+                            </td>
+                            <td class="px-4 py-3 text-gray-300">${u.club_name || '-'}</td>
+                            <td class="px-4 py-3">${statusBadge}</td>
+                            <td class="px-4 py-3">
+                                <div class="text-[11px] font-bold text-white">${u.plan_name || u.plan || 'Trial'}</div>
+                                <div class="text-[10px] text-gray-400">Tamat: ${u.subscription_end || '-'}</div>
+                            </td>
+                            <td class="px-4 py-3 text-right">${actions}</td>
+                        </tr>`;
+                    }).join('');
+                }
+            } catch (e) {
+                console.error('Gagal memuat status sistem:', e);
+            }
+        }
+
+        async function triggerKillSwitchToggle() {
+            const nextState = !currentKillSwitchActive;
+            const confirmMsg = nextState ? 
+                'AMARAN KESELAMATAN: Adakah anda pasti ingin MENGUNCI SEMUA APLIKASI dari jauh? Tiada pengguna (kecuali Coach Salipar Jipun) boleh menggunakan fungsi masa dan kamera!' :
+                'Buka semula kunci semua aplikasi Psyco Time X Pro?';
+            if (!confirm(confirmMsg)) return;
+
+            try {
+                const res = await fetch('api/app-control.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        adminEmail: 'saliparjipun.atukoi@gmail.com',
+                        action: 'toggle_kill_switch',
+                        active: nextState
+                    })
+                });
+                const data = await res.json();
+                alert(data.message || 'Perubahan berjaya.');
+                loadSystemUsers();
+            } catch (e) {
+                alert('Ralat sambungan pelayan.');
+            }
+        }
+
+        async function approveUserDirect(email) {
+            if (!confirm(`Luluskan akaun ${email} selama 30 hari?`)) return;
+            try {
+                const res = await fetch('api/app-control.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        adminEmail: 'saliparjipun.atukoi@gmail.com',
+                        action: 'approve_user',
+                        targetEmail: email,
+                        days: 30,
+                        plan: 'plan_rm30'
+                    })
+                });
+                const data = await res.json();
+                alert(data.message);
+                loadSystemUsers();
+            } catch (e) {
+                alert('Ralat semasa meluluskan pengguna.');
+            }
+        }
+
+        async function blockUserDirect(email) {
+            if (!confirm(`SEKAT akaun ${email}? Pengguna ini tidak lagi boleh menggunakan aplikasi!`)) return;
+            try {
+                const res = await fetch('api/app-control.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        adminEmail: 'saliparjipun.atukoi@gmail.com',
+                        action: 'block_user',
+                        targetEmail: email
+                    })
+                });
+                const data = await res.json();
+                alert(data.message);
+                loadSystemUsers();
+            } catch (e) {
+                alert('Ralat semasa menyekat pengguna.');
+            }
+        }
     </script>
 </body>
 </html>
