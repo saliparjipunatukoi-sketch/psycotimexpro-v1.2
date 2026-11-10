@@ -7,6 +7,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONArray
 import org.json.JSONObject
 import java.net.URLEncoder
 import java.util.concurrent.TimeUnit
@@ -22,6 +23,12 @@ data class RemoteAppStatus(
     val planName: String = "Pelan Percubaan",
     val subscriptionEnd: String = "",
     val message: String = "",
+    val broadcastMessage: String = "",
+    val latestApkVersion: String = "2.5",
+    val apkUpdateAvailable: Boolean = false,
+    val apkUpdateMessage: String = "",
+    val apkDownloadUrl: String = "https://www.psycotimexpro.my/training-management/index.php#download-apk",
+    val enabledFeatures: List<String> = emptyList(),
     val lastCheckedTimestamp: Long = System.currentTimeMillis()
 )
 
@@ -34,6 +41,7 @@ class RemoteAppControlManager(
         .build()
 
     private val superAdminEmail = "saliparjipun.atukoi@gmail.com"
+    val currentInstalledVersion = "2.5"
 
     suspend fun checkAppStatus(
         email: String,
@@ -46,6 +54,74 @@ class RemoteAppControlManager(
     ): RemoteAppStatus = withContext(Dispatchers.IO) {
         val trimmedEmail = email.trim().lowercase()
         val isSuper = trimmedEmail.equals(superAdminEmail, ignoreCase = true)
+
+        try {
+            val encodedEmail = URLEncoder.encode(trimmedEmail, "UTF-8")
+            val encodedName = URLEncoder.encode(name, "UTF-8")
+            val encodedClub = URLEncoder.encode(club, "UTF-8")
+            val encodedCountry = URLEncoder.encode(country, "UTF-8")
+            val encodedPhone = URLEncoder.encode(phone, "UTF-8")
+            val encodedCert = URLEncoder.encode(cert, "UTF-8")
+            val requestUrl = "$endpointUrl?email=$encodedEmail&name=$encodedName&club=$encodedClub&country=$encodedCountry&phone=$encodedPhone&cert=$encodedCert&apkVersion=$currentInstalledVersion"
+
+            val request = Request.Builder()
+                .url(requestUrl)
+                .get()
+                .addHeader("User-Agent", "PsycoTimeXPro-SecurityGuard/$currentInstalledVersion")
+                .build()
+
+            client.newCall(request).execute().use { response ->
+                val bodyStr = response.body?.string() ?: ""
+                if (response.isSuccessful && bodyStr.isNotBlank() && bodyStr.trim().startsWith("{")) {
+                    val json = JSONObject(bodyStr)
+                    val status = json.optString("status", "active")
+                    val killSwitch = json.optBoolean("killSwitchActive", false)
+                    val isApproved = if (isSuper) true else json.optBoolean("isApproved", status == "active")
+                    val userStatus = if (isSuper) "active" else json.optString("userStatus", if (isApproved) "active" else "pending")
+                    val plan = if (isSuper) "superadmin" else json.optString("plan", "trial")
+                    val planName = if (isSuper) "Superadmin Unlimited" else json.optString("planName", "Percubaan Percuma (7 Hari)")
+                    val subEnd = json.optString("subscriptionEnd", "")
+                    val msg = json.optString("message", "")
+                    val broadcastMsg = json.optString("broadcastMessage", "")
+                    val latestVer = json.optString("latestApkVersion", currentInstalledVersion)
+                    val updateMsg = json.optString("apkUpdateMessage", "")
+                    val downloadUrl = json.optString(
+                        "apkDownloadUrl",
+                        "https://www.psycotimexpro.my/training-management/index.php#download-apk"
+                    )
+                    val hasUpdate = json.optBoolean("apkUpdateAvailable", false) ||
+                            (latestVer.isNotBlank() && latestVer != currentInstalledVersion && updateMsg.isNotBlank())
+
+                    val featuresList = mutableListOf<String>()
+                    val featArr = json.optJSONArray("enabledFeatures")
+                    if (featArr != null) {
+                        for (i in 0 until featArr.length()) {
+                            featuresList.add(featArr.optString(i))
+                        }
+                    }
+
+                    return@withContext RemoteAppStatus(
+                        isSuperadmin = isSuper,
+                        killSwitchActive = if (isSuper) false else killSwitch,
+                        isApproved = isApproved,
+                        userStatus = userStatus,
+                        plan = plan,
+                        planName = planName,
+                        subscriptionEnd = subEnd,
+                        message = msg,
+                        broadcastMessage = broadcastMsg,
+                        latestApkVersion = latestVer,
+                        apkUpdateAvailable = hasUpdate,
+                        apkUpdateMessage = updateMsg,
+                        apkDownloadUrl = downloadUrl,
+                        enabledFeatures = featuresList,
+                        lastCheckedTimestamp = System.currentTimeMillis()
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Gagal menyemak status aplikasi dari pelayan: ${e.message}")
+        }
 
         if (isSuper) {
             return@withContext RemoteAppStatus(
@@ -60,61 +136,16 @@ class RemoteAppControlManager(
             )
         }
 
-        try {
-            val encodedEmail = URLEncoder.encode(trimmedEmail, "UTF-8")
-            val encodedName = URLEncoder.encode(name, "UTF-8")
-            val encodedClub = URLEncoder.encode(club, "UTF-8")
-            val encodedCountry = URLEncoder.encode(country, "UTF-8")
-            val encodedPhone = URLEncoder.encode(phone, "UTF-8")
-            val encodedCert = URLEncoder.encode(cert, "UTF-8")
-            val requestUrl = "$endpointUrl?email=$encodedEmail&name=$encodedName&club=$encodedClub&country=$encodedCountry&phone=$encodedPhone&cert=$encodedCert"
-
-            val request = Request.Builder()
-                .url(requestUrl)
-                .get()
-                .addHeader("User-Agent", "PsycoTimeXPro-SecurityGuard/2.4")
-                .build()
-
-            client.newCall(request).execute().use { response ->
-                val bodyStr = response.body?.string() ?: ""
-                if (response.isSuccessful && bodyStr.isNotBlank() && bodyStr.trim().startsWith("{")) {
-                    val json = JSONObject(bodyStr)
-                    val status = json.optString("status", "active")
-                    val killSwitch = json.optBoolean("killSwitchActive", false)
-                    val isApproved = json.optBoolean("isApproved", status == "active")
-                    val userStatus = json.optString("userStatus", if (isApproved) "active" else "pending")
-                    val plan = json.optString("plan", "trial")
-                    val planName = json.optString("planName", "Percubaan Percuma (7 Hari)")
-                    val subEnd = json.optString("subscriptionEnd", "")
-                    val msg = json.optString("message", "")
-
-                    return@withContext RemoteAppStatus(
-                        isSuperadmin = false,
-                        killSwitchActive = killSwitch,
-                        isApproved = isApproved,
-                        userStatus = userStatus,
-                        plan = plan,
-                        planName = planName,
-                        subscriptionEnd = subEnd,
-                        message = msg,
-                        lastCheckedTimestamp = System.currentTimeMillis()
-                    )
-                }
-            }
-        } catch (e: Exception) {
-            Log.w(TAG, "Gagal menyemak status aplikasi dari pelayan: ${e.message}")
-        }
-
         // Fallback pintar: Benarkan Akses Percuma 7 Hari (Auto Free 7 Days Trial) jika masih dalam tempoh sah
         val isWithinLocalTrial = System.currentTimeMillis() <= localTrialExpiryMillis
         RemoteAppStatus(
-            isSuperadmin = isSuper,
+            isSuperadmin = false,
             killSwitchActive = false,
-            isApproved = isSuper || isWithinLocalTrial,
-            userStatus = if (isSuper || isWithinLocalTrial) "active" else "expired",
-            plan = if (isSuper) "superadmin" else "trial",
-            planName = if (isSuper) "Superadmin Unlimited" else "Percubaan Percuma (7 Hari)",
-            message = if (isSuper || isWithinLocalTrial) {
+            isApproved = isWithinLocalTrial,
+            userStatus = if (isWithinLocalTrial) "active" else "expired",
+            plan = "trial",
+            planName = "Percubaan Percuma (7 Hari)",
+            message = if (isWithinLocalTrial) {
                 "Akses Percubaan Percuma 7 Hari Aktif."
             } else {
                 "Tempoh percubaan 7 hari telah tamat. Sila langgan pakej atau hubungi Admin WhatsApp +6019-5326399."
@@ -136,16 +167,75 @@ class RemoteAppControlManager(
             }
             val mediaType = "application/json; charset=utf-8".toMediaType()
             val body = payload.toString().toRequestBody(mediaType)
-            val request = Request.Builder()
-                .url(endpointUrl)
-                .post(body)
-                .build()
+            val request = Request.Builder().url(endpointUrl).post(body).build()
 
             client.newCall(request).execute().use { response ->
                 val bodyStr = response.body?.string() ?: ""
                 val json = JSONObject(bodyStr)
                 val success = json.optString("status") == "success"
                 val msg = json.optString("message", "Perubahan berjaya dihantar ke pelayan.")
+                return@withContext Pair(success, msg)
+            }
+        } catch (e: Exception) {
+            return@withContext Pair(false, "Ralat sambungan: ${e.localizedMessage}")
+        }
+    }
+
+    suspend fun broadcastApkUpdate(
+        adminEmail: String,
+        latestVersion: String,
+        updateMessage: String,
+        downloadUrl: String = "https://www.psycotimexpro.my/training-management/index.php#download-apk",
+        forcePrompt: Boolean = true
+    ): Pair<Boolean, String> = withContext(Dispatchers.IO) {
+        try {
+            val payload = JSONObject().apply {
+                put("adminEmail", adminEmail)
+                put("action", "broadcast_apk_update")
+                put("latestApkVersion", latestVersion)
+                put("apkUpdateMessage", updateMessage)
+                put("apkDownloadUrl", downloadUrl)
+                put("apkUpdateAvailable", forcePrompt)
+            }
+            val mediaType = "application/json; charset=utf-8".toMediaType()
+            val body = payload.toString().toRequestBody(mediaType)
+            val request = Request.Builder().url(endpointUrl).post(body).build()
+
+            client.newCall(request).execute().use { response ->
+                val bodyStr = response.body?.string() ?: ""
+                val json = JSONObject(bodyStr)
+                val success = json.optString("status") == "success"
+                val msg = json.optString("message", "Broadcast Update APK telah dihantar ke semua pengguna!")
+                return@withContext Pair(success, msg)
+            }
+        } catch (e: Exception) {
+            return@withContext Pair(false, "Ralat sambungan broadcast: ${e.localizedMessage}")
+        }
+    }
+
+    suspend fun updatePlanFeatures(
+        adminEmail: String,
+        planKey: String,
+        enabledFeatures: List<String>
+    ): Pair<Boolean, String> = withContext(Dispatchers.IO) {
+        try {
+            val featArray = JSONArray()
+            enabledFeatures.forEach { featArray.put(it) }
+            val payload = JSONObject().apply {
+                put("adminEmail", adminEmail)
+                put("action", "update_plan_features")
+                put("plan", planKey)
+                put("features", featArray)
+            }
+            val mediaType = "application/json; charset=utf-8".toMediaType()
+            val body = payload.toString().toRequestBody(mediaType)
+            val request = Request.Builder().url(endpointUrl).post(body).build()
+
+            client.newCall(request).execute().use { response ->
+                val bodyStr = response.body?.string() ?: ""
+                val json = JSONObject(bodyStr)
+                val success = json.optString("status") == "success"
+                val msg = json.optString("message", "Tetapan ciri pakej $planKey dikemaskini!")
                 return@withContext Pair(success, msg)
             }
         } catch (e: Exception) {
@@ -169,10 +259,7 @@ class RemoteAppControlManager(
             }
             val mediaType = "application/json; charset=utf-8".toMediaType()
             val body = payload.toString().toRequestBody(mediaType)
-            val request = Request.Builder()
-                .url(endpointUrl)
-                .post(body)
-                .build()
+            val request = Request.Builder().url(endpointUrl).post(body).build()
 
             client.newCall(request).execute().use { response ->
                 val bodyStr = response.body?.string() ?: ""
@@ -198,10 +285,7 @@ class RemoteAppControlManager(
             }
             val mediaType = "application/json; charset=utf-8".toMediaType()
             val body = payload.toString().toRequestBody(mediaType)
-            val request = Request.Builder()
-                .url(endpointUrl)
-                .post(body)
-                .build()
+            val request = Request.Builder().url(endpointUrl).post(body).build()
 
             client.newCall(request).execute().use { response ->
                 val bodyStr = response.body?.string() ?: ""

@@ -1,0 +1,17 @@
+# ======================================================================
+# PSYCO TIME X PRO - DATA FOLDER ZERO-TRUST LOCKDOWN
+# Lokasi: htdocs/training-management/data/.htaccess
+# Menghalang sesiapa sahaja daripada memuat turun fail pangkalan data JSON
+# secara terus melalui pelayar web (hanya skrip PHP dalaman dibenarkan).
+# ======================================================================
+
+Options -Indexes
+
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+</IfModule>

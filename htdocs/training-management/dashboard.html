@@ -67,6 +67,10 @@
 
             <!-- Current User Badge -->
             <div class="flex items-center space-x-3">
+                <a href="index.html#user-manual" class="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-400 hover:text-black border border-amber-400 text-amber-300 font-extrabold text-xs transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-book-open text-sm"></i>
+                    <span class="hidden sm:inline">User Manual</span>
+                </a>
                 <a href="https://wa.me/60195326399?text=Salam%20Admin%20Psyco%20Time%20X%20Pro%20(%2B6019-5326399)%2C%20saya%20memerlukan%20bantuan%20mengenai%20langganan%20%2F%20ralat%20sistem." target="_blank" class="px-3 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500 hover:text-black border border-emerald-500 text-emerald-400 font-extrabold text-xs transition flex items-center gap-1.5">
                     <i class="fa-brands fa-whatsapp text-sm"></i>
                     <span class="hidden sm:inline">Contact Admin (+6019-5326399)</span>
@@ -155,6 +159,68 @@
                     </table>
                 </div>
             </div>
+
+            <!-- ADMIN OTA APK UPDATE BROADCAST & PACKAGE FEATURE TOGGLE MATRIX -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-4 border-t border-gray-800">
+                <!-- 1. Broadcast Update APK Terkini kepada semua user -->
+                <div class="p-5 rounded-2xl bg-trackDark border border-cyanAccent/40 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-black uppercase text-cyanAccent flex items-center gap-2">
+                            <i class="fa-solid fa-tower-broadcast"></i> Broadcast Update APK Terkini (OTA Popup)
+                        </span>
+                        <span id="apkBroadcastBadge" class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400">v2.5 Ready</span>
+                    </div>
+                    <p class="text-[11px] text-gray-400">
+                        Apabila anda muat naik APK baharu ke website/Drive, klik butang Broadcast di bawah supaya semua pengguna yang membuka APK menerima popup <strong>"Update APK Terkini Tersedia — Klik YES untuk muat turun"</strong>.
+                    </p>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                        <div>
+                            <label class="text-[10px] text-gray-400 font-bold block mb-1">Versi APK Baharu</label>
+                            <input type="text" id="broadcastApkVersion" value="2.5" class="w-full px-3 py-2 rounded-xl bg-surface border border-gray-700 text-white font-mono">
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label class="text-[10px] text-gray-400 font-bold block mb-1">Pautan Muat Turun APK (Webpage / Drive)</label>
+                            <input type="text" id="broadcastApkUrl" value="https://www.psycotimexpro.my/training-management/index.php#download-apk" class="w-full px-3 py-2 rounded-xl bg-surface border border-gray-700 text-cyanAccent font-mono">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-gray-400 font-bold block mb-1">Mesej Broadcast Kepada Pengguna APK</label>
+                        <input type="text" id="broadcastApkMessage" value="Versi baharu Psyco Time X Pro v2.5 (Sains Sukan AI & Club Management) kini sedia! Klik YES untuk muat turun." class="w-full px-3 py-2 rounded-xl bg-surface border border-gray-700 text-white text-xs">
+                    </div>
+                    <div class="flex gap-2 pt-1">
+                        <button onclick="sendApkUpdateBroadcast(true)" class="flex-1 py-2.5 rounded-xl bg-cyanAccent hover:bg-cyan-400 text-black font-black text-xs transition flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-paper-plane"></i> Broadcast Update APK Sekarang
+                        </button>
+                        <button onclick="sendApkUpdateBroadcast(false)" class="px-3 py-2.5 rounded-xl bg-surfaceLight hover:bg-gray-700 text-gray-300 font-bold text-xs border border-gray-700 transition">
+                            Matikan Popup
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 2. Kawalan Ciri / Option Setiap Pakej Langganan (Admin Feature Toggle) -->
+                <div class="p-5 rounded-2xl bg-trackDark border border-orangeLaser/40 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-black uppercase text-orangeLaser flex items-center gap-2">
+                            <i class="fa-solid fa-sliders"></i> Kawalan Option Pakej Langganan (Admin Feature Matrix)
+                        </span>
+                        <select id="adminPlanFeatureSelect" onchange="renderAdminPlanFeatureCheckboxes()" class="bg-surface border border-gray-700 rounded-lg px-2.5 py-1 text-xs text-white font-bold">
+                            <option value="plan_rm30">PELAN RM30 (15 Atlit)</option>
+                            <option value="plan_rm40">PELAN RM40 (30 Atlit)</option>
+                            <option value="plan_rm60">PELAN RM60 (50 Atlit)</option>
+                            <option value="plan_rm80">PELAN RM80 (Unlimited)</option>
+                        </select>
+                    </div>
+                    <p class="text-[11px] text-gray-400">
+                        Tandakan (tick) mana-mana ciri yang dibenarkan untuk pakej pilihan. Perubahan akan diselaraskan terus ke APK dan Webpage.
+                    </p>
+                    <div id="adminPlanFeaturesChecklist" class="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-xs max-h-36 overflow-y-auto p-2 rounded-xl bg-surface border border-gray-800">
+                        <!-- Populated via JS -->
+                    </div>
+                    <button onclick="saveAdminPlanFeatures()" class="w-full py-2.5 rounded-xl bg-orangeLaser hover:bg-orange-400 text-black font-black text-xs transition flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-floppy-disk"></i> Simpan &amp; Sync Option Pakej
+                    </button>
+                </div>
+            </div>
         </div>
 
         <!-- STATUS LANGGANAN & MAKLUMAT KELAB BANNER -->
@@ -198,7 +264,7 @@
                         <div id="athletesProgressBar" class="bg-cyanAccent h-2.5 rounded-full" style="width: 12%"></div>
                     </div>
                     <p class="text-[11px] text-gray-400">
-                        Pakej RM30 (25 Atlit), RM40 (35 Atlit), RM50 (50 Atlit).
+                        PELAN RM30 (15 Atlit), RM40 (30 Atlit), RM60 (50 Atlit), RM80 (Unlimited Atlit).
                     </p>
                 </div>
 
@@ -242,11 +308,15 @@
                 </button>
                 <button onclick="switchTab('athletes')" id="tabBtnAthletes" class="pb-3 border-b-2 border-transparent text-gray-400 hover:text-white flex items-center gap-2 whitespace-nowrap">
                     <i class="fa-solid fa-users"></i>
-                    <span>Senarai Atlit &amp; Rekod PB</span>
+                    <span>Profil Atlit, Gambar &amp; Rekod PB</span>
+                </button>
+                <button onclick="switchTab('fees')" id="tabBtnFees" class="pb-3 border-b-2 border-transparent text-gray-400 hover:text-white flex items-center gap-2 whitespace-nowrap">
+                    <i class="fa-solid fa-file-invoice-dollar"></i>
+                    <span>Laporan Yuran Atlit &amp; PDF Bulanan</span>
                 </button>
                 <button onclick="switchTab('races')" id="tabBtnRaces" class="pb-3 border-b-2 border-transparent text-gray-400 hover:text-white flex items-center gap-2 whitespace-nowrap">
                     <i class="fa-solid fa-stopwatch"></i>
-                    <span>Keputusan Race &amp; Video ET</span>
+                    <span>Keputusan Race (Prestasi Sebulan)</span>
                 </button>
                 <button onclick="switchTab('users')" id="tabBtnUsers" class="pb-3 border-b-2 border-transparent text-gray-400 hover:text-white flex items-center gap-2 whitespace-nowrap">
                     <i class="fa-solid fa-user-gear"></i>
@@ -562,15 +632,18 @@
                 </div>
             </div>
 
-            <!-- TAB 1: SENARAI ATLIT & PB -->
+            <!-- TAB 1: SENARAI ATLIT, GAMBAR PROFIL & PB -->
             <div id="tabAthletes" class="space-y-4 hidden">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
-                        <h3 class="text-lg font-bold text-white">Senarai Atlit Terselaras dari APK</h3>
-                        <p class="text-xs text-gray-400">Semua nama atlit, acara, dan nilai Personal Best (PB) disimpan secara kekal di server.</p>
+                        <h3 class="text-lg font-bold text-white">Senarai Atlit, Gambar Profil &amp; Rekod PB (Training Club Management)</h3>
+                        <p class="text-xs text-gray-400">Semua profil atlit, gambar atlit, tarikh pendaftaran, yuran dan rekod prestasi sebulan diselaraskan dari APK.</p>
                     </div>
-                    <div class="flex items-center gap-2 w-full sm:w-auto">
+                    <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                         <input type="text" id="athleteSearch" onkeyup="filterAthletes()" placeholder="Cari nama atlit atau acara..." class="px-4 py-2 bg-surface border border-gray-700 rounded-xl text-xs text-white focus:outline-none focus:border-cyanAccent w-full sm:w-64">
+                        <button onclick="window.print()" class="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-black text-xs transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-file-pdf"></i> Muat Turun Laporan PDF Bulanan
+                        </button>
                     </div>
                 </div>
 
@@ -578,12 +651,12 @@
                     <table class="w-full text-left text-xs">
                         <thead class="bg-trackDark text-gray-400 uppercase font-bold border-b border-gray-800">
                             <tr>
-                                <th class="p-4">Nama Atlit</th>
-                                <th class="p-4">Kategori & Acara</th>
+                                <th class="p-4">Gambar &amp; Nama Atlit</th>
+                                <th class="p-4">Kategori &amp; Acara</th>
                                 <th class="p-4">Personal Best (PB)</th>
-                                <th class="p-4">Kelab / Pasukan</th>
+                                <th class="p-4">Kelab &amp; Tarikh Daftar</th>
                                 <th class="p-4">Status Yuran</th>
-                                <th class="p-4 text-right">Tarikh Sync</th>
+                                <th class="p-4 text-right">Prestasi Sebulan / PDF</th>
                             </tr>
                         </thead>
                         <tbody id="athletesTableBody" class="divide-y divide-gray-800">
@@ -593,11 +666,48 @@
                 </div>
             </div>
 
-            <!-- TAB 2: KEPUTUSAN RACE & VIDEO ET -->
+            <!-- TAB 1B: LAPORAN PEMBAYARAN YURAN ATLIT SEPANJANG DIDAFTARKAN & PDF BULANAN -->
+            <div id="tabFees" class="space-y-4 hidden">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h3 class="text-lg font-bold text-white">Laporan Pembayaran Yuran Atlit (Sepanjang Didaftarkan Dalam Sistem)</h3>
+                        <p class="text-xs text-gray-400">Rekod lengkap bayaran yuran bulanan &amp; pendaftaran setiap atlit yang diselaraskan daripada APK Training Club Management.</p>
+                    </div>
+                    <button onclick="window.print()" class="px-4 py-2 rounded-xl bg-cyanAccent hover:bg-cyan-400 text-black font-black text-xs transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-file-pdf"></i> Cetak / Simpan PDF Laporan Yuran
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto rounded-2xl border border-gray-800 bg-surface">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-trackDark text-gray-400 uppercase font-bold border-b border-gray-800">
+                            <tr>
+                                <th class="p-4">Nama Atlit</th>
+                                <th class="p-4">Jenis Yuran / Bulan</th>
+                                <th class="p-4">Jumlah (RM)</th>
+                                <th class="p-4">No. Resit</th>
+                                <th class="p-4">Tarikh Bayaran</th>
+                                <th class="p-4">Status</th>
+                                <th class="p-4">Catatan</th>
+                            </tr>
+                        </thead>
+                        <tbody id="feesTableBody" class="divide-y divide-gray-800">
+                            <!-- Populated via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TAB 2: KEPUTUSAN RACE & PRESTASI SEBULAN MENGIKUT TARIKH & MASA -->
             <div id="tabRaces" class="space-y-4 hidden">
-                <div>
-                    <h3 class="text-lg font-bold text-white">Keputusan Masa & Rakaman Race Elektronik</h3>
-                    <p class="text-xs text-gray-400">Termasuk paparan masa rasmi 0:00:00:000, kelajuan angin, cadence dan sudut torso.</p>
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h3 class="text-lg font-bold text-white">Keputusan Masa &amp; Prestasi Sebulan Mengikut Tarikh dan Masa</h3>
+                        <p class="text-xs text-gray-400">Nota Privasi Storan: Fail video ET disimpan 100% di dalam memori telefon pengguna (<code class="text-cyanAccent">/PsycoTimeXPro/ET_Training_Videos</code>) dan tidak dimuat naik ke pelayan web.</p>
+                    </div>
+                    <button onclick="window.print()" class="px-4 py-2 rounded-xl bg-orangeLaser hover:bg-orange-400 text-black font-black text-xs transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-file-pdf"></i> Eksport PDF Prestasi Bulanan
+                    </button>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="racesCardsGrid">
@@ -671,8 +781,8 @@
                         <div class="flex items-center gap-3">
                             <input type="radio" name="upgradePlan" value="plan_rm30" data-rm="30" data-usd="7" checked class="text-cyanAccent focus:ring-0">
                             <div>
-                                <p class="text-sm font-bold text-white">Pakej Asas (30 Atlit + 2 Sub Coach)</p>
-                                <p class="text-xs text-gray-400">Sesuai untuk kelab biasa / sekolah</p>
+                                <p class="text-sm font-bold text-white">PELAN RM30 (15 Orang Atlit + 1 Sub Coach)</p>
+                                <p class="text-xs text-gray-400">Cam 1+2 Torso, Auto-Sync Web, Kad PB, AI Biomekanik &amp; Folder Phone</p>
                             </div>
                         </div>
                         <span id="dashPrice30" class="text-lg font-black text-cyanAccent">RM30/bln</span>
@@ -684,8 +794,8 @@
                         <div class="flex items-center gap-3">
                             <input type="radio" name="upgradePlan" value="plan_rm40" data-rm="40" data-usd="10" class="text-orangeLaser focus:ring-0">
                             <div>
-                                <p class="text-sm font-bold text-white">Pakej Standard (50 Atlit + 2 Sub Coach)</p>
-                                <p class="text-xs text-gray-400">Untuk skuad olahraga sekolah & daerah</p>
+                                <p class="text-sm font-bold text-white">PELAN RM40 (30 Orang Atlit + 2 Sub Coach)</p>
+                                <p class="text-xs text-gray-400">Cam 1+2 Torso, AI Biomekanik Larian &amp; Padang, Folder Phone</p>
                             </div>
                         </div>
                         <span id="dashPrice40" class="text-lg font-black text-orangeLaser">RM40/bln</span>
@@ -697,8 +807,8 @@
                         <div class="flex items-center gap-3">
                             <input type="radio" name="upgradePlan" value="plan_rm60" data-rm="60" data-usd="15" class="text-yellow-400 focus:ring-0">
                             <div>
-                                <p class="text-sm font-bold text-white">Pakej Pro (80 Atlit + 3 Sub Coach)</p>
-                                <p class="text-xs text-gray-400">Untuk kontinjen MSSD, IPT & akademi</p>
+                                <p class="text-sm font-bold text-white">PELAN RM60 (50 Orang Atlit + 3 Sub Coach)</p>
+                                <p class="text-xs text-gray-400">Multi-User Serentak, Audio Starter Gun &amp; Pangkalan Data Cloud</p>
                             </div>
                         </div>
                         <span id="dashPrice60" class="text-lg font-black text-yellow-400">RM60/bln</span>
@@ -710,8 +820,8 @@
                         <div class="flex items-center gap-3">
                             <input type="radio" name="upgradePlan" value="plan_rm80" data-rm="80" data-usd="20" class="text-emerald-400 focus:ring-0">
                             <div>
-                                <p class="text-sm font-bold text-white">Pakej Elite (100 Atlit + 5 Sub Coach)</p>
-                                <p class="text-xs text-gray-400">Untuk pusat kejohanan & skuad elit</p>
+                                <p class="text-sm font-bold text-white">PELAN RM80 (Unlimited Atlit + 5 Sub Coach)</p>
+                                <p class="text-xs text-gray-400">Eksport Penuh PDF &amp; Excel, Priority WhatsApp &amp; Sync Tanpa Had</p>
                             </div>
                         </div>
                         <span id="dashPrice80" class="text-lg font-black text-emerald-400">RM80/bln</span>
@@ -759,10 +869,10 @@
                         <label class="text-gray-400 font-bold block mb-1">Pakej Langganan</label>
                         <select id="editUserPlan" class="w-full bg-trackDark border border-gray-700 rounded-xl px-3 py-2 text-white">
                             <option value="trial">Percubaan Percuma (7 Hari)</option>
-                            <option value="plan_rm30">Pelan RM30 (30 Atlit + 2 Sub)</option>
-                            <option value="plan_rm40">Pelan RM40 (50 Atlit + 2 Sub)</option>
-                            <option value="plan_rm60">Pelan RM60 (80 Atlit + 3 Sub)</option>
-                            <option value="plan_rm80">Pelan RM80 (100 Atlit + 5 Sub)</option>
+                            <option value="plan_rm30">PELAN RM30 (15 Atlit + 1 Sub)</option>
+                            <option value="plan_rm40">PELAN RM40 (30 Atlit + 2 Sub)</option>
+                            <option value="plan_rm60">PELAN RM60 (50 Atlit + 3 Sub)</option>
+                            <option value="plan_rm80">PELAN RM80 (Unlimited Atlit + 5 Sub)</option>
                         </select>
                     </div>
                     <div>
@@ -813,6 +923,22 @@
         let allAthletesData = [];
         let allRacesData = [];
         let allUsersData = [];
+        let allFeesData = [];
+        let allPlansData = {};
+
+        const ALL_CONTROLLABLE_FEATURES = [
+            'Cam 1 + Cam 2 Torso Capture',
+            'Auto-Sync Web Portal',
+            'Kad Teknikal & PB Atlit',
+            'AI Biomekanik Larian & Padang',
+            'Rakaman Video Folder Phone',
+            'Multi-User Akses Serentak',
+            'Sokongan Audio Starter Gun',
+            'Pangkalan Data Web Cloud',
+            'Eksport Penuh PDF & Excel',
+            'Priority Support WhatsApp',
+            'Penyegerakan Pantas Tanpa Had'
+        ];
 
         function logout() {
             localStorage.removeItem('psyco_logged_email');
@@ -824,11 +950,15 @@
         function switchTab(tab) {
             document.getElementById('tabTrends').classList.add('hidden');
             document.getElementById('tabAthletes').classList.add('hidden');
+            const tabFeesEl = document.getElementById('tabFees');
+            if (tabFeesEl) tabFeesEl.classList.add('hidden');
             document.getElementById('tabRaces').classList.add('hidden');
             document.getElementById('tabUsers').classList.add('hidden');
 
             document.getElementById('tabBtnTrends').className = 'pb-3 border-b-2 border-transparent text-gray-400 hover:text-white flex items-center gap-2 whitespace-nowrap font-bold';
             document.getElementById('tabBtnAthletes').className = 'pb-3 border-b-2 border-transparent text-gray-400 hover:text-white flex items-center gap-2 whitespace-nowrap font-bold';
+            const tabBtnFeesEl = document.getElementById('tabBtnFees');
+            if (tabBtnFeesEl) tabBtnFeesEl.className = 'pb-3 border-b-2 border-transparent text-gray-400 hover:text-white flex items-center gap-2 whitespace-nowrap font-bold';
             document.getElementById('tabBtnRaces').className = 'pb-3 border-b-2 border-transparent text-gray-400 hover:text-white flex items-center gap-2 whitespace-nowrap font-bold';
             document.getElementById('tabBtnUsers').className = 'pb-3 border-b-2 border-transparent text-gray-400 hover:text-white flex items-center gap-2 whitespace-nowrap font-bold';
 
@@ -839,6 +969,9 @@
             } else if (tab === 'athletes') {
                 document.getElementById('tabAthletes').classList.remove('hidden');
                 document.getElementById('tabBtnAthletes').className = 'pb-3 border-b-2 border-cyanAccent text-cyanAccent flex items-center gap-2 whitespace-nowrap font-bold';
+            } else if (tab === 'fees') {
+                if (tabFeesEl) tabFeesEl.classList.remove('hidden');
+                if (tabBtnFeesEl) tabBtnFeesEl.className = 'pb-3 border-b-2 border-emerald-400 text-emerald-400 flex items-center gap-2 whitespace-nowrap font-bold';
             } else if (tab === 'races') {
                 document.getElementById('tabRaces').classList.remove('hidden');
                 document.getElementById('tabBtnRaces').className = 'pb-3 border-b-2 border-orangeLaser text-orangeLaser flex items-center gap-2 whitespace-nowrap font-bold';
@@ -858,30 +991,35 @@
                     allAthletesData = data.athletes || [];
                     allRacesData = data.races || [];
                     allUsersData = data.users || [];
+                    allFeesData = data.fees || [];
+                    allPlansData = data.plans || {};
                     initDashboardViews();
                 })
                 .catch(err => {
                     console.warn('API fetch warning, loading local JSON data files:', err);
                     Promise.all([
                         fetch('data/athletes.json').then(r => r.json()).catch(() => []),
-                        fetch('data/races.json').then(r => r.json()).catch(() => [])
-                    ]).then(([athletes, races]) => {
+                        fetch('data/races.json').then(r => r.json()).catch(() => []),
+                        fetch('data/fees.json').then(r => r.json()).catch(() => [])
+                    ]).then(([athletes, races, fees]) => {
                         allAthletesData = athletes || [];
                         allRacesData = races || [];
+                        allFeesData = fees || [];
                         initDashboardViews();
                     });
                 });
         }
 
         function initDashboardViews() {
-            // Render Athletes Count
             document.getElementById('athletesCount').innerText = allAthletesData.length;
             document.getElementById('racesCount').innerText = allRacesData.length + ' Larian';
 
             populateAthleteDropdown();
             renderAthletesTable(allAthletesData);
+            renderFeesTable(allFeesData);
             renderRacesGrid(allRacesData);
             renderUsersTable(allUsersData);
+            renderAdminPlanFeatureCheckboxes();
             renderD3TrendsChart();
         }
 
@@ -894,15 +1032,19 @@
 
             tbody.innerHTML = athletes.map(a => {
                 const isTrack = (a.category || '').toLowerCase() === 'track';
-                const badgeClass = isTrack ? 'bg-cyanAccent/10 text-cyanAccent border-cyanAccent/30' : 'orangeLaser/10 text-orangeLaser border-orangeLaser/30';
-                
+                const badgeClass = isTrack ? 'bg-cyanAccent/10 text-cyanAccent border-cyanAccent/30' : 'bg-orangeLaser/10 text-orangeLaser border-orangeLaser/30';
+                const avatarHtml = a.photoDataUrl
+                    ? `<img src="${a.photoDataUrl}" alt="${a.name}" class="w-10 h-10 rounded-full object-cover border border-cyanAccent">`
+                    : `<div class="w-10 h-10 rounded-full bg-surfaceLight border border-gray-700 flex items-center justify-center text-xs"><i class="fa-solid fa-person-running text-cyanAccent"></i></div>`;
+
                 return `
                     <tr class="hover:bg-trackDark/50 transition">
                         <td class="p-4 font-bold text-white flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-full bg-surfaceLight border border-gray-700 flex items-center justify-center text-xs">
-                                <i class="fa-solid fa-person-running text-cyanAccent"></i>
+                            ${avatarHtml}
+                            <div>
+                                <span class="block">${a.name}</span>
+                                <span class="text-[10px] text-gray-400 font-normal">Umur: ${a.age || '-'} • Jantina: ${a.gender || '-'}</span>
                             </div>
-                            <span>${a.name}</span>
                         </td>
                         <td class="p-4">
                             <span class="px-2 py-0.5 rounded text-[10px] font-bold border ${badgeClass}">
@@ -913,16 +1055,59 @@
                         <td class="p-4 font-mono font-bold text-white">
                             ${a.pbValue || '-'} <span class="text-[10px] text-gray-400 font-normal">${a.pbUnit || 's'}</span>
                         </td>
-                        <td class="p-4 text-gray-400">${a.clubName || 'Psyco Elite'}</td>
+                        <td class="p-4 text-gray-300">
+                            <div class="font-semibold">${a.clubName || 'Psyco Elite'}</div>
+                            <div class="text-[10px] text-gray-500">Daftar: ${a.registeredDate || a.syncedAt || '2026'}</div>
+                        </td>
                         <td class="p-4">
                             <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${a.feePaidStatus ? 'bg-successGreen/20 text-successGreen' : 'bg-speedAmber/20 text-speedAmber'}">
-                                ${a.feePaidStatus ? 'Lunas' : 'Belum Selesai'}
+                                ${a.feePaidStatus ? 'Lunas (RM' + (a.registrationFee || 30) + ')' : 'Tertunggak'}
                             </span>
                         </td>
-                        <td class="p-4 text-right text-gray-500 font-mono text-[11px]">${a.syncedAt || 'Baru'}</td>
+                        <td class="p-4 text-right space-x-1">
+                            <button onclick="viewAthleteMonthlyReport('${(a.name || '').replace(/'/g, "\\'")}')" class="px-2.5 py-1 rounded-lg bg-cyanAccent/20 hover:bg-cyanAccent text-cyanAccent hover:text-black font-bold text-[11px] transition">
+                                <i class="fa-solid fa-chart-line"></i> Prestasi Sebulan
+                            </button>
+                            <button onclick="window.print()" class="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500 text-emerald-400 hover:text-black font-bold text-[11px] transition">
+                                <i class="fa-solid fa-file-pdf"></i> PDF
+                            </button>
+                        </td>
                     </tr>
                 `;
             }).join('');
+        }
+
+        function renderFeesTable(fees) {
+            const tbody = document.getElementById('feesTableBody');
+            if (!tbody) return;
+            if (!fees || fees.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-gray-500">Tiada rekod bayaran yuran diselaraskan lagi. Tambah rekod bayaran di dalam Profil Atlit / Tab Yuran APK.</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = fees.map(f => `
+                <tr class="hover:bg-trackDark/50 transition">
+                    <td class="p-4 font-bold text-white">${f.athleteName || '-'}</td>
+                    <td class="p-4 text-cyanAccent font-semibold">${f.feeType || 'Yuran Bulanan'}</td>
+                    <td class="p-4 font-mono font-bold text-white">RM ${Number(f.amount || 0).toFixed(2)}</td>
+                    <td class="p-4 font-mono text-gray-400">${f.receiptNo || '-'}</td>
+                    <td class="p-4 font-mono text-yellow-300">${f.paymentDate || '-'}</td>
+                    <td class="p-4">
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${f.isPaid ? 'bg-successGreen/20 text-successGreen' : 'bg-red-500/20 text-red-400'}">
+                            ${f.isPaid ? 'LUNAS ✓' : 'TERTUNGGAK'}
+                        </span>
+                    </td>
+                    <td class="p-4 text-gray-400">${f.notes || '-'}</td>
+                </tr>
+            `).join('');
+        }
+
+        function viewAthleteMonthlyReport(athleteName) {
+            const select = document.getElementById('trendAthleteSelect');
+            if (select) {
+                select.value = athleteName;
+                switchTab('trends');
+                onTrendFilterChange();
+            }
         }
 
         function renderRacesGrid(races) {
@@ -2308,6 +2493,73 @@
                 loadSystemUsers();
             } catch (e) {
                 alert('Ralat semasa menyekat pengguna.');
+            }
+        }
+
+        async function sendApkUpdateBroadcast(active) {
+            const version = document.getElementById('broadcastApkVersion').value.trim() || '2.5';
+            const downloadUrl = document.getElementById('broadcastApkUrl').value.trim();
+            const message = document.getElementById('broadcastApkMessage').value.trim();
+            try {
+                const res = await fetch('api/app-control.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        adminEmail: 'saliparjipun.atukoi@gmail.com',
+                        action: 'broadcast_apk_update',
+                        version: version,
+                        downloadUrl: downloadUrl,
+                        message: message,
+                        active: active
+                    })
+                });
+                const data = await res.json();
+                alert(data.message || 'Broadcast APK dikemaskini!');
+            } catch (e) {
+                alert('Ralat menghantar broadcast update APK.');
+            }
+        }
+
+        function renderAdminPlanFeatureCheckboxes() {
+            const sel = document.getElementById('adminPlanFeatureSelect');
+            const box = document.getElementById('adminPlanFeaturesChecklist');
+            if (!sel || !box) return;
+            const planKey = sel.value;
+            const planObj = (allPlansData && allPlansData[planKey]) ? allPlansData[planKey] : null;
+            const activeFeats = (planObj && Array.isArray(planObj.features)) ? planObj.features : ALL_CONTROLLABLE_FEATURES.slice(0, 5);
+
+            box.innerHTML = ALL_CONTROLLABLE_FEATURES.map(feat => {
+                const checked = activeFeats.includes(feat) ? 'checked' : '';
+                return `<label class="flex items-center gap-2 text-gray-200 cursor-pointer p-1 hover:bg-trackDark rounded">
+                    <input type="checkbox" name="adminPlanFeatItem" value="${feat}" ${checked} class="rounded text-orangeLaser focus:ring-0">
+                    <span>${feat}</span>
+                </label>`;
+            }).join('');
+        }
+
+        async function saveAdminPlanFeatures() {
+            const sel = document.getElementById('adminPlanFeatureSelect');
+            if (!sel) return;
+            const planKey = sel.value;
+            const checkedFeats = Array.from(document.querySelectorAll('input[name="adminPlanFeatItem"]:checked')).map(el => el.value);
+            try {
+                const res = await fetch('api/app-control.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        adminEmail: 'saliparjipun.atukoi@gmail.com',
+                        action: 'update_plan_features',
+                        planKey: planKey,
+                        enabledFeatures: checkedFeats
+                    })
+                });
+                const data = await res.json();
+                if (allPlansData && allPlansData[planKey]) {
+                    allPlansData[planKey].features = checkedFeats;
+                }
+                alert(data.message || 'Option pakej berjaya disimpan!');
+            } catch (e) {
+                alert('Ralat menyimpan option pakej.');
             }
         }
     </script>

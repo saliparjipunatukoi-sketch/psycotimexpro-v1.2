@@ -33,12 +33,14 @@ $usersFile = $dataDir . '/users.json';
 $athletesFile = $dataDir . '/athletes.json';
 $racesFile = $dataDir . '/races.json';
 $paymentsFile = $dataDir . '/payments.json';
+$feesFile = $dataDir . '/fees.json';
+$planFeaturesFile = $dataDir . '/plan_features.json';
 
-// Pakej Langganan Rasmi Psyco Time X Pro Mengikut Kiraan Baharu
-// RM30 = 30 atlit for 1 Month user + 2 Sub Coach
-// RM40 = 50 Atlit for 1 month user + 2 Sub Coach
-// RM60 = 80 atlit for 1 Month User + 3 Subcoach
-// RM80 = 100 Atlit for 1 month user + 5 Sub Coach
+// Pakej Langganan Rasmi Psyco Time X Pro Mengikut Kiraan Terbaharu (Dikurangkan 10 Atlit Setiap Pakej)
+// PELAN RM30 = 15 Orang Atlit (1 Bulan) + 1 Sub Coach / Urusetia
+// PELAN RM40 = 30 Orang Atlit (1 Bulan) + 2 Sub Coach / Urusetia
+// PELAN RM60 = 50 Orang Atlit (1 Bulan) + 3 Sub Coach / Urusetia
+// PELAN RM80 = Unlimited Atlit (1 Bulan) + 5 Sub Coach / Urusetia
 $SUBSCRIPTION_PLANS = [
     'trial' => [
         'name' => 'Percubaan Percuma (7 Hari)',
@@ -46,43 +48,84 @@ $SUBSCRIPTION_PLANS = [
         'price_usd' => 0,
         'max_athletes' => 10,
         'max_sub_coaches' => 1,
-        'duration_days' => 7
+        'duration_days' => 7,
+        'description' => '10 Orang Atlit (7 Hari) + 1 Sub Coach',
+        'features' => [
+            'Cam 1 + Cam 2 Torso Capture',
+            'Auto-Sync Web Portal',
+            'Kad Teknikal & PB Atlit',
+            'AI Biomekanik Larian & Padang',
+            'Rakaman Video Folder Phone'
+        ]
     ],
     'plan_rm30' => [
-        'name' => 'Pakej Asas (RM30 / USD $7)',
+        'name' => 'PELAN RM30 (RM 30 / USD $7)',
         'price' => 30,
         'price_usd' => 7,
+        'max_athletes' => 15,
+        'max_sub_coaches' => 1,
+        'duration_days' => 30,
+        'description' => '15 Orang Atlit (1 Bulan) + 1 Sub Coach / Urusetia — Sesuai untuk jurulatih sekolah dan kelab pembangunan bakat baharu.',
+        'features' => [
+            'Cam 1 + Cam 2 Torso Capture',
+            'Auto-Sync Web Portal',
+            'Kad Teknikal & PB Atlit',
+            'AI Biomekanik Larian & Padang',
+            'Rakaman Video Folder Phone'
+        ]
+    ],
+    'plan_rm40' => [
+        'name' => 'PELAN RM40 (RM 40 / USD $10)',
+        'price' => 40,
+        'price_usd' => 10,
         'max_athletes' => 30,
         'max_sub_coaches' => 2,
         'duration_days' => 30,
-        'description' => '30 Atlit (1 Bulan) + 2 Sub Coach'
-    ],
-    'plan_rm40' => [
-        'name' => 'Pakej Standard (RM40 / USD $10)',
-        'price' => 40,
-        'price_usd' => 10,
-        'max_athletes' => 50,
-        'max_sub_coaches' => 2,
-        'duration_days' => 30,
-        'description' => '50 Atlit (1 Bulan) + 2 Sub Coach'
+        'description' => '30 Orang Atlit (1 Bulan) + 2 Sub Coach / Urusetia — Pilihan terbaik untuk skuad olahraga sekolah menengah dan kelab daerah.',
+        'features' => [
+            'Cam 1 + Cam 2 Torso Capture',
+            'AI Biomekanik Larian & Padang',
+            'Rakaman Video Folder Phone',
+            'Auto-Sync Web Portal',
+            'Kad Teknikal & PB Atlit'
+        ]
     ],
     'plan_rm60' => [
-        'name' => 'Pakej Pro (RM60 / USD $15)',
+        'name' => 'PELAN RM60 (RM 60 / USD $15)',
         'price' => 60,
         'price_usd' => 15,
-        'max_athletes' => 80,
+        'max_athletes' => 50,
         'max_sub_coaches' => 3,
         'duration_days' => 30,
-        'description' => '80 Atlit (1 Bulan) + 3 Sub Coach'
+        'description' => '50 Orang Atlit (1 Bulan) + 3 Sub Coach / Urusetia — Direka khas bagi kontinjen MSSD, IPT, atau akademi berbilang jurulatih.',
+        'features' => [
+            'Multi-User Akses Serentak',
+            'Sokongan Audio Starter Gun',
+            'Pangkalan Data Web Cloud',
+            'Cam 1 + Cam 2 Torso Capture',
+            'AI Biomekanik Larian & Padang',
+            'Rakaman Video Folder Phone'
+        ]
     ],
     'plan_rm80' => [
-        'name' => 'Pakej Elite (RM80 / USD $20)',
+        'name' => 'PELAN RM80 (RM 80 / USD $20)',
         'price' => 80,
         'price_usd' => 20,
-        'max_athletes' => 100,
+        'max_athletes' => 9999,
         'max_sub_coaches' => 5,
         'duration_days' => 30,
-        'description' => '100 Atlit (1 Bulan) + 5 Sub Coach'
+        'description' => 'Unlimited Atlit (1 Bulan) + 5 Sub Coach / Urusetia — Kapasiti terbesar untuk kejohanan terbuka, MSSN & program sukan negeri.',
+        'features' => [
+            'Eksport Penuh PDF & Excel',
+            'Priority Support WhatsApp',
+            'Penyegerakan Pantas Tanpa Had',
+            'Multi-User Akses Serentak',
+            'Sokongan Audio Starter Gun',
+            'Pangkalan Data Web Cloud',
+            'Cam 1 + Cam 2 Torso Capture',
+            'AI Biomekanik Larian & Padang',
+            'Rakaman Video Folder Phone'
+        ]
     ]
 ];
 

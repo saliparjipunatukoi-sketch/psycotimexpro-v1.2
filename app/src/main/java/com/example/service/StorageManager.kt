@@ -1123,4 +1123,285 @@ class StorageManager(private val context: Context) {
         addSavedCustomFolderPath(newFolder.absolutePath)
         return newFolder
     }
+
+    fun hasUserConsentedPhoneVideoFolder(): Boolean {
+        return prefs.getBoolean("user_consented_phone_video_folder", false)
+    }
+
+    fun confirmAndCreateLocalPhoneVideoFolder(customFolderName: String = "ET_Training_Videos"): File {
+        val safeName = customFolderName.trim().ifBlank { "ET_Training_Videos" }.replace(Regex("[^a-zA-Z0-9_-]"), "_")
+        val phoneFolder = File(appBaseDir, safeName)
+        if (!phoneFolder.exists()) phoneFolder.mkdirs()
+        saveSelectedVideoFolder(phoneFolder.absolutePath)
+        prefs.edit().putBoolean("user_consented_phone_video_folder", true).apply()
+        return phoneFolder
+    }
+
+    /**
+     * Generates a comprehensive Monthly Athlete PDF Report containing:
+     * 1. Athlete Profile & Personal Best (PB)
+     * 2. 1-Month Performance History by Date & Time
+     * 3. Lifetime Fee Payment History since Registration
+     */
+    fun generateAthleteMonthlyPdfReport(
+        athlete: com.example.data.model.AthleteEntity,
+        clubName: String,
+        coachName: String,
+        races: List<com.example.data.model.RaceRecordEntity>,
+        metrics: List<com.example.data.model.PerformanceMetrics>,
+        fees: List<com.example.data.model.FeeRecordEntity>
+    ): String {
+        ensureDirectoriesExist()
+        val pdfDoc = android.graphics.pdf.PdfDocument()
+        val pageInfo = android.graphics.pdf.PdfDocument.PageInfo.Builder(595, 842, 1).create()
+        val page = pdfDoc.startPage(pageInfo)
+        val canvas = page.canvas
+
+        val bgPaint = Paint().apply { color = Color.parseColor("#FFFFFF") }
+        canvas.drawRect(0f, 0f, 595f, 842f, bgPaint)
+
+        val headerPaint = Paint().apply { color = Color.parseColor("#0B1120") }
+        canvas.drawRect(0f, 0f, 595f, 95f, headerPaint)
+
+        val titlePaint = Paint().apply {
+            color = Color.parseColor("#00E5FF")
+            textSize = 16f
+            isFakeBoldText = true
+            isAntiAlias = true
+        }
+        val whiteSubPaint = Paint().apply {
+            color = Color.WHITE
+            textSize = 11f
+            isAntiAlias = true
+        }
+        val dateStr = java.text.SimpleDateFormat("dd MMM yyyy, HH:mm", java.util.Locale.getDefault()).format(java.util.Date())
+        val monthStr = java.text.SimpleDateFormat("MMMM yyyy", java.util.Locale.getDefault()).format(java.util.Date())
+
+        canvas.drawText("PSYCO TIME X PRO — LAPORAN BULANAN RASMI ATLIT ($monthStr)", 28f, 36f, titlePaint)
+        canvas.drawText("Kelab: $clubName  |  Jurulatih: $coachName", 28f, 58f, whiteSubPaint)
+        canvas.drawText("Tarikh Cetakan PDF: $dateStr  |  www.psycotimexpro.my", 28f, 76f, whiteSubPaint)
+
+        val sectionPaint = Paint().apply {
+            color = Color.parseColor("#0F172A")
+            textSize = 13f
+            isFakeBoldText = true
+            isAntiAlias = true
+        }
+        val bodyPaint = Paint().apply {
+            color = Color.parseColor("#1E293B")
+            textSize = 10f
+            isAntiAlias = true
+        }
+        val boldBodyPaint = Paint().apply {
+            color = Color.parseColor("#0F172A")
+            textSize = 10f
+            isFakeBoldText = true
+            isAntiAlias = true
+        }
+        val linePaint = Paint().apply {
+            color = Color.parseColor("#CBD5E1")
+            strokeWidth = 1f
+        }
+
+        var y = 122f
+        val regDateFormatted = java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault()).format(java.util.Date(athlete.createdAt))
+
+        canvas.drawText("1. PROFIL LENGKAP ATLIT & REKOD PERSONAL BEST (PB)", 28f, y, sectionPaint)
+        y += 18f
+        canvas.drawText("Nama Penuh Atlit: ${athlete.name}   |   Jantina: ${athlete.gender}   |   Tarikh Lahir: ${athlete.dateOfBirth}", 28f, y, boldBodyPaint)
+        y += 15f
+        canvas.drawText("Kategori: ${athlete.category}   |   Acara Utama: ${athlete.specificEvent}   |   Tarikh Daftar Sistem: $regDateFormatted", 28f, y, bodyPaint)
+        y += 15f
+        canvas.drawText("Rekod Personal Best (PB): ${athlete.pbValue} ${athlete.pbUnit}   |   Status Yuran Semasa: ${if (athlete.feePaidStatus) "LUNAS" else "TERTUNGGAK"}", 28f, y, boldBodyPaint)
+        y += 14f
+        canvas.drawLine(28f, y, 567f, y, linePaint)
+
+        // Section 2: 1-Month Performance by Date & Time
+        y += 22f
+        canvas.drawText("2. PRESTASI SEBULAN MENGIKUT TARIKH & MASA (30 HARI TERKINI)", 28f, y, sectionPaint)
+        y += 18f
+        val dtFormat = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm:ss", java.util.Locale.getDefault())
+        val athleteRaces = races.filter { it.athleteId == athlete.id || it.athleteName.equals(athlete.name, ignoreCase = true) }
+        if (athleteRaces.isEmpty() && metrics.isEmpty()) {
+            canvas.drawText("Tiada rekod ujian masa / jarak direkodkan pada bulan ini.", 28f, y, bodyPaint)
+            y += 16f
+        } else {
+            canvas.drawText("TARIKH & MASA          | ACARA              | KEPUTUSAN    | ANGIN    | BIOMEKANIK AI (CADENCE / GCT / TORSO)", 28f, y, boldBodyPaint)
+            y += 14f
+            athleteRaces.take(12).forEach { r ->
+                val dStr = dtFormat.format(java.util.Date(r.createdAt))
+                val rowText = String.format(
+                    java.util.Locale.US,
+                    "%-21s | %-18s | %-12s | %-8s | %d spm / %dms / %.1f deg",
+                    dStr,
+                    r.eventName.take(18),
+                    String.format(java.util.Locale.US, "%.2f s", r.recordedTimeMillis / 1000.0),
+                    r.windReading,
+                    r.cadenceSpM,
+                    r.groundContactTimeMs,
+                    r.torsoLeanAngleDeg
+                )
+                canvas.drawText(rowText, 28f, y, bodyPaint)
+                y += 14f
+            }
+            metrics.take(6).forEach { m ->
+                val dStr = dtFormat.format(java.util.Date(m.recordedAt))
+                val rowText = "$dStr | ${m.eventName.take(18)} | PB: ${m.pbValue} ${m.pbUnit} | Cadence: ${m.cadenceSpM} spm, GCT: ${m.groundContactTimeMs}ms"
+                canvas.drawText(rowText, 28f, y, bodyPaint)
+                y += 14f
+            }
+        }
+        y += 8f
+        canvas.drawLine(28f, y, 567f, y, linePaint)
+
+        // Section 3: Lifetime Fee Payment History since Registration
+        y += 22f
+        val athleteFees = fees.filter { it.athleteId == athlete.id || it.athleteName.equals(athlete.name, ignoreCase = true) }
+        val totalPaid = athleteFees.filter { it.isPaid }.sumOf { it.amount }
+        val totalPending = athleteFees.filter { !it.isPaid }.sumOf { it.amount }
+
+        canvas.drawText("3. REKOD PEMBAYARAN YURAN SEPANJANG MASA (SEJAK DIDAFTARKAN: $regDateFormatted)", 28f, y, sectionPaint)
+        y += 16f
+        canvas.drawText(
+            String.format(java.util.Locale.US, "Jumlah Telah Dibayar (Lunas): RM %.2f   |   Jumlah Tertunggak: RM %.2f   |   Bil. Transaksi: %d", totalPaid, totalPending, athleteFees.size),
+            28f,
+            y,
+            boldBodyPaint
+        )
+        y += 16f
+        if (athleteFees.isEmpty()) {
+            canvas.drawText("Rekod Pendaftaran Asal: RM ${String.format(java.util.Locale.US, "%.2f", athlete.registrationFee)} (${if (athlete.feePaidStatus) "LUNAS" else "TERTUNGGAK"})", 28f, y, bodyPaint)
+            y += 14f
+        } else {
+            canvas.drawText("NO. RESIT       | JENIS YURAN                  | TARIKH BAYARAN | JUMLAH (RM) | STATUS", 28f, y, boldBodyPaint)
+            y += 14f
+            athleteFees.take(12).forEach { f ->
+                val statusStr = if (f.isPaid) "LUNAS" else "TERTUNGGAK"
+                val line = String.format(
+                    java.util.Locale.US,
+                    "%-15s | %-28s | %-14s | RM %-8.2f | %s",
+                    f.receiptNo.take(14),
+                    f.feeType.take(28),
+                    f.paymentDate.take(14),
+                    f.amount,
+                    statusStr
+                )
+                canvas.drawText(line, 28f, y, bodyPaint)
+                y += 14f
+            }
+        }
+
+        // Footer
+        val footerPaint = Paint().apply {
+            color = Color.parseColor("#64748B")
+            textSize = 9f
+            isAntiAlias = true
+        }
+        canvas.drawText(
+            "Dijana secara automatik oleh Sistem Pengurusan Kelab & Sains Sukan AI Psyco Time X Pro (www.psycotimexpro.my)",
+            28f,
+            815f,
+            footerPaint
+        )
+
+        pdfDoc.finishPage(page)
+
+        val safeAthName = athlete.name.replace(Regex("[^a-zA-Z0-9_-]"), "_")
+        val pdfFile = File(exportsDir, "Laporan_Bulanan_${safeAthName}_${System.currentTimeMillis() % 100000}.pdf")
+        try {
+            FileOutputStream(pdfFile).use { out ->
+                pdfDoc.writeTo(out)
+            }
+        } finally {
+            pdfDoc.close()
+        }
+        return pdfFile.absolutePath
+    }
+
+    /**
+     * Generates a Club-Wide Monthly PDF Report for all registered athletes, monthly race records, and fee collections.
+     */
+    fun generateClubMonthlyPdfReport(
+        clubName: String,
+        coachName: String,
+        athletes: List<com.example.data.model.AthleteEntity>,
+        races: List<com.example.data.model.RaceRecordEntity>,
+        fees: List<com.example.data.model.FeeRecordEntity>
+    ): String {
+        ensureDirectoriesExist()
+        val pdfDoc = android.graphics.pdf.PdfDocument()
+        val pageInfo = android.graphics.pdf.PdfDocument.PageInfo.Builder(595, 842, 1).create()
+        val page = pdfDoc.startPage(pageInfo)
+        val canvas = page.canvas
+
+        val bgPaint = Paint().apply { color = Color.WHITE }
+        canvas.drawRect(0f, 0f, 595f, 842f, bgPaint)
+
+        val headerPaint = Paint().apply { color = Color.parseColor("#0B1120") }
+        canvas.drawRect(0f, 0f, 595f, 90f, headerPaint)
+
+        val titlePaint = Paint().apply {
+            color = Color.parseColor("#00E5FF")
+            textSize = 15f
+            isFakeBoldText = true
+            isAntiAlias = true
+        }
+        val subPaint = Paint().apply {
+            color = Color.WHITE
+            textSize = 10.5f
+            isAntiAlias = true
+        }
+        val monthStr = java.text.SimpleDateFormat("MMMM yyyy", java.util.Locale.getDefault()).format(java.util.Date())
+        canvas.drawText("LAPORAN BULANAN PENGURUSAN KELAB — $clubName ($monthStr)", 28f, 35f, titlePaint)
+        canvas.drawText("Ketua Jurulatih: $coachName  |  Jumlah Atlit: ${athletes.size}  |  Jumlah Ujian ET: ${races.size}", 28f, 56f, subPaint)
+        canvas.drawText("Portal Rasmi: https://www.psycotimexpro.my/training-management/", 28f, 74f, subPaint)
+
+        val sectionPaint = Paint().apply {
+            color = Color.parseColor("#0F172A")
+            textSize = 12f
+            isFakeBoldText = true
+            isAntiAlias = true
+        }
+        val bodyPaint = Paint().apply {
+            color = Color.parseColor("#1E293B")
+            textSize = 9.5f
+            isAntiAlias = true
+        }
+        var y = 115f
+        val totalPaid = fees.filter { it.isPaid }.sumOf { it.amount }
+        val totalPending = fees.filter { !it.isPaid }.sumOf { it.amount }
+
+        canvas.drawText("1. RINGKASAN KEWANGAN YURAN KELAB & SENARAI ATLIT BERDAFTAR", 28f, y, sectionPaint)
+        y += 16f
+        canvas.drawText(String.format(java.util.Locale.US, "Kutipan Yuran Lunas: RM %.2f   |   Yuran Tertunggak: RM %.2f", totalPaid, totalPending), 28f, y, bodyPaint)
+        y += 18f
+
+        athletes.take(18).forEachIndexed { idx, a ->
+            val feeStr = if (a.feePaidStatus) "LUNAS (RM${a.registrationFee.toInt()})" else "TERTUNGGAK (RM${a.registrationFee.toInt()})"
+            canvas.drawText("${idx + 1}. ${a.name} — ${a.specificEvent} (${a.category}) | PB: ${a.pbValue} ${a.pbUnit} | Yuran: $feeStr", 28f, y, bodyPaint)
+            y += 14f
+        }
+
+        y += 12f
+        canvas.drawText("2. REKOD PRESTASI BULANAN TERKINI MENGIKUT TARIKH & MASA", 28f, y, sectionPaint)
+        y += 16f
+        val dtFormat = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", java.util.Locale.getDefault())
+        races.take(14).forEach { r ->
+            val dStr = dtFormat.format(java.util.Date(r.createdAt))
+            canvas.drawText("• [$dStr] ${r.athleteName} (${r.eventName}): ${r.formattedTime} | Cadence ${r.cadenceSpM} spm | GCT ${r.groundContactTimeMs}ms", 28f, y, bodyPaint)
+            y += 13f
+        }
+
+        pdfDoc.finishPage(page)
+        val safeClub = clubName.replace(Regex("[^a-zA-Z0-9_-]"), "_")
+        val pdfFile = File(exportsDir, "Laporan_Kelab_${safeClub}_${System.currentTimeMillis() % 100000}.pdf")
+        try {
+            FileOutputStream(pdfFile).use { out ->
+                pdfDoc.writeTo(out)
+            }
+        } finally {
+            pdfDoc.close()
+        }
+        return pdfFile.absolutePath
+    }
 }

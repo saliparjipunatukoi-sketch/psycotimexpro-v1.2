@@ -52,10 +52,14 @@ val COUNTRY_DIAL_SPECS = listOf(
 
 data class SubscriptionPlanSpec(
     val id: String,
+    val titleMy: String,
+    val subtitleMy: String,
     val rmPrice: Int,
     val usdPrice: Int,
     val athletesLimit: Int,
-    val subCoachLimit: Int
+    val athletesLabel: String,
+    val subCoachLimit: Int,
+    val features: List<String>
 ) {
     fun formattedPrice(country: String): String {
         val isMy = country.trim().equals("Malaysia", ignoreCase = true) || country.contains("+60")
@@ -67,11 +71,92 @@ object SubscriptionPricing {
     const val ADMIN_WHATSAPP_NUMBER = "60195326399"
     const val ADMIN_WHATSAPP_DISPLAY = "+6019-5326399"
 
+    val allControllableFeatures = listOf(
+        "cam1_cam2_torso" to "Cam 1 + Cam 2 Torso Capture",
+        "auto_sync_web" to "Auto-Sync Web Portal",
+        "kad_teknikal_pb" to "Kad Teknikal & PB Atlit",
+        "ai_biomekanik" to "AI Biomekanik Larian & Padang",
+        "video_folder_phone" to "Rakaman Video Folder Phone",
+        "multi_user_access" to "Multi-User Akses Serentak",
+        "audio_starter_gun" to "Sokongan Audio Starter Gun",
+        "web_cloud_db" to "Pangkalan Data Web Cloud",
+        "export_pdf_excel" to "Eksport Penuh PDF & Excel",
+        "priority_whatsapp" to "Priority Support WhatsApp",
+        "unlimited_fast_sync" to "Penyegerakan Pantas Tanpa Had"
+    )
+
     val plans = listOf(
-        SubscriptionPlanSpec("plan_rm30", rmPrice = 30, usdPrice = 7, athletesLimit = 30, subCoachLimit = 2),
-        SubscriptionPlanSpec("plan_rm40", rmPrice = 40, usdPrice = 10, athletesLimit = 50, subCoachLimit = 2),
-        SubscriptionPlanSpec("plan_rm60", rmPrice = 60, usdPrice = 15, athletesLimit = 80, subCoachLimit = 3),
-        SubscriptionPlanSpec("plan_rm80", rmPrice = 80, usdPrice = 20, athletesLimit = 100, subCoachLimit = 5)
+        SubscriptionPlanSpec(
+            id = "plan_rm30",
+            titleMy = "PELAN RM30",
+            subtitleMy = "Sesuai untuk jurulatih sekolah dan kelab pembangunan bakat baharu.",
+            rmPrice = 30,
+            usdPrice = 7,
+            athletesLimit = 15,
+            athletesLabel = "15 Orang Atlit",
+            subCoachLimit = 1,
+            features = listOf(
+                "Cam 1 + Cam 2 Torso Capture",
+                "Auto-Sync Web Portal",
+                "Kad Teknikal & PB Atlit",
+                "AI Biomekanik Larian & Padang",
+                "Rakaman Video Folder Phone"
+            )
+        ),
+        SubscriptionPlanSpec(
+            id = "plan_rm40",
+            titleMy = "PELAN RM40",
+            subtitleMy = "Pilihan terbaik untuk skuad olahraga sekolah menengah dan kelab daerah.",
+            rmPrice = 40,
+            usdPrice = 10,
+            athletesLimit = 30,
+            athletesLabel = "30 Orang Atlit",
+            subCoachLimit = 2,
+            features = listOf(
+                "Cam 1 + Cam 2 Torso Capture",
+                "AI Biomekanik Larian & Padang",
+                "Rakaman Video Folder Phone",
+                "Auto-Sync Web Portal",
+                "Kad Teknikal & PB Atlit"
+            )
+        ),
+        SubscriptionPlanSpec(
+            id = "plan_rm60",
+            titleMy = "PELAN RM60",
+            subtitleMy = "Direka khas bagi kontinjen MSSD, IPT, atau akademi berbilang jurulatih.",
+            rmPrice = 60,
+            usdPrice = 15,
+            athletesLimit = 50,
+            athletesLabel = "50 Orang Atlit",
+            subCoachLimit = 3,
+            features = listOf(
+                "Multi-User Akses Serentak",
+                "Sokongan Audio Starter Gun",
+                "Pangkalan Data Web Cloud",
+                "Cam 1 + Cam 2 Torso Capture",
+                "AI Biomekanik Larian & Padang",
+                "Rakaman Video Folder Phone"
+            )
+        ),
+        SubscriptionPlanSpec(
+            id = "plan_rm80",
+            titleMy = "PELAN RM80",
+            subtitleMy = "Kapasiti terbesar untuk kejohanan terbuka, MSSN & program sukan negeri.",
+            rmPrice = 80,
+            usdPrice = 20,
+            athletesLimit = 9999,
+            athletesLabel = "Unlimited Atlit",
+            subCoachLimit = 5,
+            features = listOf(
+                "Eksport Penuh PDF & Excel",
+                "Priority Support WhatsApp",
+                "Penyegerakan Pantas Tanpa Had",
+                "Cam 1 + Cam 2 Torso Capture",
+                "AI Biomekanik Larian & Padang",
+                "Sokongan Audio Starter Gun",
+                "Rakaman Video Folder Phone"
+            )
+        )
     )
 
     fun isMalaysia(country: String): Boolean {

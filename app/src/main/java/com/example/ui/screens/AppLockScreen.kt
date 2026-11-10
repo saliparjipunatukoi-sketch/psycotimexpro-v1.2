@@ -223,51 +223,78 @@ fun AppLockScreen(
                         }
                     }
 
-                    // 4 DYNAMIC PRICING PACKAGES (RM30->$7, RM40->$10, RM60->$15, RM80->$20)
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    // 4 DYNAMIC PRICING PACKAGES (RM30->$7 [15 Atlit], RM40->$10 [30 Atlit], RM60->$15 [50 Atlit], RM80->$20 [Unlimited])
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         SubscriptionPricing.plans.forEach { plan ->
                             val priceLabel = plan.formattedPrice(selectedPricingCountry)
                             Surface(
                                 color = StadiumSurfaceVariant,
-                                shape = RoundedCornerShape(10.dp),
+                                shape = RoundedCornerShape(12.dp),
                                 border = androidx.compose.foundation.BorderStroke(
                                     1.dp,
-                                    if (isMyCurrency) ElectricCyan.copy(alpha = 0.35f) else LaserOrange.copy(alpha = 0.35f)
+                                    if (isMyCurrency) ElectricCyan.copy(alpha = 0.4f) else LaserOrange.copy(alpha = 0.4f)
                                 ),
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clickable {
-                                        val msg = "Salam Admin Psyco Time X Pro (+6019-5326399), saya ingin mengaktifkan pakej $priceLabel (${plan.athletesLimit} Atlit + ${plan.subCoachLimit} Sub Coach) untuk akaun: $currentUserEmail"
+                                        val msg = "Salam Admin Psyco Time X Pro (+6019-5326399), saya ingin mengaktifkan ${plan.titleMy} ($priceLabel • ${plan.athletesLabel} + ${plan.subCoachLimit} Sub Coach) untuk akaun: $currentUserEmail"
                                         val uri = Uri.parse("https://wa.me/${SubscriptionPricing.ADMIN_WHATSAPP_NUMBER}?text=${Uri.encode(msg)}")
                                         context.startActivity(Intent(Intent.ACTION_VIEW, uri))
                                     }
                             ) {
-                                Row(
+                                Column(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
+                                        .padding(12.dp),
+                                    verticalArrangement = Arrangement.spacedBy(4.dp)
                                 ) {
-                                    Column {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                text = "${plan.titleMy} • ${plan.athletesLabel}",
+                                                fontSize = 12.sp,
+                                                fontWeight = FontWeight.Black,
+                                                color = Color.White
+                                            )
+                                            Text(
+                                                text = "(1 Bulan) • ${plan.subCoachLimit} Sub Coach / Urusetia",
+                                                fontSize = 10.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = if (isMyCurrency) ElectricCyan else LaserOrange
+                                            )
+                                        }
                                         Text(
-                                            text = "${plan.athletesLimit} Atlit + ${plan.subCoachLimit} Sub Coach",
-                                            fontSize = 12.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = Color.White
-                                        )
-                                        Text(
-                                            text = "1 Bulan / 30 Days Active License",
-                                            fontSize = 10.sp,
-                                            color = TextSecondary
+                                            text = "$priceLabel / Bln",
+                                            fontSize = 15.sp,
+                                            fontWeight = FontWeight.Black,
+                                            color = if (isMyCurrency) ElectricCyan else LaserOrange
                                         )
                                     }
                                     Text(
-                                        text = priceLabel,
-                                        fontSize = 16.sp,
-                                        fontWeight = FontWeight.Black,
-                                        color = if (isMyCurrency) ElectricCyan else LaserOrange
+                                        text = plan.subtitleMy,
+                                        fontSize = 9.5.sp,
+                                        color = TextSecondary
                                     )
+                                    plan.features.forEach { feat ->
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(
+                                                Icons.Default.CheckCircle,
+                                                contentDescription = null,
+                                                tint = SuccessGreen,
+                                                modifier = Modifier.size(12.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(5.dp))
+                                            Text(
+                                                text = feat,
+                                                fontSize = 9.5.sp,
+                                                color = Color.White
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }

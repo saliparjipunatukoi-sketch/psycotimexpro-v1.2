@@ -114,15 +114,14 @@
                 <!-- Desktop Navigation Links -->
                 <div class="hidden md:flex items-center space-x-5 text-sm font-semibold">
                     <a href="#iklan" class="hover:text-cyanAccent transition" data-i18n="nav_system">Sistem Latihan</a>
-                    <a href="#cara-pakai" class="hover:text-cyanAccent transition" data-i18n="nav_guide">Panduan APK</a>
+                    <a href="#user-manual" class="text-emerald-400 hover:text-emerald-300 transition flex items-center gap-1 font-extrabold">
+                        <i class="fa-solid fa-book-open text-xs"></i> <span data-i18n="nav_manual">User Manual</span>
+                    </a>
                     <a href="#trend-prestasi" class="text-yellow-400 hover:text-yellow-300 transition flex items-center gap-1 font-bold">
                         <i class="fa-solid fa-chart-line text-xs"></i> <span data-i18n="nav_d3">Trend Prestasi D3</span>
                     </a>
-                    <a href="/sports-management/" class="text-cyanAccent hover:text-cyan-300 transition flex items-center gap-1 font-bold">
-                        <i class="fa-solid fa-medal text-xs"></i> <span data-i18n="nav_sports">Sports Management</span>
-                    </a>
-                    <a href="#download-apk" class="text-emerald-400 hover:text-emerald-300 transition flex items-center gap-1.5 font-bold">
-                        <i class="fa-brands fa-android text-base"></i> <span data-i18n="nav_apk">APK</span>
+                    <a href="#download-apk" class="text-cyanAccent hover:text-cyan-300 transition flex items-center gap-1.5 font-bold">
+                        <i class="fa-brands fa-android text-base"></i> <span data-i18n="nav_apk">APK v2.5</span>
                     </a>
                     <a href="#langganan" class="text-orangeLaser hover:text-orange-400 transition flex items-center gap-1.5">
                         <i class="fa-solid fa-crown text-xs"></i> <span data-i18n="nav_pricing">Yuran</span>
@@ -321,6 +320,123 @@
                     <span class="text-xs text-successGreen font-semibold flex items-center gap-1">
                         <i class="fa-solid fa-cloud-arrow-up text-[10px]"></i> Live Sync ke portal web psycotimexpro.my
                     </span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- BAHAGIAN KHAS: USER MANUAL (POSTER INFOGRAFIK BAHASA MELAYU & ENGLISH) -->
+    <section id="user-manual" class="py-20 bg-gradient-to-b from-track via-surface to-trackDark border-b border-gray-800 relative overflow-hidden">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-10">
+            <div class="text-center max-w-3xl mx-auto space-y-3">
+                <span class="inline-flex items-center gap-2 text-xs font-black uppercase text-emerald-400 tracking-widest bg-emerald-500/10 px-4 py-1.5 rounded-full border border-emerald-500/30">
+                    <i class="fa-solid fa-book-open"></i> OFFICIAL INFOGRAPHIC GUIDE • DWI-BAHASA (BM &amp; EN)
+                </span>
+                <h2 class="font-teko text-5xl sm:text-7xl font-bold uppercase text-white tracking-wide">
+                    USER MANUAL
+                </h2>
+                <p class="text-gray-300 text-sm sm:text-base leading-relaxed">
+                    Poster Infografik Rasmi &amp; Panduan Penggunaan Ciri Utama <strong class="text-cyanAccent">Psyco Time X Pro</strong> dalam <strong>Bahasa Melayu</strong> dan <strong>Bahasa Inggeris (English)</strong>: Cara guna <em>ET Training</em>, <em>Analisis AI Sains Sukan</em>, <em>Daftar Profil &amp; Gambar Atlit / Logo Kelab</em>, serta <em>Laporan Yuran &amp; Prestasi Bulanan PDF</em>.
+                </p>
+
+                <!-- Language Switcher for User Manual Posters -->
+                <div class="pt-3 flex justify-center gap-3">
+                    <button type="button" id="btnManualAll" onclick="filterManualPoster('all')" class="px-4 py-2 rounded-xl text-xs font-black bg-cyanAccent text-black shadow transition">
+                        📚 Papar Kedua-dua Poster (BM &amp; EN)
+                    </button>
+                    <button type="button" id="btnManualBM" onclick="filterManualPoster('bm')" class="px-4 py-2 rounded-xl text-xs font-bold bg-surfaceLight text-gray-200 hover:text-white border border-gray-700 transition">
+                        🇲🇾 Poster Bahasa Melayu
+                    </button>
+                    <button type="button" id="btnManualEN" onclick="filterManualPoster('en')" class="px-4 py-2 rounded-xl text-xs font-bold bg-surfaceLight text-gray-200 hover:text-white border border-gray-700 transition">
+                        🇬🇧 English Infographic Poster
+                    </button>
+                </div>
+            </div>
+
+            <!-- 2 Official Infographic Posters Grid (Bahasa Melayu & English) -->
+            <div id="manualPostersGrid" class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- BAHASA MELAYU POSTER CARD -->
+                <div id="posterCardBM" class="rounded-3xl bg-surface border-2 border-cyanAccent/50 p-5 sm:p-6 shadow-2xl space-y-5 flex flex-col justify-between">
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between border-b border-gray-800 pb-3">
+                            <div class="flex items-center gap-2.5">
+                                <span class="text-xl">🇲🇾</span>
+                                <div>
+                                    <h3 class="font-teko text-2xl sm:text-3xl font-bold text-white uppercase leading-none">USER MANUAL (BAHASA MELAYU)</h3>
+                                    <p class="text-[11px] text-cyanAccent font-semibold">Poster Infografik Rasmi Cara Guna APK &amp; Web</p>
+                                </div>
+                            </div>
+                            <a href="assets/images/poster-user-manual-bm.jpg" download="PsycoTimeXPro-User-Manual-BM.jpg" class="px-3.5 py-2 rounded-xl bg-cyanAccent hover:bg-cyan-400 text-black font-black text-xs transition flex items-center gap-1.5 shadow">
+                                <i class="fa-solid fa-download"></i> Muat Turun Poster (BM)
+                            </a>
+                        </div>
+
+                        <div class="rounded-2xl overflow-hidden border border-gray-700 bg-trackDark relative group">
+                            <img src="assets/images/poster-user-manual-bm.jpg" alt="User Manual Bahasa Melayu Psyco Time X Pro" class="w-full h-auto object-cover">
+                        </div>
+
+                        <!-- Ringkasan 4 Langkah Utama (BM) -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                            <div class="p-3.5 rounded-2xl bg-trackDark border border-cyanAccent/30 space-y-1">
+                                <span class="text-cyanAccent font-black uppercase block">1. ET Training &amp; Video Telefon</span>
+                                <p class="text-gray-300 leading-relaxed">Pilih Cam 1 / Cam 2 Torso, tekan START atau guna BLE-M3 / Audio Gun. Video disimpan 100% di memori telefon anda (<code class="text-cyanAccent">/PsycoTimeXPro/ET_Training_Videos</code>).</p>
+                            </div>
+                            <div class="p-3.5 rounded-2xl bg-trackDark border border-orangeLaser/30 space-y-1">
+                                <span class="text-orangeLaser font-black uppercase block">2. Analisis Sains Sukan AI</span>
+                                <p class="text-gray-300 leading-relaxed">Enjin AI mengira Cadence (spm), Ground Contact Time (ms), Sudut Torso, Stride Length (m), RSI &amp; Auto-Generate Sesi Warm-Up RAMP terkini.</p>
+                            </div>
+                            <div class="p-3.5 rounded-2xl bg-trackDark border border-emerald-500/30 space-y-1">
+                                <span class="text-emerald-400 font-black uppercase block">3. Profil Atlit &amp; Logo Kelab</span>
+                                <p class="text-gray-300 leading-relaxed">Muat naik Logo Kelab semasa daftar/tetapan &amp; masukkan Gambar Profil setiap Atlit. Semua gambar dan PB auto-sync ke portal web.</p>
+                            </div>
+                            <div class="p-3.5 rounded-2xl bg-trackDark border border-yellow-400/30 space-y-1">
+                                <span class="text-yellow-400 font-black uppercase block">4. Laporan Yuran &amp; Prestasi PDF</span>
+                                <p class="text-gray-300 leading-relaxed">Semak rekod bayaran yuran sepanjang atlit didaftarkan, prestasi sebulan ikut tarikh/masa tepat, dan muat turun PDF bulanan.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ENGLISH POSTER CARD -->
+                <div id="posterCardEN" class="rounded-3xl bg-surface border-2 border-orangeLaser/50 p-5 sm:p-6 shadow-2xl space-y-5 flex flex-col justify-between">
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between border-b border-gray-800 pb-3">
+                            <div class="flex items-center gap-2.5">
+                                <span class="text-xl">🇬🇧</span>
+                                <div>
+                                    <h3 class="font-teko text-2xl sm:text-3xl font-bold text-white uppercase leading-none">USER MANUAL (ENGLISH EDITION)</h3>
+                                    <p class="text-[11px] text-orangeLaser font-semibold">Official Feature Infographic Poster &amp; Quick Start Guide</p>
+                                </div>
+                            </div>
+                            <a href="assets/images/poster-user-manual-en.jpg" download="PsycoTimeXPro-User-Manual-EN.jpg" class="px-3.5 py-2 rounded-xl bg-orangeLaser hover:bg-orange-400 text-black font-black text-xs transition flex items-center gap-1.5 shadow">
+                                <i class="fa-solid fa-download"></i> Download Poster (EN)
+                            </a>
+                        </div>
+
+                        <div class="rounded-2xl overflow-hidden border border-gray-700 bg-trackDark relative group">
+                            <img src="assets/images/poster-user-manual-en.jpg" alt="User Manual English Psyco Time X Pro" class="w-full h-auto object-cover">
+                        </div>
+
+                        <!-- 4 Key Steps Summary (EN) -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                            <div class="p-3.5 rounded-2xl bg-trackDark border border-cyanAccent/30 space-y-1">
+                                <span class="text-cyanAccent font-black uppercase block">1. ET Training &amp; Phone Storage</span>
+                                <p class="text-gray-300 leading-relaxed">Select Cam 1 or Cam 2 Torso Gate, trigger via START, Audio Gun, or BLE-M3. Videos save 100% locally in your phone memory (<code class="text-cyanAccent">/PsycoTimeXPro/ET_Training_Videos</code>).</p>
+                            </div>
+                            <div class="p-3.5 rounded-2xl bg-trackDark border border-orangeLaser/30 space-y-1">
+                                <span class="text-orangeLaser font-black uppercase block">2. AI Sports Science Analysis</span>
+                                <p class="text-gray-300 leading-relaxed">Real-time biomechanics: Cadence (spm), GCT (ms), Torso Lean (°), Stride Length (m), RSI, Mechanical Power (W/kg) &amp; Auto-Generated Warm-Up Drills.</p>
+                            </div>
+                            <div class="p-3.5 rounded-2xl bg-trackDark border border-emerald-500/30 space-y-1">
+                                <span class="text-emerald-400 font-black uppercase block">3. Add Athlete Profile &amp; Club Logo</span>
+                                <p class="text-gray-300 leading-relaxed">Upload your Club Logo as user profile photo and set individual Athlete Profile Pictures. Automatically synced with the web portal.</p>
+                            </div>
+                            <div class="p-3.5 rounded-2xl bg-trackDark border border-yellow-400/30 space-y-1">
+                                <span class="text-yellow-400 font-black uppercase block">4. Fee History &amp; Monthly PDF Report</span>
+                                <p class="text-gray-300 leading-relaxed">Track lifetime athlete fee payments since registration, review 1-month performance by exact date &amp; time, and export printable PDF reports.</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -591,16 +707,16 @@
                 </div>
             </div>
 
-            <!-- Pricing Cards Grid -->
+            <!-- Pricing Cards Grid (Dikurangkan 10 Atlit Setiap Pakej: 15 / 30 / 50 / Unlimited) -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <!-- RM30 / USD $7 = 30 atlit for 1 Month user + 2 Sub Coach -->
+                <!-- PELAN RM30 / USD $7 = 15 Orang Atlit (1 Bulan) + 1 Sub Coach / Urusetia -->
                 <div class="rounded-3xl bg-gradient-to-b from-surface to-trackDark p-7 border-2 border-cyanAccent shadow-xl shadow-cyanAccent/10 flex flex-col justify-between relative">
                     <div class="absolute -top-3.5 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-cyanAccent to-blue-600 text-black text-[10px] font-black uppercase tracking-widest px-4 py-1 rounded-full shadow">
                         ASAS KELAB
                     </div>
                     <div>
                         <div class="flex justify-between items-center mb-4 mt-2">
-                            <span class="text-xs font-bold px-3 py-1 bg-cyanAccent/20 text-cyanAccent rounded-full">PAKEJ ASAS</span>
+                            <span class="text-xs font-bold px-3 py-1 bg-cyanAccent/20 text-cyanAccent rounded-full">PELAN RM30</span>
                             <span class="text-xs text-cyanAccent font-semibold">1 Bulan</span>
                         </div>
                         <h3 id="title_plan_30" class="font-teko text-3xl font-bold text-white uppercase tracking-wide">PELAN RM30</h3>
@@ -611,22 +727,24 @@
                         <p class="text-xs text-gray-400 mb-5">Sesuai untuk jurulatih sekolah dan kelab pembangunan bakat baharu.</p>
                         
                         <ul class="space-y-2.5 text-xs text-gray-200 border-t border-gray-800 pt-5">
-                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-cyanAccent font-bold"></i> <strong>30 Orang Atlit</strong> (1 Bulan)</li>
-                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-cyanAccent font-bold"></i> <strong>2 Sub Coach / Urusetia</strong></li>
-                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-cyanAccent"></i> Cam 1 + Cam 2 Torso Laser</li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-cyanAccent font-bold"></i> <strong>15 Orang Atlit</strong> (1 Bulan)</li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-cyanAccent font-bold"></i> <strong>1 Sub Coach / Urusetia</strong></li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-cyanAccent"></i> Cam 1 + Cam 2 Torso Capture</li>
                             <li class="flex items-center gap-2"><i class="fa-solid fa-check text-cyanAccent"></i> Auto-Sync Web Portal</li>
-                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-cyanAccent"></i> Kad Teknikal & PB Atlit</li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-cyanAccent"></i> Kad Teknikal &amp; PB Atlit</li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-cyanAccent"></i> AI Biomekanik Larian &amp; Padang</li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-cyanAccent"></i> Rakaman Video Folder Phone</li>
                         </ul>
                     </div>
                     <div class="pt-6">
-                        <button onclick="requestPlanUpgrade('plan_rm30', 'Pakej Asas (30 Atlit + 2 Sub Coach)', 30, 7, 30, 2)" class="w-full py-3.5 rounded-xl bg-cyanAccent hover:bg-cyan-400 text-black font-extrabold text-sm shadow-lg shadow-cyanAccent/20 transition flex items-center justify-center gap-2">
+                        <button onclick="requestPlanUpgrade('plan_rm30', 'PELAN RM30 (15 Orang Atlit + 1 Sub Coach)', 30, 7, 15, 1)" class="w-full py-3.5 rounded-xl bg-cyanAccent hover:bg-cyan-400 text-black font-extrabold text-sm shadow-lg shadow-cyanAccent/20 transition flex items-center justify-center gap-2">
                             <i class="fa-brands fa-whatsapp text-lg"></i>
                             <span id="btn_plan_30">Langgan RM30 via WhatsApp</span>
                         </button>
                     </div>
                 </div>
 
-                <!-- RM40 / USD $10 = 50 Atlit for 1 month user + 2 Sub Coach -->
+                <!-- PELAN RM40 / USD $10 = 30 Orang Atlit (1 Bulan) + 2 Sub Coach / Urusetia -->
                 <div class="rounded-3xl bg-surface p-7 border border-gray-800 flex flex-col justify-between hover:border-orangeLaser transition">
                     <div>
                         <div class="flex justify-between items-center mb-4">
@@ -641,22 +759,24 @@
                         <p class="text-xs text-gray-400 mb-5">Pilihan terbaik untuk skuad olahraga sekolah menengah dan kelab daerah.</p>
                         
                         <ul class="space-y-2.5 text-xs text-gray-300 border-t border-gray-800 pt-5">
-                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-orangeLaser font-bold"></i> <strong>50 Orang Atlit</strong> (1 Bulan)</li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-orangeLaser font-bold"></i> <strong>30 Orang Atlit</strong> (1 Bulan)</li>
                             <li class="flex items-center gap-2"><i class="fa-solid fa-check text-orangeLaser font-bold"></i> <strong>2 Sub Coach / Urusetia</strong></li>
-                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-orangeLaser"></i> Janaan Photo Finish Slit</li>
-                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-orangeLaser"></i> AI Biomekanik Larian & Padang</li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-orangeLaser"></i> Cam 1 + Cam 2 Torso Capture</li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-orangeLaser"></i> AI Biomekanik Larian &amp; Padang</li>
                             <li class="flex items-center gap-2"><i class="fa-solid fa-check text-orangeLaser"></i> Rakaman Video Folder Phone</li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-orangeLaser"></i> Auto-Sync Web Portal</li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-orangeLaser"></i> Kad Teknikal &amp; PB Atlit</li>
                         </ul>
                     </div>
                     <div class="pt-6">
-                        <button onclick="requestPlanUpgrade('plan_rm40', 'Pakej Standard (50 Atlit + 2 Sub Coach)', 40, 10, 50, 2)" class="w-full py-3 rounded-xl bg-surfaceLight hover:bg-orangeLaser hover:text-black text-white font-bold text-sm border border-gray-700 transition flex items-center justify-center gap-2">
+                        <button onclick="requestPlanUpgrade('plan_rm40', 'PELAN RM40 (30 Orang Atlit + 2 Sub Coach)', 40, 10, 30, 2)" class="w-full py-3 rounded-xl bg-surfaceLight hover:bg-orangeLaser hover:text-black text-white font-bold text-sm border border-gray-700 transition flex items-center justify-center gap-2">
                             <i class="fa-brands fa-whatsapp text-lg text-green-400"></i>
                             <span id="btn_plan_40">Langgan RM40 via WhatsApp</span>
                         </button>
                     </div>
                 </div>
 
-                <!-- RM60 / USD $15 = 80 atlit for 1 Month User + 3 Subcoach -->
+                <!-- PELAN RM60 / USD $15 = 50 Orang Atlit (1 Bulan) + 3 Sub Coach / Urusetia -->
                 <div class="rounded-3xl bg-surface p-7 border border-gray-800 flex flex-col justify-between hover:border-yellow-400 transition">
                     <div>
                         <div class="flex justify-between items-center mb-4">
@@ -671,26 +791,29 @@
                         <p class="text-xs text-gray-400 mb-5">Direka khas bagi kontinjen MSSD, IPT, atau akademi berbilang jurulatih.</p>
                         
                         <ul class="space-y-2.5 text-xs text-gray-300 border-t border-gray-800 pt-5">
-                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-yellow-400 font-bold"></i> <strong>80 Orang Atlit</strong> (1 Bulan)</li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-yellow-400 font-bold"></i> <strong>50 Orang Atlit</strong> (1 Bulan)</li>
                             <li class="flex items-center gap-2"><i class="fa-solid fa-check text-yellow-400 font-bold"></i> <strong>3 Sub Coach / Urusetia</strong></li>
                             <li class="flex items-center gap-2"><i class="fa-solid fa-check text-yellow-400"></i> Multi-User Akses Serentak</li>
                             <li class="flex items-center gap-2"><i class="fa-solid fa-check text-yellow-400"></i> Sokongan Audio Starter Gun</li>
                             <li class="flex items-center gap-2"><i class="fa-solid fa-check text-yellow-400"></i> Pangkalan Data Web Cloud</li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-yellow-400"></i> Cam 1 + Cam 2 Torso Capture</li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-yellow-400"></i> AI Biomekanik Larian &amp; Padang</li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-yellow-400"></i> Rakaman Video Folder Phone</li>
                         </ul>
                     </div>
                     <div class="pt-6">
-                        <button onclick="requestPlanUpgrade('plan_rm60', 'Pakej Pro (80 Atlit + 3 Sub Coach)', 60, 15, 80, 3)" class="w-full py-3 rounded-xl bg-surfaceLight hover:bg-yellow-400 hover:text-black text-white font-bold text-sm border border-gray-700 transition flex items-center justify-center gap-2">
+                        <button onclick="requestPlanUpgrade('plan_rm60', 'PELAN RM60 (50 Orang Atlit + 3 Sub Coach)', 60, 15, 50, 3)" class="w-full py-3 rounded-xl bg-surfaceLight hover:bg-yellow-400 hover:text-black text-white font-bold text-sm border border-gray-700 transition flex items-center justify-center gap-2">
                             <i class="fa-brands fa-whatsapp text-lg text-green-400"></i>
                             <span id="btn_plan_60">Langgan RM60 via WhatsApp</span>
                         </button>
                     </div>
                 </div>
 
-                <!-- RM80 / USD $20 = 100 Atlit for 1 month user + 5 Sub Coach -->
+                <!-- PELAN RM80 / USD $20 = Unlimited Atlit (1 Bulan) + 5 Sub Coach / Urusetia -->
                 <div class="rounded-3xl bg-surface p-7 border border-gray-800 flex flex-col justify-between hover:border-emerald-400 transition">
                     <div>
                         <div class="flex justify-between items-center mb-4">
-                            <span class="text-xs font-bold px-3 py-1 bg-emerald-400/20 text-emerald-400 rounded-full">ELITE MAXIMUM</span>
+                            <span class="text-xs font-bold px-3 py-1 bg-emerald-400/20 text-emerald-400 rounded-full">ELITE UNLIMITED</span>
                             <span class="text-xs text-gray-400">1 Bulan</span>
                         </div>
                         <h3 id="title_plan_80" class="font-teko text-3xl font-bold text-white uppercase tracking-wide">PELAN RM80</h3>
@@ -698,18 +821,21 @@
                             <span id="price_plan_80" class="text-5xl font-extrabold text-white">RM 80</span>
                             <span class="text-xs text-gray-400">/ Bulan</span>
                         </div>
-                        <p class="text-xs text-gray-400 mb-5">Kapasiti terbesar untuk kejohanan terbuka, MSSN & program sukan negeri.</p>
+                        <p class="text-xs text-gray-400 mb-5">Kapasiti terbesar untuk kejohanan terbuka, MSSN &amp; program sukan negeri.</p>
                         
                         <ul class="space-y-2.5 text-xs text-gray-300 border-t border-gray-800 pt-5">
-                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400 font-bold"></i> <strong>100 Orang Atlit</strong> (1 Bulan)</li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400 font-bold"></i> <strong>Unlimited Atlit</strong> (1 Bulan)</li>
                             <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400 font-bold"></i> <strong>5 Sub Coach / Urusetia</strong></li>
-                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400"></i> Eksport Penuh PDF & Excel</li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400"></i> Eksport Penuh PDF &amp; Excel</li>
                             <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400"></i> Priority Support WhatsApp</li>
                             <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400"></i> Penyegerakan Pantas Tanpa Had</li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400"></i> Cam 1 + Cam 2 Torso Capture</li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400"></i> AI Biomekanik Larian &amp; Padang</li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400"></i> Rakaman Video Folder Phone</li>
                         </ul>
                     </div>
                     <div class="pt-6">
-                        <button onclick="requestPlanUpgrade('plan_rm80', 'Pakej Elite (100 Atlit + 5 Sub Coach)', 80, 20, 100, 5)" class="w-full py-3 rounded-xl bg-surfaceLight hover:bg-emerald-400 hover:text-black text-white font-bold text-sm border border-gray-700 transition flex items-center justify-center gap-2">
+                        <button onclick="requestPlanUpgrade('plan_rm80', 'PELAN RM80 (Unlimited Atlit + 5 Sub Coach)', 80, 20, 9999, 5)" class="w-full py-3 rounded-xl bg-surfaceLight hover:bg-emerald-400 hover:text-black text-white font-bold text-sm border border-gray-700 transition flex items-center justify-center gap-2">
                             <i class="fa-brands fa-whatsapp text-lg text-green-400"></i>
                             <span id="btn_plan_80">Langgan RM80 via WhatsApp</span>
                         </button>
@@ -770,24 +896,24 @@
                             <!-- Visual Pricing Grid Poster Box -->
                             <div class="grid grid-cols-2 gap-2.5 my-4 text-left font-mono">
                                 <div class="p-3 rounded-xl bg-surface/90 border border-cyanAccent/30">
-                                    <span class="text-[10px] text-gray-400 block">PAKEJ ASAS</span>
+                                    <span class="text-[10px] text-gray-400 block">PELAN RM30</span>
                                     <span class="text-xl font-black text-cyanAccent">RM 30</span>
-                                    <span class="text-[11px] text-gray-200 block font-sans font-semibold mt-0.5">30 Atlit + 2 Sub</span>
+                                    <span class="text-[11px] text-gray-200 block font-sans font-semibold mt-0.5">15 Atlit + 1 Sub</span>
                                 </div>
                                 <div class="p-3 rounded-xl bg-surface/90 border border-orangeLaser/30">
-                                    <span class="text-[10px] text-gray-400 block">PAKEJ STANDARD</span>
+                                    <span class="text-[10px] text-gray-400 block">PELAN RM40</span>
                                     <span class="text-xl font-black text-orangeLaser">RM 40</span>
-                                    <span class="text-[11px] text-gray-200 block font-sans font-semibold mt-0.5">50 Atlit + 2 Sub</span>
+                                    <span class="text-[11px] text-gray-200 block font-sans font-semibold mt-0.5">30 Atlit + 2 Sub</span>
                                 </div>
                                 <div class="p-3 rounded-xl bg-surface/90 border border-yellow-400/30">
-                                    <span class="text-[10px] text-gray-400 block">PAKEJ PRO</span>
+                                    <span class="text-[10px] text-gray-400 block">PELAN RM60</span>
                                     <span class="text-xl font-black text-yellow-400">RM 60</span>
-                                    <span class="text-[11px] text-gray-200 block font-sans font-semibold mt-0.5">80 Atlit + 3 Sub</span>
+                                    <span class="text-[11px] text-gray-200 block font-sans font-semibold mt-0.5">50 Atlit + 3 Sub</span>
                                 </div>
                                 <div class="p-3 rounded-xl bg-surface/90 border border-emerald-400/30">
-                                    <span class="text-[10px] text-gray-400 block">PAKEJ ELITE</span>
+                                    <span class="text-[10px] text-gray-400 block">PELAN RM80</span>
                                     <span class="text-xl font-black text-emerald-400">RM 80</span>
-                                    <span class="text-[11px] text-gray-200 block font-sans font-semibold mt-0.5">100 Atlit + 5 Sub</span>
+                                    <span class="text-[11px] text-gray-200 block font-sans font-semibold mt-0.5">Unlimited + 5 Sub</span>
                                 </div>
                             </div>
 
@@ -982,10 +1108,21 @@
                     <input type="text" id="loginFullName" required placeholder="Cth: Coach Ahmad bin Razak / Kenji Tanaka" class="w-full px-4 py-2.5 rounded-xl bg-trackDark border border-gray-700 text-white text-sm focus:outline-none focus:border-cyanAccent transition">
                 </div>
 
-                <!-- Wajib: Email Google -->
-                <div>
-                    <label class="block text-xs font-bold text-gray-200 mb-1">Email Google Akaun (Wajib) *</label>
-                    <input type="email" id="loginEmail" required placeholder="coach@gmail.com" class="w-full px-4 py-2.5 rounded-xl bg-trackDark border border-gray-700 text-white text-sm focus:outline-none focus:border-cyanAccent transition">
+                <!-- Wajib: Email Google & Kata Laluan (Dengan Butang Forgot Password) -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-200 mb-1">Email Google Akaun (Wajib) *</label>
+                        <input type="email" id="loginEmail" required placeholder="coach@gmail.com" class="w-full px-4 py-2.5 rounded-xl bg-trackDark border border-gray-700 text-white text-sm focus:outline-none focus:border-cyanAccent transition">
+                    </div>
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="block text-xs font-bold text-gray-200">Kata Laluan (Password) *</label>
+                            <button type="button" onclick="openForgotPasswordModal()" class="text-[11px] font-black text-speedAmber hover:underline">
+                                Forgot Password?
+                            </button>
+                        </div>
+                        <input type="password" id="loginPassword" required minlength="6" placeholder="Min 6 aksara" class="w-full px-4 py-2.5 rounded-xl bg-trackDark border border-gray-700 text-white text-sm focus:outline-none focus:border-cyanAccent transition">
+                    </div>
                 </div>
 
                 <!-- Wajib: Negara & Kod Panggilan (+60 / +62 / +65 / +81 / +94 / +86) -->
@@ -1017,23 +1154,28 @@
                     </div>
                 </div>
 
-                <!-- Nama Kelab & Sijil Kejurulatihan -->
+                <!-- Nama Kelab & Sijil Kejurulatihan / Tahap Kelayakan (Termasuk Option Other Taip Sendiri) -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-xs font-bold text-gray-200 mb-1" data-i18n="field_club">Nama Kelab / Sekolah *</label>
+                        <label class="block text-xs font-bold text-gray-200 mb-1" data-i18n="field_club">Nama Kelab / Sekolah (Wajib) *</label>
                         <input type="text" id="loginClub" required placeholder="Kelab Olahraga / Sekolah" class="w-full px-3.5 py-2.5 rounded-xl bg-trackDark border border-gray-700 text-white text-xs focus:outline-none focus:border-cyanAccent">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-gray-200 mb-1" data-i18n="field_cert">Sijil Kejurulatihan</label>
-                        <select id="loginCert" class="w-full px-3 py-2.5 rounded-xl bg-trackDark border border-gray-700 text-white text-xs focus:outline-none focus:border-cyanAccent">
+                        <label class="block text-xs font-bold text-gray-200 mb-1" data-i18n="field_cert">Sijil Kejurulatihan / Tahap Kelayakan</label>
+                        <select id="loginCert" onchange="onModalCertChange()" class="w-full px-3 py-2.5 rounded-xl bg-trackDark border border-gray-700 text-white text-xs focus:outline-none focus:border-cyanAccent">
                             <option value="World Athletics Level 1">World Athletics Level 1</option>
                             <option value="World Athletics Level 2">World Athletics Level 2</option>
                             <option value="Sports Science Level 1">Sains Sukan Tahap 1</option>
                             <option value="Sports Science Level 2">Sains Sukan Tahap 2</option>
                             <option value="Sports Science Level 3">Sains Sukan Tahap 3</option>
                             <option value="School Coach">Jurulatih Sekolah (MSSD/MSSM)</option>
+                            <option value="Other">Other / Lain-lain (Taip Sendiri)</option>
                         </select>
                     </div>
+                </div>
+                <div id="customCertWrapper" class="hidden">
+                    <label class="block text-xs font-bold text-cyanAccent mb-1">Taip Sijil Kejurulatihan / Tahap Kelayakan Anda (Other) *</label>
+                    <input type="text" id="loginCertCustom" placeholder="Cth: Ijazah Sains Sukan UiTM / Bekas Atlit Kebangsaan / ISN" class="w-full px-3.5 py-2.5 rounded-xl bg-trackDark border border-cyanAccent/60 text-white text-xs focus:outline-none focus:border-cyanAccent">
                 </div>
 
                 <!-- Paparan Kadar Yuran Automatik Mengikut Negara -->
@@ -1043,9 +1185,19 @@
                 </div>
 
                 <button type="submit" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-cyanAccent to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-black font-extrabold text-sm shadow-lg shadow-cyanAccent/20 transition">
-                    Daftar & Masuk ke Dashboard (7 Hari Percuma)
+                    Daftar &amp; Masuk ke Dashboard (7 Hari Percuma)
                 </button>
             </form>
+
+            <!-- Butang Pantas Terlupa Kata Laluan & Perisai Keselamatan -->
+            <div class="p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/40 flex items-center justify-between text-[11px]">
+                <span class="text-emerald-400 font-bold flex items-center gap-1.5">
+                    <i class="fa-solid fa-shield-halved"></i> Dilindungi Enkripsi Bcrypt &amp; Anti-Hack Firewall
+                </span>
+                <button type="button" onclick="openForgotPasswordModal()" class="text-speedAmber font-extrabold hover:underline">
+                    <i class="fa-solid fa-envelope-open-text"></i> Lupa Password?
+                </button>
+            </div>
 
             <div class="text-center text-xs text-gray-400 border-t border-gray-800 pt-3 flex flex-col gap-2">
                 <span>Ada sebarang ralat atau kekeliruan langganan?</span>
@@ -1053,6 +1205,37 @@
                     <i class="fa-brands fa-whatsapp"></i> Hubungi Admin Terus (+6019-5326399)
                 </a>
             </div>
+        </div>
+    </div>
+
+    <!-- MODAL: FORGOT PASSWORD (HANTAR PAUTAN RESET KATA LALUAN KE GMAIL) -->
+    <div id="forgotPasswordModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-surface border-2 border-speedAmber/60 w-full max-w-md rounded-3xl p-6 sm:p-8 space-y-5 shadow-2xl relative">
+            <button onclick="closeForgotPasswordModal()" class="absolute top-5 right-5 text-gray-400 hover:text-white text-xl">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <div class="text-center space-y-1">
+                <div class="w-12 h-12 bg-speedAmber/15 text-speedAmber rounded-2xl mx-auto flex items-center justify-center text-2xl font-bold mb-2 border border-speedAmber/40">
+                    <i class="fa-solid fa-envelope-circle-check"></i>
+                </div>
+                <h3 class="font-teko text-3xl font-bold text-white uppercase tracking-wide">TERLUPA KATA LALUAN (FORGOT PASSWORD)</h3>
+                <p class="text-xs text-gray-300">Masukkan alamat Gmail anda. Sistem akan menghantar pautan khas untuk mencipta kata laluan baharu.</p>
+            </div>
+
+            <form onsubmit="handleForgotPasswordSubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-200 mb-1">Alamat Emel Gmail Berdaftar *</label>
+                    <input type="email" id="forgotEmailInput" required placeholder="coach@gmail.com" class="w-full px-4 py-2.5 rounded-xl bg-trackDark border border-gray-700 text-white text-sm focus:outline-none focus:border-speedAmber transition">
+                </div>
+
+                <div id="forgotPasswordFeedback" class="hidden p-3.5 rounded-xl text-xs leading-relaxed"></div>
+
+                <button type="submit" id="btnSendForgotLink" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-speedAmber to-orangeLaser text-black font-black text-sm shadow-lg transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-paper-plane"></i>
+                    <span>Hantar Link Reset ke Gmail</span>
+                </button>
+            </form>
         </div>
     </div>
 
@@ -1308,6 +1491,47 @@
             setSubscriptionCurrency(isMy ? 'Malaysia' : 'International');
         }
 
+        function filterManualPoster(mode) {
+            const cardBM = document.getElementById('posterCardBM');
+            const cardEN = document.getElementById('posterCardEN');
+            const grid = document.getElementById('manualPostersGrid');
+            const btnAll = document.getElementById('btnManualAll');
+            const btnBM = document.getElementById('btnManualBM');
+            const btnEN = document.getElementById('btnManualEN');
+
+            [btnAll, btnBM, btnEN].forEach(b => {
+                if (b) b.className = 'px-4 py-2 rounded-xl text-xs font-bold bg-surfaceLight text-gray-200 hover:text-white border border-gray-700 transition';
+            });
+
+            if (mode === 'bm') {
+                if (cardBM) cardBM.classList.remove('hidden');
+                if (cardEN) cardEN.classList.add('hidden');
+                if (grid) grid.className = 'grid grid-cols-1 max-w-3xl mx-auto gap-8';
+                if (btnBM) btnBM.className = 'px-4 py-2 rounded-xl text-xs font-black bg-cyanAccent text-black shadow transition';
+            } else if (mode === 'en') {
+                if (cardBM) cardBM.classList.add('hidden');
+                if (cardEN) cardEN.classList.remove('hidden');
+                if (grid) grid.className = 'grid grid-cols-1 max-w-3xl mx-auto gap-8';
+                if (btnEN) btnEN.className = 'px-4 py-2 rounded-xl text-xs font-black bg-orangeLaser text-black shadow transition';
+            } else {
+                if (cardBM) cardBM.classList.remove('hidden');
+                if (cardEN) cardEN.classList.remove('hidden');
+                if (grid) grid.className = 'grid grid-cols-1 lg:grid-cols-2 gap-8';
+                if (btnAll) btnAll.className = 'px-4 py-2 rounded-xl text-xs font-black bg-cyanAccent text-black shadow transition';
+            }
+        }
+
+        function onModalCertChange() {
+            const certSel = document.getElementById('loginCert');
+            const wrapper = document.getElementById('customCertWrapper');
+            if (!certSel || !wrapper) return;
+            if (certSel.value === 'Other') {
+                wrapper.classList.remove('hidden');
+            } else {
+                wrapper.classList.add('hidden');
+            }
+        }
+
         function openLoginModal() {
             document.getElementById('loginModal').classList.remove('hidden');
         }
@@ -1315,21 +1539,106 @@
             document.getElementById('loginModal').classList.add('hidden');
         }
 
-        function handleLogin(e) {
+        function openForgotPasswordModal() {
+            const currentEmail = document.getElementById('loginEmail') ? document.getElementById('loginEmail').value.trim() : '';
+            const forgotInput = document.getElementById('forgotEmailInput');
+            if (forgotInput && currentEmail) forgotInput.value = currentEmail;
+            const fb = document.getElementById('forgotPasswordFeedback');
+            if (fb) fb.classList.add('hidden');
+            document.getElementById('forgotPasswordModal').classList.remove('hidden');
+        }
+
+        function closeForgotPasswordModal() {
+            document.getElementById('forgotPasswordModal').classList.add('hidden');
+        }
+
+        async function handleForgotPasswordSubmit(e) {
+            e.preventDefault();
+            const email = document.getElementById('forgotEmailInput').value.trim();
+            const fb = document.getElementById('forgotPasswordFeedback');
+            const btn = document.getElementById('btnSendForgotLink');
+            if (!email) return;
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menghantar Link ke Gmail...';
+
+            try {
+                const res = await fetch('api/auth-security.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'forgot_password',
+                        email: email
+                    })
+                });
+                const data = await res.json();
+                fb.className = 'p-3.5 rounded-xl text-xs leading-relaxed bg-emerald-500/20 border border-emerald-500 text-emerald-200 space-y-2';
+                let htmlMsg = `<p><i class="fa-solid fa-circle-check text-emerald-400 mr-1"></i> <strong>Berjaya!</strong> ${data.message || 'Pautan reset telah dihantar ke Gmail anda.'}</p>`;
+                if (data.resetUrl) {
+                    htmlMsg += `<p class="pt-1"><a href="${data.resetUrl}" class="inline-block px-3 py-1.5 rounded-lg bg-cyanAccent text-black font-black text-xs hover:bg-cyan-400 transition"><i class="fa-solid fa-key mr-1"></i> Klik Di Sini Untuk Terus Cipta Kata Laluan Baharu</a></p>`;
+                }
+                fb.innerHTML = htmlMsg;
+                fb.classList.remove('hidden');
+            } catch (err) {
+                fb.className = 'p-3.5 rounded-xl text-xs leading-relaxed bg-red-500/20 border border-red-500 text-red-200';
+                fb.textContent = 'Ralat sambungan pelayan semasa menghantar pautan reset.';
+                fb.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> <span>Hantar Link Reset ke Gmail</span>';
+            }
+        }
+
+        async function handleLogin(e) {
             e.preventDefault();
             const fullName = document.getElementById('loginFullName').value.trim();
             const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword') ? document.getElementById('loginPassword').value.trim() : '';
             const countrySel = document.getElementById('loginCountrySelect');
             const country = countrySel ? countrySel.value : 'Malaysia';
             const dial = countrySel ? (countrySel.options[countrySel.selectedIndex].getAttribute('data-dial') || '+60') : '+60';
             const phoneRaw = document.getElementById('loginPhone').value.trim().replace(/^0+/, '');
             const fullPhone = dial + phoneRaw;
             const club = document.getElementById('loginClub').value.trim();
-            const cert = document.getElementById('loginCert').value;
+            const certSelVal = document.getElementById('loginCert').value;
+            const customCertVal = (document.getElementById('loginCertCustom') ? document.getElementById('loginCertCustom').value.trim() : '');
+            const cert = (certSelVal === 'Other') ? (customCertVal || 'Other Coaching Qualification') : certSelVal;
 
-            if (!fullName || !phoneRaw) {
-                alert('Sila lengkapkan Nama Penuh dan Nombor Telefon mengikut kod negara.');
+            if (!fullName || !phoneRaw || !club) {
+                alert('Sila lengkapkan Nama Penuh, Nama Kelab, dan Nombor Telefon mengikut kod negara.');
                 return;
+            }
+            if (password.length < 6) {
+                alert('Kata laluan mestilah sekurang-kurangnya 6 aksara. Jika anda terlupa kata laluan, sila klik "Forgot Password?".');
+                return;
+            }
+            if (certSelVal === 'Other' && !customCertVal) {
+                alert('Sila taip Sijil Kejurulatihan / Tahap Kelayakan anda pada ruangan Other.');
+                return;
+            }
+
+            try {
+                const secRes = await fetch('api/auth-security.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'login_or_register',
+                        email: email,
+                        password: password,
+                        name: fullName,
+                        country: country,
+                        phone: fullPhone,
+                        club: club,
+                        cert: cert
+                    })
+                });
+                const secData = await secRes.json();
+                if (secData.status === 'error' || secData.status === 'locked') {
+                    alert(secData.message);
+                    return;
+                }
+            } catch (err) {
+                // Fallback if offline preview
             }
 
             localStorage.setItem('psyco_logged_email', email);

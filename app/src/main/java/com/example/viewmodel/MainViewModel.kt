@@ -31,7 +31,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val athleteRepository = AthleteRepository(db.athleteDao())
     val repository = SportsRepository(db)
     val storageManager = StorageManager(application)
-    val webSyncManager = WebSyncManager()
+    val webSyncManager = WebSyncManager(application)
     val bluetoothTriggerManager = BluetoothSelfieTriggerManager(application)
 
     // Provisioned Firestore Named Database & Repository
@@ -258,13 +258,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         phone: String = "",
         cert: String = "",
         specialization: String = "",
-        isSuper: Boolean
+        isSuper: Boolean,
+        clubLogoUri: String? = null
     ) {
         _currentUserEmail.value = email
         _currentUserName.value = name
         _isSuperAdmin.value = isSuper
         _clubProfile.value = _clubProfile.value.copy(
             clubName = if (club.isNotBlank()) club else _clubProfile.value.clubName,
+            logoUri = if (!clubLogoUri.isNullOrBlank()) clubLogoUri else _clubProfile.value.logoUri,
             coachName = name,
             coachEmail = email,
             coachPhone = if (phone.isNotBlank()) phone else _clubProfile.value.coachPhone,
@@ -279,6 +281,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         if (Firebase.auth.currentUser != null) {
             syncAllToFirestoreCloud()
         }
+        syncWithWeb()
     }
 
     fun checkRemoteAppStatus() {
@@ -320,6 +323,45 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun broadcastApkUpdate(
+        version: String,
+        message: String,
+        url: String,
+        onResult: (Boolean, String) -> Unit
+    ) {
+        viewModelScope.launch {
+            val result = remoteAppControlManager.broadcastApkUpdate(
+                adminEmail = superAdminEmail,
+                latestVersion = version,
+                updateMessage = message,
+                downloadUrl = url,
+                forcePrompt = true
+            )
+            if (result.first) {
+                checkRemoteAppStatus()
+            }
+            onResult(result.first, result.second)
+        }
+    }
+
+    fun updatePlanFeatures(
+        planKey: String,
+        features: List<String>,
+        onResult: (Boolean, String) -> Unit
+    ) {
+        viewModelScope.launch {
+            val result = remoteAppControlManager.updatePlanFeatures(
+                adminEmail = superAdminEmail,
+                planKey = planKey,
+                enabledFeatures = features
+            )
+            if (result.first) {
+                checkRemoteAppStatus()
+            }
+            onResult(result.first, result.second)
+        }
+    }
+
     fun logout() {
         viewModelScope.launch {
             try {
@@ -347,7 +389,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun updateClubInfo(name: String, logoUri: String?, coachName: String, phone: String, photoUri: String?) {
-        _clubProfile.value = ClubProfile(
+        _clubProfile.value = _clubProfile.value.copy(
             clubName = name,
             logoUri = logoUri,
             coachName = coachName,
@@ -355,6 +397,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             coachPhone = phone,
             coachPhotoUri = photoUri
         )
+        syncWithWeb()
     }
 
     fun setCamMode(mode: Int) {
@@ -764,9 +807,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun updateAthlete(athlete: AthleteEntity) {
         viewModelScope.launch {
             athleteRepository.updateAthlete(athlete)
+            if (_selectedAthleteDetail.value?.id == athlete.id) {
+                _selectedAthleteDetail.value = athlete
+            }
             if (Firebase.auth.currentUser != null) {
                 firestoreRepository.syncLocalAthleteToCloud(athlete)
             }
+            syncWithWeb()
         }
     }
 
@@ -776,6 +823,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             if (_selectedAthleteDetail.value?.id == athlete.id) {
                 _selectedAthleteDetail.value = null
             }
+            syncWithWeb()
         }
     }
 
@@ -806,12 +854,45 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun addFee(fee: FeeRecordEntity) {
         viewModelScope.launch {
             repository.insertFee(fee)
+            syncWithWeb()
         }
     }
 
     fun updateFee(fee: FeeRecordEntity) {
         viewModelScope.launch {
             repository.updateFee(fee)
+            syncWithWeb()
+        }
+    }
+
+    fun exportAthleteMonthlyPdf(athlete: AthleteEntity, onExported: (String) -> Unit) {
+        viewModelScope.launch {
+            val path = withContext(Dispatchers.IO) {
+                storageManager.generateAthleteMonthlyPdfReport(
+                    athlete = athlete,
+                    clubName = _clubProfile.value.clubName,
+                    coachName = _currentUserName.value,
+                    races = allRaces.value,
+                    metrics = allPerformanceMetrics.value,
+                    fees = allFees.value
+                )
+            }
+            onExported(path)
+        }
+    }
+
+    fun exportClubMonthlyPdf(onExported: (String) -> Unit) {
+        viewModelScope.launch {
+            val path = withContext(Dispatchers.IO) {
+                storageManager.generateClubMonthlyPdfReport(
+                    clubName = _clubProfile.value.clubName,
+                    coachName = _currentUserName.value,
+                    athletes = allAthletes.value,
+                    races = allRaces.value,
+                    fees = allFees.value
+                )
+            }
+            onExported(path)
         }
     }
 
@@ -898,6 +979,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             _isSyncing.value = true
             val athletesList = allAthletes.value
             val racesList = allRaces.value
+            val feesList = allFees.value
             if (Firebase.auth.currentUser != null) {
                 athletesList.forEach { firestoreRepository.syncLocalAthleteToCloud(it) }
                 racesList.forEach { firestoreRepository.syncLocalRaceToCloud(it) }
@@ -905,8 +987,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             val result = webSyncManager.syncDataToWeb(
                 athletes = athletesList,
                 races = racesList,
+                fees = feesList,
                 clubName = _clubProfile.value.clubName,
-                coachEmail = _currentUserEmail.value
+                coachEmail = _currentUserEmail.value,
+                clubLogoUri = _clubProfile.value.logoUri
             )
             _syncStatus.value = result
             _isSyncing.value = false

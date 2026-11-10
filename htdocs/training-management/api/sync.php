@@ -54,9 +54,10 @@ if (!$currentUser) {
         'role' => 'coach',
         'phone' => $data['phone'] ?? '',
         'club_name' => $data['clubName'] ?? 'Kelab Sukan',
+        'club_logo' => $data['clubLogoDataUrl'] ?? '',
         'plan' => 'trial',
         'plan_name' => 'Percubaan Percuma (7 Hari)',
-        'max_athletes' => 10,
+        'max_athletes' => 15,
         'max_sub_coaches' => 1,
         'registered_at' => date('Y-m-d H:i:s', $now),
         'subscription_start' => date('Y-m-d H:i:s', $now),
@@ -67,22 +68,34 @@ if (!$currentUser) {
     ];
     $users[] = $currentUser;
     writeJsonFile($usersFile, $users);
+} else if ($userIndex >= 0) {
+    $updatedUser = false;
+    if (!empty($data['clubName'])) {
+        $users[$userIndex]['club_name'] = trim($data['clubName']);
+        $updatedUser = true;
+    }
+    if (!empty($data['clubLogoDataUrl'])) {
+        $users[$userIndex]['club_logo'] = $data['clubLogoDataUrl'];
+        $updatedUser = true;
+    }
+    if ($updatedUser) {
+        writeJsonFile($usersFile, $users);
+        $currentUser = $users[$userIndex];
+    }
 }
 
 // 2. Semak Tarikh Luput Akaun
 $expiryTime = strtotime($currentUser['subscription_end'] ?? 'now');
 $isExpired = (time() > $expiryTime) && ($currentUser['role'] !== 'superadmin');
 
-// 3. Simpan dan gabungkan rekod atlit yang disinkronkan dari APK
+// 3. Simpan dan gabungkan rekod atlit yang disinkronkan dari APK (termasuk gambar profil atlit photoDataUrl)
 $incomingAthletes = $data['athletes'] ?? [];
 $allAthletes = readJsonFile($athletesFile);
 
-// Ambil rekod atlit sedia ada dari coach lain
 $otherAthletes = array_values(array_filter($allAthletes, function($a) use ($coachEmail) {
     return strtolower($a['coachEmail'] ?? '') !== strtolower($coachEmail);
 }));
 
-// Tambah/Kemas kini rekod atlit bagi coach ini
 $syncedAthletesCount = 0;
 foreach ($incomingAthletes as $ia) {
     $ia['coachEmail'] = $coachEmail;
@@ -110,17 +123,37 @@ foreach ($incomingRaces as $ir) {
 }
 writeJsonFile($racesFile, $otherRaces);
 
-// 5. Kembalikan respons rasmi ke APK
+// 5. Simpan dan gabungkan rekod pembayaran yuran atlit sepanjang didaftarkan (fees.json)
+$incomingFees = $data['feeRecords'] ?? [];
+$allFees = readJsonFile($feesFile);
+
+$otherFees = array_values(array_filter($allFees, function($f) use ($coachEmail) {
+    return strtolower($f['coachEmail'] ?? '') !== strtolower($coachEmail);
+}));
+
+$syncedFeesCount = 0;
+foreach ($incomingFees as $ifee) {
+    $ifee['coachEmail'] = $coachEmail;
+    $ifee['clubName'] = $currentUser['club_name'] ?? ($data['clubName'] ?? '');
+    $ifee['syncedAt'] = date('Y-m-d H:i:s');
+    $otherFees[] = $ifee;
+    $syncedFeesCount++;
+}
+writeJsonFile($feesFile, $otherFees);
+
+// 6. Kembalikan respons rasmi ke APK
 echo json_encode([
     'status' => 'success',
-    'message' => 'Penyegerakan ke Portal Web Training Management berjaya!',
+    'message' => 'Penyegerakan ke Portal Web Training Management berjaya! (Atlit, Gambar Profil, Yuran & Prestasi Bulanan)',
     'isExpired' => $isExpired,
     'currentPlan' => $currentUser['plan'] ?? 'trial',
     'planName' => $currentUser['plan_name'] ?? 'Percubaan Percuma',
-    'maxAthletes' => $currentUser['max_athletes'] ?? 10,
+    'maxAthletes' => $currentUser['max_athletes'] ?? 15,
     'maxSubCoaches' => $currentUser['max_sub_coaches'] ?? 1,
     'subscriptionEnd' => $currentUser['subscription_end'] ?? '-',
     'syncedAthletes' => $syncedAthletesCount,
     'syncedRaces' => $syncedRacesCount,
+    'syncedFees' => $syncedFeesCount,
+    'videoStoragePolicy' => 'LOCAL_PHONE_MEMORY_ONLY',
     'serverTimestamp' => date('Y-m-d H:i:s')
 ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);

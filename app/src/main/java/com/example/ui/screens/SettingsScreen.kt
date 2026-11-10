@@ -59,6 +59,10 @@ fun SettingsScreen(
     onToggleKillSwitch: (Boolean) -> Unit = {},
     onApproveUser: (String, Int) -> Unit = { _, _ -> },
     onBlockUser: (String) -> Unit = {},
+    onBroadcastApkUpdate: (version: String, message: String, url: String) -> Unit = { _, _, _ -> },
+    onUpdatePlanFeatures: (planKey: String, features: List<String>) -> Unit = { _, _ -> },
+    onConsentCreatePhoneFolder: (String) -> Unit = {},
+    onOpenInfographicManual: (String) -> Unit = {},
     currentLanguage: com.example.service.AppLanguage = com.example.service.AppLanguage.MALAY,
     onLanguageChange: (com.example.service.AppLanguage) -> Unit = {},
     onLogout: () -> Unit,
@@ -636,6 +640,163 @@ fun SettingsScreen(
                             }
                         }
                     }
+
+                    HorizontalDivider(color = StadiumBorder, thickness = 1.dp)
+
+                    // ADMIN OTA APK UPDATE BROADCAST PANEL
+                    var updateVersionInput by remember { mutableStateOf(remoteAppStatus?.latestApkVersion ?: "2.5") }
+                    var updateMsgInput by remember {
+                        mutableStateOf(
+                            remoteAppStatus?.apkUpdateMessage?.ifBlank {
+                                "Kemaskini APK Psyco Time X Pro v2.5 kini sedia! Penambahbaikan AI Sains Sukan, Laporan PDF Bulanan & Pengurusan Kelab. Klik YES untuk muat turun sekarang."
+                            } ?: "Kemaskini APK Psyco Time X Pro v2.5 kini sedia! Klik YES untuk muat turun."
+                        )
+                    }
+                    var updateUrlInput by remember {
+                        mutableStateOf(
+                            remoteAppStatus?.apkDownloadUrl ?: "https://www.psycotimexpro.my/training-management/index.php#download-apk"
+                        )
+                    }
+
+                    Text(
+                        text = "📢 Broadcast Update APK Ke Semua Pengguna (Manual Website / Drive):",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Black,
+                        color = ElectricCyan
+                    )
+                    Text(
+                        text = "Apabila anda menekan butang Broadcast di bawah, semua pengguna yang membuka APK akan terus melihat pop-up 'Update APK Terkini' dan apabila mereka klik YES, mereka akan dibawa terus ke laman web untuk muat turun APK terkini.",
+                        fontSize = 10.sp,
+                        color = TextSecondary
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedTextField(
+                            value = updateVersionInput,
+                            onValueChange = { updateVersionInput = it },
+                            label = { Text("Versi APK") },
+                            singleLine = true,
+                            modifier = Modifier.weight(0.35f)
+                        )
+                        OutlinedTextField(
+                            value = updateUrlInput,
+                            onValueChange = { updateUrlInput = it },
+                            label = { Text("URL Muat Turun APK") },
+                            singleLine = true,
+                            modifier = Modifier.weight(0.65f)
+                        )
+                    }
+                    OutlinedTextField(
+                        value = updateMsgInput,
+                        onValueChange = { updateMsgInput = it },
+                        label = { Text("Mesej Broadcast Update APK Kepada Semua Pengguna") },
+                        minLines = 2,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Button(
+                        onClick = {
+                            onBroadcastApkUpdate(updateVersionInput.trim(), updateMsgInput.trim(), updateUrlInput.trim())
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = ElectricCyan),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("btn_admin_broadcast_apk_update")
+                    ) {
+                        Icon(Icons.Default.SystemUpdate, contentDescription = null, tint = Color.Black, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "BROADCAST UPDATE APK KE SEMUA USER SEKARANG",
+                            fontSize = 10.5.sp,
+                            fontWeight = FontWeight.Black,
+                            color = Color.Black
+                        )
+                    }
+
+                    HorizontalDivider(color = StadiumBorder, thickness = 1.dp)
+
+                    // ADMIN PACKAGE FEATURE TOGGLE MATRIX
+                    var selectedPlanToConfigure by remember { mutableStateOf("plan_rm30") }
+                    val defaultPlanSpec = com.example.service.SubscriptionPricing.plans.find { it.id == selectedPlanToConfigure }
+                        ?: com.example.service.SubscriptionPricing.plans.first()
+                    var activePlanFeatures by remember(selectedPlanToConfigure) {
+                        mutableStateOf(defaultPlanSpec.features.toSet())
+                    }
+
+                    Text(
+                        text = "⚙️ Kawalan Ciri Pakej Langganan (Admin Feature Toggle):",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Black,
+                        color = LaserOrange
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        com.example.service.SubscriptionPricing.plans.forEach { p ->
+                            val isSel = selectedPlanToConfigure == p.id
+                            Button(
+                                onClick = { selectedPlanToConfigure = p.id },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = if (isSel) LaserOrange else StadiumSurfaceVariant
+                                ),
+                                contentPadding = PaddingValues(horizontal = 6.dp, vertical = 4.dp),
+                                shape = RoundedCornerShape(8.dp),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text(
+                                    text = "RM${p.rmPrice}",
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Black,
+                                    color = if (isSel) Color.Black else Color.White
+                                )
+                            }
+                        }
+                    }
+
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        com.example.service.SubscriptionPricing.allControllableFeatures.forEach { (_, featLabel) ->
+                            val isChecked = activePlanFeatures.contains(featLabel)
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        activePlanFeatures = if (isChecked) {
+                                            activePlanFeatures - featLabel
+                                        } else {
+                                            activePlanFeatures + featLabel
+                                        }
+                                    }
+                                    .padding(vertical = 2.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Checkbox(
+                                    checked = isChecked,
+                                    onCheckedChange = { checked ->
+                                        activePlanFeatures = if (checked) activePlanFeatures + featLabel else activePlanFeatures - featLabel
+                                    },
+                                    modifier = Modifier.size(24.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(featLabel, fontSize = 10.5.sp, color = Color.White)
+                            }
+                        }
+                    }
+
+                    Button(
+                        onClick = {
+                            onUpdatePlanFeatures(selectedPlanToConfigure, activePlanFeatures.toList())
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = SuccessGreen),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "Simpan Tetapan Ciri ${defaultPlanSpec.titleMy} Ke Server",
+                            fontSize = 10.5.sp,
+                            fontWeight = FontWeight.Black,
+                            color = Color.Black
+                        )
+                    }
                 }
             }
         }
@@ -848,14 +1009,27 @@ fun SettingsScreen(
 
                 Button(
                     onClick = {
-                        storageStatusMessage = "Semua folder /PsycoTimeXPro/ telah disahkan aktif & boleh diakses!"
+                        onConsentCreatePhoneFolder("ET_Training_Videos")
+                        storageStatusMessage = "Folder Rakaman Video Telefon telah dibenarkan & dicipta! Semua video ET Training disimpan 100% di memori telefon anda (tidak dimuat naik ke hosting)."
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = SuccessGreen),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.CreateNewFolder, contentDescription = null, tint = Color.Black, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Benarkan & Jana Folder Video Telefon (Simpanan Telefon Sahaja)", color = Color.Black, fontWeight = FontWeight.Black, fontSize = 11.sp)
+                }
+
+                Button(
+                    onClick = {
+                        onOpenInfographicManual("BM")
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = StadiumSurfaceVariant),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Icon(Icons.Default.Check, contentDescription = null, tint = SuccessGreen, modifier = Modifier.size(16.dp))
+                    Icon(Icons.Default.MenuBook, contentDescription = null, tint = ElectricCyan, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text("Sahkan Integriti Folder", color = Color.White, fontSize = 12.sp)
+                    Text("Buka Poster Infografik & Manual Penggunaan (BM / EN)", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -966,110 +1140,53 @@ fun SettingsScreen(
                     }
                 }
 
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Surface(
-                        color = StadiumSurfaceVariant,
-                        shape = RoundedCornerShape(10.dp),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, ElectricCyan.copy(alpha = 0.5f)),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(10.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column {
-                                Text("PAKEJ ASAS / BASIC (1 BULAN)", fontSize = 10.sp, fontWeight = FontWeight.Black, color = ElectricCyan)
-                                Text("30 Atlit + 2 Sub Coach", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                                Text("Ideal untuk kelab sekolah & bakat muda", fontSize = 10.sp, color = TextSecondary)
-                            }
-                            Text(
-                                text = com.example.service.SubscriptionPricing.formatPrice(30, settingsPricingRegion),
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Black,
-                                color = ElectricCyan
-                            )
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    com.example.service.SubscriptionPricing.plans.forEachIndexed { idx, plan ->
+                        val accent = when (idx) {
+                            0 -> ElectricCyan
+                            1 -> LaserOrange
+                            2 -> SpeedAmber
+                            else -> SuccessGreen
                         }
-                    }
-
-                    Surface(
-                        color = StadiumSurfaceVariant,
-                        shape = RoundedCornerShape(10.dp),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, LaserOrange.copy(alpha = 0.5f)),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(10.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                        Surface(
+                            color = StadiumSurfaceVariant,
+                            shape = RoundedCornerShape(12.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, accent.copy(alpha = 0.55f)),
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Column {
-                                Text("PAKEJ STANDARD (1 BULAN)", fontSize = 10.sp, fontWeight = FontWeight.Black, color = LaserOrange)
-                                Text("50 Atlit + 2 Sub Coach", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                                Text("Paling popular untuk kontinjen MSSD", fontSize = 10.sp, color = TextSecondary)
+                            Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(plan.titleMy, fontSize = 11.sp, fontWeight = FontWeight.Black, color = accent)
+                                        Text("${plan.athletesLabel} (1 Bulan) • ${plan.subCoachLimit} Sub Coach / Urusetia", fontSize = 12.5.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                        Text(plan.subtitleMy, fontSize = 10.sp, color = TextSecondary)
+                                    }
+                                    Text(
+                                        text = "${com.example.service.SubscriptionPricing.formatPrice(plan.rmPrice, settingsPricingRegion)} / Bln",
+                                        fontSize = 15.sp,
+                                        fontWeight = FontWeight.Black,
+                                        color = accent
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(2.dp))
+                                plan.features.forEach { feat ->
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(Icons.Default.CheckCircle, contentDescription = null, tint = accent, modifier = Modifier.size(12.dp))
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(feat, fontSize = 10.sp, color = Color.White)
+                                    }
+                                }
                             }
-                            Text(
-                                text = com.example.service.SubscriptionPricing.formatPrice(40, settingsPricingRegion),
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Black,
-                                color = LaserOrange
-                            )
-                        }
-                    }
-
-                    Surface(
-                        color = StadiumSurfaceVariant,
-                        shape = RoundedCornerShape(10.dp),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, SpeedAmber.copy(alpha = 0.5f)),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(10.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column {
-                                Text("PAKEJ PRO (1 BULAN)", fontSize = 10.sp, fontWeight = FontWeight.Black, color = SpeedAmber)
-                                Text("80 Atlit + 3 Sub Coach", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                                Text("Kapasiti besar untuk akademi olahraga", fontSize = 10.sp, color = TextSecondary)
-                            }
-                            Text(
-                                text = com.example.service.SubscriptionPricing.formatPrice(60, settingsPricingRegion),
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Black,
-                                color = SpeedAmber
-                            )
-                        }
-                    }
-
-                    Surface(
-                        color = StadiumSurfaceVariant,
-                        shape = RoundedCornerShape(10.dp),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, SuccessGreen.copy(alpha = 0.5f)),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(10.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column {
-                                Text("PAKEJ ELITE (1 BULAN)", fontSize = 10.sp, fontWeight = FontWeight.Black, color = SuccessGreen)
-                                Text("100 Atlit + 5 Sub Coach", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                                Text("Kejohanan terbuka & skuad elit MSSN", fontSize = 10.sp, color = TextSecondary)
-                            }
-                            Text(
-                                text = com.example.service.SubscriptionPricing.formatPrice(80, settingsPricingRegion),
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Black,
-                                color = SuccessGreen
-                            )
                         }
                     }
                 }
 
                 Text(
-                    text = "* Malaysia: RM30 / RM40 / RM60 / RM80. Semua Negara Lain (International): USD $7 / USD $10 / USD $15 / USD $20. Percubaan Percuma 7 Hari diaktifkan secara automatik.",
+                    text = "* Malaysia: RM30 (15 Atlit) / RM40 (30 Atlit) / RM60 (50 Atlit) / RM80 (Unlimited Atlit). Semua Negara Lain: USD $7 / USD $10 / USD $15 / USD $20. Percubaan Percuma 7 Hari diaktifkan secara automatik.",
                     fontSize = 10.sp,
                     color = TextMuted,
                     lineHeight = 14.sp

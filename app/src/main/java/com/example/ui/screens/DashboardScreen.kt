@@ -51,6 +51,8 @@ fun DashboardScreen(
     onLogout: () -> Unit,
     onSelectAthlete: (AthleteEntity) -> Unit,
     onUpdateClubLogo: (logoUri: String) -> Unit,
+    onOpenInfographicManual: (String) -> Unit = {},
+    onExportClubMonthlyPdf: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     // Club logo picker launcher from local storage (Item 12)
@@ -281,6 +283,34 @@ fun DashboardScreen(
                             modifier = Modifier.weight(1f)
                         )
                     }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        ActionPill(
+                            title = "🇲🇾 Manual & Infografik BM",
+                            icon = Icons.Default.MenuBook,
+                            color = ElectricCyan,
+                            onClick = { onOpenInfographicManual("BM") },
+                            modifier = Modifier.weight(1f)
+                        )
+                        ActionPill(
+                            title = "🇬🇧 English Manual Poster",
+                            icon = Icons.Default.AutoStories,
+                            color = SpeedAmber,
+                            onClick = { onOpenInfographicManual("EN") },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    ActionPill(
+                        title = "📄 Muat Turun Laporan Bulanan Keseluruhan Kelab & Atlit (PDF)",
+                        icon = Icons.Default.PictureAsPdf,
+                        color = LaserOrange,
+                        onClick = onExportClubMonthlyPdf,
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
             }
         }

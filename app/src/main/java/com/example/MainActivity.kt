@@ -101,6 +101,12 @@ class MainActivity : ComponentActivity() {
                 val isSuperAdminState by viewModel.isSuperAdmin.collectAsStateWithLifecycle()
                 val isAppBlocked = (!isSuperAdminState && (remoteAppStatus.killSwitchActive || !remoteAppStatus.isApproved || remoteAppStatus.userStatus == "blocked" || remoteAppStatus.userStatus == "pending" || remoteAppStatus.userStatus == "expired"))
 
+                var infographicManualLang by remember { mutableStateOf<String?>(null) }
+                var dismissedUpdateVersion by remember { mutableStateOf("") }
+                var showPhoneVideoFolderConsentDialog by remember {
+                    mutableStateOf(!viewModel.storageManager.hasUserConsentedPhoneVideoFolder())
+                }
+
                 CompositionLocalProvider(com.example.service.LocalLanguageHook provides langHook) {
                 if (showSplash) {
                     SplashScreen(
@@ -110,7 +116,7 @@ class MainActivity : ComponentActivity() {
                     AuthScreen(
                         currentLanguage = currentLanguage,
                         onLanguageChange = { viewModel.setLanguage(it) },
-                        onLoginSuccess = { email, name, club, country, phone, cert, spec, isSuper ->
+                        onLoginSuccess = { email, name, club, country, phone, cert, spec, isSuper, clubLogoUri ->
                             viewModel.login(
                                 email = email,
                                 name = name,
@@ -119,7 +125,8 @@ class MainActivity : ComponentActivity() {
                                 phone = phone,
                                 cert = cert,
                                 specialization = spec,
-                                isSuper = isSuper
+                                isSuper = isSuper,
+                                clubLogoUri = clubLogoUri
                             )
                             currentTab = ScreenTab.DASHBOARD
                             Toast.makeText(this@MainActivity, "Welcome, $name!", Toast.LENGTH_SHORT).show()
@@ -410,6 +417,18 @@ class MainActivity : ComponentActivity() {
                                             clubProfile.coachPhone,
                                             clubProfile.coachPhotoUri
                                         )
+                                    },
+                                    onOpenInfographicManual = { lang ->
+                                        infographicManualLang = lang
+                                    },
+                                    onExportClubMonthlyPdf = {
+                                        viewModel.exportClubMonthlyPdf { savedPath ->
+                                            Toast.makeText(
+                                                this@MainActivity,
+                                                "Laporan PDF Bulanan Kelab disimpan: $savedPath",
+                                                Toast.LENGTH_LONG
+                                            ).show()
+                                        }
                                     }
                                 )
 
@@ -511,6 +530,15 @@ class MainActivity : ComponentActivity() {
                                     onDeleteAthlete = {
                                         viewModel.deleteAthlete(it)
                                         Toast.makeText(this@MainActivity, "Atlit '${it.name}' dipadam.", Toast.LENGTH_SHORT).show()
+                                    },
+                                    onExportClubMonthlyPdf = {
+                                        viewModel.exportClubMonthlyPdf { savedPath ->
+                                            Toast.makeText(
+                                                this@MainActivity,
+                                                "Laporan PDF Bulanan Kelab disimpan: $savedPath",
+                                                Toast.LENGTH_LONG
+                                            ).show()
+                                        }
                                     }
                                 )
 
@@ -600,6 +628,24 @@ class MainActivity : ComponentActivity() {
                                         viewModel.blockUserRemotely(email) { success, msg ->
                                             Toast.makeText(this@MainActivity, msg, Toast.LENGTH_LONG).show()
                                         }
+                                    },
+                                    onBroadcastApkUpdate = { version, msg, url ->
+                                        viewModel.broadcastApkUpdate(version, msg, url) { _, resMsg ->
+                                            Toast.makeText(this@MainActivity, resMsg, Toast.LENGTH_LONG).show()
+                                        }
+                                    },
+                                    onUpdatePlanFeatures = { planKey, features ->
+                                        viewModel.updatePlanFeatures(planKey, features) { _, resMsg ->
+                                            Toast.makeText(this@MainActivity, resMsg, Toast.LENGTH_SHORT).show()
+                                        }
+                                    },
+                                    onOpenInfographicManual = { lang ->
+                                        infographicManualLang = lang
+                                    },
+                                    onConsentCreatePhoneFolder = {
+                                        val folder = viewModel.storageManager.confirmAndCreateLocalPhoneVideoFolder()
+                                        viewModel.updateSelectedVideoFolder(folder.absolutePath)
+                                        Toast.makeText(this@MainActivity, "Folder video telefon dijana: ${folder.absolutePath}", Toast.LENGTH_LONG).show()
                                     },
                                     currentLanguage = currentLanguage,
                                     onLanguageChange = { viewModel.setLanguage(it) },
@@ -709,12 +755,34 @@ class MainActivity : ComponentActivity() {
                     selectedAthleteDetail?.let { athlete ->
                         AthleteDetailDialog(
                             athlete = athlete,
+                            races = races,
+                            fees = fees,
                             achievements = achievements,
                             performanceMetrics = performanceMetrics,
                             onDismiss = { viewModel.selectAthlete(null) },
                             onDeleteAthlete = {
                                 viewModel.deleteAthlete(athlete)
                                 Toast.makeText(this@MainActivity, "Atlit dipadam.", Toast.LENGTH_SHORT).show()
+                            },
+                            onUpdateAthlete = { updated ->
+                                viewModel.updateAthlete(updated)
+                                Toast.makeText(this@MainActivity, "Profil & Gambar Atlit dikemaskini & diselaraskan ke Web!", Toast.LENGTH_SHORT).show()
+                            },
+                            onAddFeeForAthlete = { newFee ->
+                                viewModel.addFee(newFee)
+                                Toast.makeText(this@MainActivity, "Rekod bayaran yuran ditambah & diselaraskan ke Web!", Toast.LENGTH_SHORT).show()
+                            },
+                            onToggleFeePaid = { updatedFee ->
+                                viewModel.updateFee(updatedFee)
+                            },
+                            onExportMonthlyPdf = { targetAth ->
+                                viewModel.exportAthleteMonthlyPdf(targetAth) { savedPath ->
+                                    Toast.makeText(
+                                        this@MainActivity,
+                                        "Laporan PDF Bulanan Atlit disimpan: $savedPath",
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                }
                             },
                             onAddAchievement = { tournament, event, medal, record ->
                                 viewModel.addAchievement(
@@ -729,6 +797,126 @@ class MainActivity : ComponentActivity() {
                                     )
                                 )
                             }
+                        )
+                    }
+
+                    infographicManualLang?.let { lang ->
+                        InfographicManualDialog(
+                            initialLang = lang,
+                            onDismiss = { infographicManualLang = null }
+                        )
+                    }
+
+                    // OTA ADMIN APK UPDATE BROADCAST DIALOG
+                    if (remoteAppStatus.apkUpdateAvailable && dismissedUpdateVersion != remoteAppStatus.latestApkVersion) {
+                        AlertDialog(
+                            onDismissRequest = { dismissedUpdateVersion = remoteAppStatus.latestApkVersion },
+                            title = {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Icon(Icons.Default.SystemUpdate, contentDescription = null, tint = ElectricCyan)
+                                    Text(
+                                        text = "Update APK Terkini (v${remoteAppStatus.latestApkVersion})",
+                                        fontWeight = FontWeight.Black,
+                                        fontSize = 15.sp,
+                                        color = Color.White
+                                    )
+                                }
+                            },
+                            text = {
+                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Text(
+                                        text = remoteAppStatus.apkUpdateMessage.ifBlank {
+                                            "Versi baharu Psyco Time X Pro v${remoteAppStatus.latestApkVersion} kini sedia untuk dimuat turun dari laman web rasmi."
+                                        },
+                                        color = TextSecondary,
+                                        fontSize = 12.sp
+                                    )
+                                    Text(
+                                        text = "Klik 'YES (MUAT TURUN)' untuk terus ke laman web training-management dan muat turun APK terkini.",
+                                        color = ElectricCyan,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            },
+                            confirmButton = {
+                                Button(
+                                    onClick = {
+                                        dismissedUpdateVersion = remoteAppStatus.latestApkVersion
+                                        try {
+                                            val url = remoteAppStatus.apkDownloadUrl.ifBlank {
+                                                "https://www.psycotimexpro.my/training-management/index.php#download-apk"
+                                            }
+                                            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                                        } catch (_: Exception) {
+                                            Toast.makeText(
+                                                this@MainActivity,
+                                                "Membuka laman muat turun APK terkini...",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        }
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = SuccessGreen)
+                                ) {
+                                    Text("YES — Muat Turun APK", color = TrackDarkNavy, fontWeight = FontWeight.Black)
+                                }
+                            },
+                            dismissButton = {
+                                TextButton(onClick = { dismissedUpdateVersion = remoteAppStatus.latestApkVersion }) {
+                                    Text("Nanti", color = SilverMetallic)
+                                }
+                            },
+                            containerColor = StadiumSurface
+                        )
+                    }
+
+                    // PHONE MEMORY VIDEO FOLDER CONSENT PROMPT
+                    if (showPhoneVideoFolderConsentDialog) {
+                        AlertDialog(
+                            onDismissRequest = { showPhoneVideoFolderConsentDialog = false },
+                            title = {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Icon(Icons.Default.FolderSpecial, contentDescription = null, tint = ElectricCyan)
+                                    Text(
+                                        text = "Kebenaran Folder Video Telefon",
+                                        fontWeight = FontWeight.Black,
+                                        fontSize = 15.sp,
+                                        color = Color.White
+                                    )
+                                }
+                            },
+                            text = {
+                                Text(
+                                    text = "Semua fail rakaman video ET Training disimpan 100% di dalam memori telefon pintar anda (/PsycoTimeXPro/ET_Training_Videos) dan TIDAK disimpan di dalam hosting web atau cloud bagi menjimatkan kuota pelayan.\n\nKlik 'ALLOW / BENARKAN' supaya APK menjana folder rasmi di dalam memori telefon anda.",
+                                    color = TextSecondary,
+                                    fontSize = 12.sp
+                                )
+                            },
+                            confirmButton = {
+                                Button(
+                                    onClick = {
+                                        val folder = viewModel.storageManager.confirmAndCreateLocalPhoneVideoFolder()
+                                        viewModel.updateSelectedVideoFolder(folder.absolutePath)
+                                        showPhoneVideoFolderConsentDialog = false
+                                        Toast.makeText(this@MainActivity, "Folder video telefon dijana: ${folder.absolutePath}", Toast.LENGTH_LONG).show()
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = ElectricCyan)
+                                ) {
+                                    Text("ALLOW — Jana Folder Telefon", color = TrackDarkNavy, fontWeight = FontWeight.Black)
+                                }
+                            },
+                            dismissButton = {
+                                TextButton(onClick = { showPhoneVideoFolderConsentDialog = false }) {
+                                    Text("Tutup", color = SilverMetallic)
+                                }
+                            },
+                            containerColor = StadiumSurface
                         )
                     }
 

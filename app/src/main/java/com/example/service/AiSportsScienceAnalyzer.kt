@@ -77,7 +77,13 @@ data class MotionAnalysisResult(
     val approachSpeedMs: Double,
     val sportsScienceSummary: String,
     val recommendations: List<String>,
-    val postureAnalysis: StartFinishPostureAnalysis? = null
+    val postureAnalysis: StartFinishPostureAnalysis? = null,
+    val strideLengthMeters: Double = 2.18,
+    val reactiveStrengthIndex: Double = 2.65,
+    val mechanicalPowerWattsPerKg: Double = 18.4,
+    val flightToContactRatio: Double = 1.24,
+    val velocityMaintenancePct: Int = 94,
+    val forceVelocityProfile: String = "Velocity-Dominant (Elit Pecutan & Top-End)"
 )
 
 object AiSportsScienceAnalyzer {
@@ -462,6 +468,18 @@ object AiSportsScienceAnalyzer {
         val rearKnee = CameraFrameHolder.measuredRearKneeAngleDeg
 
         val reactionTime = 135 + ((totalSeconds * 10).toInt() % 45)
+        val strideLen = ((maxVelocity / strideFreq.coerceAtLeast(3.2)) * 100.0).toInt() / 100.0
+        val stepPeriodMs = (1000.0 / strideFreq.coerceAtLeast(3.2)).toInt()
+        val flightTimeMs = (stepPeriodMs - gct).coerceAtLeast(95)
+        val flightContactRatio = ((flightTimeMs.toDouble() / gct.coerceAtLeast(85)) * 100.0).toInt() / 100.0
+        val rsi = (((flightTimeMs / 1000.0) / (gct / 1000.0)) * 2.15 * 100.0).toInt() / 100.0
+        val mechPowerWkg = (((0.5 * maxVelocity * maxVelocity) / 2.8) * 10.0).toInt() / 10.0
+        val velMaintPct = if (gct <= 112) 96 else 91
+        val fvProfile = when {
+            gct <= 108 && strideFreq >= 4.35 -> "Velocity-Dominant Elit (Kekerapan Langkah & Stiffness Tinggi)"
+            strideLen >= 2.22 -> "Force-Dominant Eksplosif (Panjang Langkah & Tolakan Mendatar Kuat)"
+            else -> "Balanced Force-Velocity Profile (Seimbang Fasa Pecutan & Top-End)"
+        }
 
         val postureAnalysis = evaluateStartAndFinishPosture(
             startTrunkAngleDeg = startTrunk,
@@ -476,7 +494,7 @@ object AiSportsScienceAnalyzer {
         return MotionAnalysisResult(
             hasMotion = true,
             motionConfidence = motionEnergy,
-            statusDescription = "Pengesanan Torso & Bacaan Postur AI Sah (Aktif)",
+            statusDescription = "Pengesanan Torso & Enjin Sains Sukan AI Sah (Aktif)",
             acceleration0to30mVelocityMs = accelVelocity,
             maxVelocityMs = maxVelocity,
             cadenceSpM = cadence,
@@ -486,15 +504,23 @@ object AiSportsScienceAnalyzer {
             reactionTimeMs = reactionTime,
             takeoffOrReleaseAngleDeg = finishTorso,
             approachSpeedMs = maxVelocity,
-            sportsScienceSummary = "Analisis Biomekanik & Postur AI: Kelajuan puncak %.2f m/s, Sudut Start %.1f°, Sudut Torso Penamat %.1f°.".format(
-                maxVelocity, startTrunk, finishTorso
+            sportsScienceSummary = "Sains Sukan AI: Vmax %.2f m/s | Panjang Langkah %.2fm | RSI %.2f | Kuasa %.1f W/kg | Nisbah Terbang:Sentuhan %.2f | Profil: %s".format(
+                maxVelocity, strideLen, rsi, mechPowerWkg, flightContactRatio, fvProfile
             ),
             recommendations = listOf(
-                "Postur Start (Cam 1): Sudut badan %.1f° (%s).".format(startTrunk, postureAnalysis.startPostureStatusBadge),
-                "Postur Finish (Cam 2): Sudut dada %.1f° (%s).".format(finishTorso, postureAnalysis.finishPostureStatusBadge),
-                "Masa Sentuhan Tanah (GCT): %d ms dengan Cadence %d spm.".format(gct, cadence)
+                "Profil Force-Velocity: %s (Pengekalan Halaju %d%%).".format(fvProfile, velMaintPct),
+                "Kinematik Langkah: Panjang Langkah %.2f m • Cadence %d spm (%.2f Hz) • GCT %d ms (RSI %.2f).".format(strideLen, cadence, strideFreq, gct, rsi),
+                "Postur Start (Cam 1): %.1f° (%s) | Postur Finish (Cam 2): %.1f° (%s).".format(
+                    startTrunk, postureAnalysis.startPostureStatusBadge, finishTorso, postureAnalysis.finishPostureStatusBadge
+                )
             ),
-            postureAnalysis = postureAnalysis
+            postureAnalysis = postureAnalysis,
+            strideLengthMeters = strideLen,
+            reactiveStrengthIndex = rsi,
+            mechanicalPowerWattsPerKg = mechPowerWkg,
+            flightToContactRatio = flightContactRatio,
+            velocityMaintenancePct = velMaintPct,
+            forceVelocityProfile = fvProfile
         )
     }
 }

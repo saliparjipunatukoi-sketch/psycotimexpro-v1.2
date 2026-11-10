@@ -43,6 +43,7 @@ fun AthleteListScreen(
     onOpenAddAthlete: () -> Unit,
     onSelectAthlete: (AthleteEntity) -> Unit,
     onDeleteAthlete: ((AthleteEntity) -> Unit)? = null,
+    onExportClubMonthlyPdf: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     var searchQuery by remember { mutableStateOf("") }
@@ -113,22 +114,43 @@ fun AthleteListScreen(
                             )
                         }
 
-                        FilledTonalButton(
-                            onClick = onOpenAddAthlete,
-                            colors = ButtonDefaults.filledTonalButtonColors(
-                                containerColor = StadiumSurfaceVariant,
-                                contentColor = ElectricCyan
-                            ),
-                            shape = RoundedCornerShape(10.dp),
-                            modifier = Modifier.testTag("btn_register_athlete_header")
-                        ) {
-                            Icon(
-                                Icons.Default.Add,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Daftar", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            if (onExportClubMonthlyPdf != null) {
+                                FilledTonalButton(
+                                    onClick = onExportClubMonthlyPdf,
+                                    colors = ButtonDefaults.filledTonalButtonColors(
+                                        containerColor = StadiumSurfaceVariant,
+                                        contentColor = LaserOrange
+                                    ),
+                                    shape = RoundedCornerShape(10.dp),
+                                    modifier = Modifier.testTag("btn_export_club_monthly_pdf")
+                                ) {
+                                    Icon(
+                                        Icons.Default.PictureAsPdf,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("PDF Bulanan", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                            FilledTonalButton(
+                                onClick = onOpenAddAthlete,
+                                colors = ButtonDefaults.filledTonalButtonColors(
+                                    containerColor = StadiumSurfaceVariant,
+                                    contentColor = ElectricCyan
+                                ),
+                                shape = RoundedCornerShape(10.dp),
+                                modifier = Modifier.testTag("btn_register_athlete_header")
+                            ) {
+                                Icon(
+                                    Icons.Default.Add,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Daftar", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            }
                         }
                     }
                 }

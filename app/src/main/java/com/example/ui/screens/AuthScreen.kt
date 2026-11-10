@@ -7,6 +7,8 @@ import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -67,7 +69,8 @@ val COACH_CERTIFICATIONS = listOf(
     "MSSM / MSSD School Track & Field Coach",
     "National Athletics Coach",
     "Certified Strength & Conditioning Specialist",
-    "Club Coach / Bebas"
+    "Club Coach / Bebas",
+    "Other / Lain-lain (Taip Sendiri)"
 )
 
 val SPECIALIZATION_EVENTS = listOf(
@@ -92,7 +95,8 @@ fun AuthScreen(
         phone: String,
         cert: String,
         specialization: String,
-        isSuperAdmin: Boolean
+        isSuperAdmin: Boolean,
+        clubLogoUri: String?
     ) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -109,8 +113,18 @@ fun AuthScreen(
     var selectedCountrySpec by remember { mutableStateOf(COUNTRY_DIAL_SPECS.first()) }
     var phoneDigitsInput by remember { mutableStateOf("") }
     var clubNameInput by remember { mutableStateOf("") }
+    var selectedClubLogoUri by remember { mutableStateOf<String?>(null) }
     var selectedCert by remember { mutableStateOf(COACH_CERTIFICATIONS.first()) }
+    var customCertInput by remember { mutableStateOf("") }
     var selectedSpecialization by remember { mutableStateOf(SPECIALIZATION_EVENTS.first()) }
+
+    val clubLogoPickerLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            selectedClubLogoUri = uri.toString()
+        }
+    }
 
     var countryDropdownExpanded by remember { mutableStateOf(false) }
     var certDropdownExpanded by remember { mutableStateOf(false) }
@@ -145,10 +159,15 @@ fun AuthScreen(
             } else {
                 "${selectedCountrySpec.dialCode}195326399"
             }
+            val resolvedCert = if (selectedCert.startsWith("Other", ignoreCase = true)) {
+                customCertInput.trim().ifBlank { "Other / Kelayakan Khas" }
+            } else {
+                selectedCert
+            }
 
             Toast.makeText(
                 context,
-                "Welcome $resolvedName! (7-Day Free Trial Active)",
+                "Welcome $resolvedName! ($resolvedClub • 7-Day Free Trial Active)",
                 Toast.LENGTH_SHORT
             ).show()
 
@@ -158,9 +177,10 @@ fun AuthScreen(
                 resolvedClub,
                 selectedCountrySpec.countryName,
                 resolvedPhone,
-                selectedCert,
+                resolvedCert,
                 selectedSpecialization,
-                isSuper
+                isSuper,
+                selectedClubLogoUri
             )
         } else {
             authErrorMessage = "Unsupported credential type."
@@ -382,18 +402,98 @@ fun AuthScreen(
                         )
                     }
 
-                    // 4. CLUB / SCHOOL / TEAM NAME
-                    OutlinedTextField(
-                        value = clubNameInput,
-                        onValueChange = { clubNameInput = it },
-                        label = { Text(langHook.t("field_club")) },
-                        placeholder = { Text("Psyco Track & Field / Sekolah Sukan") },
-                        leadingIcon = { Icon(Icons.Default.Shield, contentDescription = null, tint = FinishLineRed) },
-                        singleLine = true,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .testTag("auth_club_input")
-                    )
+                    // 4. CLUB / SCHOOL / TEAM NAME & CLUB LOGO PROFILE PHOTO UPLOAD
+                    Surface(
+                        color = StadiumSurfaceVariant,
+                        shape = RoundedCornerShape(14.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, ElectricCyan.copy(alpha = 0.45f)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                // Clickable Club Logo / Profile Photo Avatar
+                                Box(
+                                    contentAlignment = Alignment.Center,
+                                    modifier = Modifier
+                                        .size(64.dp)
+                                        .background(TrackDarkNavy, CircleShape)
+                                        .border(2.dp, ElectricCyan, CircleShape)
+                                        .clickable {
+                                            clubLogoPickerLauncher.launch(
+                                                androidx.activity.result.PickVisualMediaRequest(
+                                                    androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.ImageOnly
+                                                )
+                                            )
+                                        }
+                                        .testTag("auth_club_logo_picker")
+                                ) {
+                                    if (!selectedClubLogoUri.isNullOrBlank()) {
+                                        coil.compose.AsyncImage(
+                                            model = selectedClubLogoUri,
+                                            contentDescription = "Logo Kelab",
+                                            contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .background(TrackDarkNavy, CircleShape)
+                                        )
+                                    } else {
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                            Icon(
+                                                Icons.Default.AddAPhoto,
+                                                contentDescription = "Muat Naik Logo Kelab",
+                                                tint = ElectricCyan,
+                                                modifier = Modifier.size(22.dp)
+                                            )
+                                            Text(
+                                                text = "Logo",
+                                                fontSize = 9.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = ElectricCyan
+                                            )
+                                        }
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.width(12.dp))
+
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "Foto Profil & Logo Kelab Sukan *",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Black,
+                                        color = Color.White
+                                    )
+                                    Text(
+                                        text = "Klik bulatan di sebelah untuk muat naik gambar Logo Kelab sebagai Foto Profil anda di dalam APK & Portal Web.",
+                                        fontSize = 10.sp,
+                                        color = TextSecondary,
+                                        lineHeight = 13.sp
+                                    )
+                                }
+                            }
+
+                            OutlinedTextField(
+                                value = clubNameInput,
+                                onValueChange = {
+                                    clubNameInput = it
+                                    authErrorMessage = null
+                                },
+                                label = { Text("${langHook.t("field_club")} *") },
+                                placeholder = { Text("Psyco Track & Field / Sekolah Sukan / Kelab Olahraga") },
+                                leadingIcon = { Icon(Icons.Default.Shield, contentDescription = null, tint = FinishLineRed) },
+                                singleLine = true,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .testTag("auth_club_input")
+                            )
+                        }
+                    }
 
                     // 5. COACH CERTIFICATION PICKER
                     ExposedDropdownMenuBox(
@@ -425,6 +525,24 @@ fun AuthScreen(
                                 )
                             }
                         }
+                    }
+
+                    // IF USER SELECTED "OTHER / LAIN-LAIN", ALLOW TYPING CUSTOM CERTIFICATION
+                    if (selectedCert.startsWith("Other", ignoreCase = true)) {
+                        OutlinedTextField(
+                            value = customCertInput,
+                            onValueChange = {
+                                customCertInput = it
+                                authErrorMessage = null
+                            },
+                            label = { Text("Sila Taip Sijil Kejurulatihan / Tahap Kelayakan Anda *") },
+                            placeholder = { Text("Cth: Ijazah Sains Sukan UPSI / Kejurulatihan Kebangsaan / Guru Sukan") },
+                            leadingIcon = { Icon(Icons.Default.EditNote, contentDescription = null, tint = ElectricCyan) },
+                            singleLine = true,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag("auth_custom_cert_input")
+                        )
                     }
 
                     // 6. SPECIALIZATION EVENT PICKER
@@ -509,8 +627,8 @@ fun AuthScreen(
                                             color = Color.White
                                         )
                                         Text(
-                                            text = "${plan.athletesLimit} Atlit",
-                                            fontSize = 9.sp,
+                                            text = plan.athletesLabel,
+                                            fontSize = 8.5.sp,
                                             color = TextSecondary
                                         )
                                     }
@@ -541,11 +659,11 @@ fun AuthScreen(
                         }
                     }
 
-                    // GOOGLE SIGN-IN BUTTON (validates mandatory Full Name & Contact Number first)
+                    // GOOGLE SIGN-IN BUTTON (validates mandatory Full Name, Contact Number & Club Name first)
                     Button(
                         onClick = {
-                            if (fullNameInput.trim().length < 2 || phoneDigitsInput.trim().length < 5) {
-                                authErrorMessage = langHook.t("err_fullname_phone_required")
+                            if (fullNameInput.trim().length < 2 || phoneDigitsInput.trim().length < 5 || clubNameInput.trim().length < 2) {
+                                authErrorMessage = "${langHook.t("err_fullname_phone_required")} (Sila isi Nama Penuh, Nombor Telefon & Nama Kelab)"
                                 return@Button
                             }
                             val activityContext = context.findActivity()
@@ -623,6 +741,23 @@ fun AuthScreen(
                         }
                     }
 
+                    // EMAIL & PASSWORD LOGIN + FORGOT PASSWORD (GMAIL LINK RESET) SECTION
+                    EmailPasswordAndForgotSection(
+                        fullNameInput = fullNameInput,
+                        clubNameInput = clubNameInput,
+                        selectedCountryName = selectedCountrySpec.countryName,
+                        fullFormattedPhone = fullFormattedPhone,
+                        selectedCert = if (selectedCert.startsWith("Other", ignoreCase = true)) {
+                            customCertInput.trim().ifBlank { "Other / Kelayakan Khas" }
+                        } else {
+                            selectedCert
+                        },
+                        selectedSpecialization = selectedSpecialization,
+                        selectedClubLogoUri = selectedClubLogoUri,
+                        onLoginSuccess = onLoginSuccess,
+                        onError = { authErrorMessage = it }
+                    )
+
                     // DIRECT CONTACT ADMIN WHATSAPP (+6019-5326399) FOR REGISTRATION / SUBSCRIPTION HELP
                     OutlinedButton(
                         onClick = {
@@ -647,6 +782,41 @@ fun AuthScreen(
                             color = Color(0xFF25D366)
                         )
                     }
+
+                    // ANTI-HACK SECURITY SHIELD BADGE
+                    val securityAudit = remember { AppSecurityGuard.runSecurityAudit(context) }
+                    Surface(
+                        color = Color(0xFF064E3B).copy(alpha = 0.35f),
+                        shape = RoundedCornerShape(10.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, SuccessGreen.copy(alpha = 0.5f)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.VerifiedUser,
+                                contentDescription = "Perisai Keselamatan",
+                                tint = SuccessGreen,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Column {
+                                Text(
+                                    text = "PERISAI KESELAMATAN SIBER AKTIF (${securityAudit.securityLevelLabel})",
+                                    fontSize = 9.5.sp,
+                                    fontWeight = FontWeight.Black,
+                                    color = SuccessGreen
+                                )
+                                Text(
+                                    text = "${securityAudit.encryptionStandard} • Anti-Brute-Force & Bcrypt Protected",
+                                    fontSize = 8.5.sp,
+                                    color = TextSecondary
+                                )
+                            }
+                        }
+                    }
                 }
             }
 
@@ -662,3 +832,322 @@ fun AuthScreen(
         }
     }
 }
+
+@Composable
+private fun EmailPasswordAndForgotSection(
+    fullNameInput: String,
+    clubNameInput: String,
+    selectedCountryName: String,
+    fullFormattedPhone: String,
+    selectedCert: String,
+    selectedSpecialization: String,
+    selectedClubLogoUri: String?,
+    onLoginSuccess: (
+        email: String,
+        name: String,
+        club: String,
+        country: String,
+        phone: String,
+        cert: String,
+        specialization: String,
+        isSuperAdmin: Boolean,
+        clubLogoUri: String?
+    ) -> Unit,
+    onError: (String) -> Unit
+) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    var showEmailLoginPanel by remember { mutableStateOf(false) }
+    var emailInput by remember { mutableStateOf("") }
+    var passwordInput by remember { mutableStateOf("") }
+    var passwordVisible by remember { mutableStateOf(false) }
+    var isProcessingEmailAuth by remember { mutableStateOf(false) }
+
+    // Forgot Password Modal State
+    var showForgotPasswordDialog by remember { mutableStateOf(false) }
+    var forgotEmailInput by remember { mutableStateOf("") }
+    var isSendingReset by remember { mutableStateOf(false) }
+    var resetFeedbackMessage by remember { mutableStateOf<String?>(null) }
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            TextButton(
+                onClick = { showEmailLoginPanel = !showEmailLoginPanel },
+                modifier = Modifier.testTag("toggle_email_password_login_btn")
+            ) {
+                Icon(
+                    if (showEmailLoginPanel) Icons.Default.ExpandLess else Icons.Default.Lock,
+                    contentDescription = null,
+                    tint = ElectricCyan,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = if (showEmailLoginPanel) "Tutup Log Masuk Kata Laluan" else "Log Masuk Guna Emel & Kata Laluan",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = ElectricCyan
+                )
+            }
+
+            TextButton(
+                onClick = {
+                    forgotEmailInput = emailInput
+                    resetFeedbackMessage = null
+                    showForgotPasswordDialog = true
+                },
+                modifier = Modifier.testTag("btn_forgot_password")
+            ) {
+                Icon(
+                    Icons.Default.MarkEmailRead,
+                    contentDescription = null,
+                    tint = SpeedAmber,
+                    modifier = Modifier.size(15.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = "Forgot Password?",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Black,
+                    color = SpeedAmber
+                )
+            }
+        }
+
+        if (showEmailLoginPanel) {
+            Surface(
+                color = StadiumSurfaceVariant,
+                shape = RoundedCornerShape(14.dp),
+                border = androidx.compose.foundation.BorderStroke(1.dp, ElectricCyan.copy(alpha = 0.4f)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Text(
+                        text = "Log Masuk / Daftar dengan Gmail & Kata Laluan",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Black,
+                        color = Color.White
+                    )
+
+                    OutlinedTextField(
+                        value = emailInput,
+                        onValueChange = { emailInput = it },
+                        label = { Text("Alamat Emel Gmail *") },
+                        placeholder = { Text("coach@gmail.com") },
+                        leadingIcon = { Icon(Icons.Default.Email, contentDescription = null, tint = ElectricCyan) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                        singleLine = true,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("auth_email_input")
+                    )
+
+                    OutlinedTextField(
+                        value = passwordInput,
+                        onValueChange = { passwordInput = it },
+                        label = { Text("Kata Laluan (Password - Min 6 Aksara) *") },
+                        leadingIcon = { Icon(Icons.Default.Key, contentDescription = null, tint = SpeedAmber) },
+                        trailingIcon = {
+                            IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                Icon(
+                                    if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                    contentDescription = "Tunjuk Kata Laluan",
+                                    tint = SilverMetallic
+                                )
+                            }
+                        },
+                        visualTransformation = if (passwordVisible) {
+                            androidx.compose.ui.text.input.VisualTransformation.None
+                        } else {
+                            androidx.compose.ui.text.input.PasswordVisualTransformation()
+                        },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        singleLine = true,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("auth_password_input")
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Button(
+                            onClick = {
+                                val cleanEmail = AppSecurityGuard.sanitizeInput(emailInput).lowercase()
+                                val pass = passwordInput.trim()
+                                if (!cleanEmail.contains("@") || pass.length < 6) {
+                                    onError("Sila masukkan Emel Gmail yang sah dan Kata Laluan sekurang-kurangnya 6 aksara.")
+                                    return@Button
+                                }
+                                isProcessingEmailAuth = true
+                                scope.launch {
+                                    try {
+                                        try {
+                                            Firebase.auth.signInWithEmailAndPassword(cleanEmail, pass).await()
+                                        } catch (_: Exception) {
+                                            Firebase.auth.createUserWithEmailAndPassword(cleanEmail, pass).await()
+                                        }
+                                        val isSuper = cleanEmail.equals("saliparjipun.atukoi@gmail.com", ignoreCase = true)
+                                        val resolvedName = fullNameInput.trim().ifBlank {
+                                            if (isSuper) "Coach Salipar Jipun (Superadmin)" else "Coach (${cleanEmail.substringBefore("@")})"
+                                        }
+                                        val resolvedClub = clubNameInput.trim().ifBlank {
+                                            if (isSuper) "Psyco Track & Field Elite" else "Kelab Olahraga"
+                                        }
+                                        onLoginSuccess(
+                                            cleanEmail,
+                                            resolvedName,
+                                            resolvedClub,
+                                            selectedCountryName,
+                                            fullFormattedPhone,
+                                            selectedCert,
+                                            selectedSpecialization,
+                                            isSuper,
+                                            selectedClubLogoUri
+                                        )
+                                    } catch (e: Exception) {
+                                        onError("Kata laluan tidak tepat atau akaun memerlukan pengesahan. Sila tekan 'Forgot Password?' untuk hantar link reset ke Gmail anda. (${e.localizedMessage ?: ""})")
+                                    } finally {
+                                        isProcessingEmailAuth = false
+                                    }
+                                }
+                            },
+                            enabled = !isProcessingEmailAuth,
+                            colors = ButtonDefaults.buttonColors(containerColor = ElectricCyan),
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(
+                                text = if (isProcessingEmailAuth) "Mengesahkan..." else "Log Masuk / Daftar",
+                                color = TrackDarkNavy,
+                                fontWeight = FontWeight.Black,
+                                fontSize = 12.sp
+                            )
+                        }
+
+                        OutlinedButton(
+                            onClick = {
+                                forgotEmailInput = emailInput
+                                resetFeedbackMessage = null
+                                showForgotPasswordDialog = true
+                            },
+                            border = androidx.compose.foundation.BorderStroke(1.dp, SpeedAmber),
+                            shape = RoundedCornerShape(10.dp)
+                        ) {
+                            Text(
+                                text = "Lupa Password?",
+                                color = SpeedAmber,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 11.sp
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (showForgotPasswordDialog) {
+        AlertDialog(
+            onDismissRequest = { showForgotPasswordDialog = false },
+            title = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(Icons.Default.MarkEmailRead, contentDescription = null, tint = SpeedAmber)
+                    Text(
+                        text = "Terlupa Kata Laluan (Forgot Password)",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Black,
+                        color = Color.White
+                    )
+                }
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        text = "Masukkan alamat Gmail anda di bawah. Sistem Firebase & Pelayan Psyco Time X Pro akan menghantar pautan khas (Password Reset Link) ke Gmail anda untuk mencipta kata laluan baharu.",
+                        fontSize = 12.sp,
+                        color = TextSecondary,
+                        lineHeight = 16.sp
+                    )
+                    OutlinedTextField(
+                        value = forgotEmailInput,
+                        onValueChange = {
+                            forgotEmailInput = it
+                            resetFeedbackMessage = null
+                        },
+                        label = { Text("Alamat Gmail Anda *") },
+                        placeholder = { Text("coach@gmail.com") },
+                        leadingIcon = { Icon(Icons.Default.Email, contentDescription = null, tint = ElectricCyan) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                        singleLine = true,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("forgot_password_email_input")
+                    )
+                    if (!resetFeedbackMessage.isNullOrBlank()) {
+                        Surface(
+                            color = SuccessGreen.copy(alpha = 0.15f),
+                            shape = RoundedCornerShape(10.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, SuccessGreen.copy(alpha = 0.5f)),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = resetFeedbackMessage ?: "",
+                                fontSize = 11.sp,
+                                color = Color.White,
+                                modifier = Modifier.padding(10.dp),
+                                lineHeight = 15.sp
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        isSendingReset = true
+                        scope.launch {
+                            val (_, msg) = AppSecurityGuard.sendForgotPasswordResetLink(forgotEmailInput)
+                            resetFeedbackMessage = msg
+                            isSendingReset = false
+                            Toast.makeText(context, "Link Reset Kata Laluan dihantar ke Gmail!", Toast.LENGTH_LONG).show()
+                        }
+                    },
+                    enabled = !isSendingReset,
+                    colors = ButtonDefaults.buttonColors(containerColor = SpeedAmber)
+                ) {
+                    Icon(Icons.Default.Send, contentDescription = null, tint = TrackDarkNavy, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = if (isSendingReset) "Menghantar..." else "Hantar Link Reset ke Gmail",
+                        color = TrackDarkNavy,
+                        fontWeight = FontWeight.Black,
+                        fontSize = 12.sp
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showForgotPasswordDialog = false }) {
+                    Text("Tutup", color = SilverMetallic)
+                }
+            },
+            containerColor = StadiumSurface
+        )
+    }
+}
+

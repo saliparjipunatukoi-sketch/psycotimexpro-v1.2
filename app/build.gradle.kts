@@ -17,8 +17,8 @@ android {
     applicationId = "com.example"
     minSdk = 24
     targetSdk = 36
-    versionCode = 24
-    versionName = "2.4"
+    versionCode = 25
+    versionName = "2.5"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
@@ -174,8 +174,20 @@ tasks.register<Delete>("cleanUnrelatedHtdocsFiles") {
   )
 }
 
-tasks.register<Copy>("publishApkToPublic") {
+tasks.register<Copy>("copyInfographicPostersToWeb") {
   dependsOn("cleanUnrelatedHtdocsFiles")
+  outputs.upToDateWhen { false }
+  from(file("src/main/res/drawable/img_infographic_manual_bm.jpg")) {
+    rename { "poster-user-manual-bm.jpg" }
+  }
+  from(file("src/main/res/drawable/img_infographic_manual_en.jpg")) {
+    rename { "poster-user-manual-en.jpg" }
+  }
+  into(rootProject.file("htdocs/training-management/assets/images"))
+}
+
+tasks.register<Copy>("publishApkToPublic") {
+  dependsOn("cleanUnrelatedHtdocsFiles", "copyInfographicPostersToWeb")
   outputs.upToDateWhen { false }
   from(layout.buildDirectory.file("outputs/apk/debug/app-debug.apk"))
   into(rootProject.file("htdocs"))
@@ -183,7 +195,7 @@ tasks.register<Copy>("publishApkToPublic") {
 }
 
 tasks.register<Copy>("publishApkToPublicFolder") {
-  dependsOn("cleanUnrelatedHtdocsFiles")
+  dependsOn("cleanUnrelatedHtdocsFiles", "copyInfographicPostersToWeb")
   mustRunAfter("publishApkToPublic")
   outputs.upToDateWhen { false }
   from(layout.buildDirectory.file("outputs/apk/debug/app-debug.apk"))
@@ -191,9 +203,18 @@ tasks.register<Copy>("publishApkToPublicFolder") {
   rename { "PsycoTimeXPro-Latest.apk" }
 }
 
+tasks.register<Copy>("publishApkToTrainingDownloads") {
+  dependsOn("cleanUnrelatedHtdocsFiles", "copyInfographicPostersToWeb")
+  mustRunAfter("publishApkToPublicFolder")
+  outputs.upToDateWhen { false }
+  from(layout.buildDirectory.file("outputs/apk/debug/app-debug.apk"))
+  into(rootProject.file("htdocs/training-management/downloads"))
+  rename { "PsycoTimeXPro-Latest.apk" }
+}
+
 tasks.register<Zip>("packageTrainingManagementZip") {
-  dependsOn("cleanUnrelatedHtdocsFiles")
-  mustRunAfter("publishApkToPublic", "publishApkToPublicFolder")
+  dependsOn("cleanUnrelatedHtdocsFiles", "copyInfographicPostersToWeb", "publishApkToTrainingDownloads")
+  mustRunAfter("publishApkToPublic", "publishApkToPublicFolder", "publishApkToTrainingDownloads")
   outputs.upToDateWhen { false }
   from(rootProject.file("htdocs/training-management"))
   destinationDirectory.set(rootProject.file("htdocs"))
@@ -203,11 +224,14 @@ tasks.register<Zip>("packageTrainingManagementZip") {
 afterEvaluate {
   tasks.findByName("assembleDebug")?.finalizedBy(
     "cleanUnrelatedHtdocsFiles",
+    "copyInfographicPostersToWeb",
     "publishApkToPublic",
     "publishApkToPublicFolder",
+    "publishApkToTrainingDownloads",
     "packageTrainingManagementZip"
   )
 }
+
 
 
 

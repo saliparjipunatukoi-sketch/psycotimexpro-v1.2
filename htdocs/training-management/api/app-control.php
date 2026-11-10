@@ -33,6 +33,10 @@ function getSystemControl($filePath) {
             'require_admin_approval' => false, // Pendaftaran baru automatik mendapat 7 Hari Percubaan Percuma (Auto Free 7 Days Trial)
             'default_trial_days' => 7,
             'broadcast_message' => '',
+            'latest_apk_version' => '2.5',
+            'apk_update_available' => false,
+            'apk_update_message' => 'Versi baharu Psyco Time X Pro v2.5 kini sedia untuk dimuat turun dari laman web rasmi.',
+            'apk_download_url' => 'https://www.psycotimexpro.my/training-management/index.php#download-apk',
             'superadmin_email' => 'saliparjipun.atukoi@gmail.com',
             'admin_whatsapp' => '+6019-5326399',
             'updated_at' => date('Y-m-d H:i:s')
@@ -47,6 +51,7 @@ function getSystemControl($filePath) {
 
 $controlConfig = getSystemControl($controlFile);
 $superadminEmail = 'saliparjipun.atukoi@gmail.com';
+$customPlanFeatures = readJsonFile($planFeaturesFile);
 
 // -------------------------------------------------------------
 // GET REQUEST: Disemak oleh APK Android & Web pada setiap pembukaan / pendaftaran
@@ -67,6 +72,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             'planName' => 'Superadmin Unlimited',
             'subscriptionEnd' => '2099-12-31 23:59:59',
             'adminWhatsapp' => '+6019-5326399',
+            'latestApkVersion' => $controlConfig['latest_apk_version'] ?? '2.5',
+            'apkUpdateAvailable' => (bool)($controlConfig['apk_update_available'] ?? false),
+            'apkUpdateMessage' => $controlConfig['apk_update_message'] ?? '',
+            'apkDownloadUrl' => $controlConfig['apk_download_url'] ?? 'https://www.psycotimexpro.my/training-management/index.php#download-apk',
+            'enabledFeatures' => $SUBSCRIPTION_PLANS['plan_rm80']['features'] ?? [],
+            'planFeatures' => $customPlanFeatures,
             'message' => 'Akses Master Superadmin Dibenarkan.'
         ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
         exit;
@@ -207,18 +218,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     }
 
     // Pengguna yang aktif dan diluluskan (termasuk dalam tempoh 7 Hari Percubaan Percuma)
+    $userPlanKey = $currentUser['plan'] ?? 'trial';
+    $enabledFeats = $customPlanFeatures[$userPlanKey] ?? ($SUBSCRIPTION_PLANS[$userPlanKey]['features'] ?? []);
+
     echo json_encode([
         'status' => 'active',
         'isApproved' => true,
         'userStatus' => 'active',
         'killSwitchActive' => false,
-        'plan' => $currentUser['plan'] ?? 'trial',
+        'plan' => $userPlanKey,
         'planName' => $currentUser['plan_name'] ?? 'Percubaan Percuma (7 Hari)',
         'country' => $currentUser['country'] ?? 'Malaysia',
         'currency' => $currentUser['currency'] ?? 'MYR',
-        'maxAthletes' => $currentUser['max_athletes'] ?? 30,
+        'maxAthletes' => $currentUser['max_athletes'] ?? 15,
         'subscriptionEnd' => $currentUser['subscription_end'] ?? '-',
         'broadcastMessage' => $controlConfig['broadcast_message'] ?? '',
+        'latestApkVersion' => $controlConfig['latest_apk_version'] ?? '2.5',
+        'apkUpdateAvailable' => (bool)($controlConfig['apk_update_available'] ?? false),
+        'apkUpdateMessage' => $controlConfig['apk_update_message'] ?? '',
+        'apkDownloadUrl' => $controlConfig['apk_download_url'] ?? 'https://www.psycotimexpro.my/training-management/index.php#download-apk',
+        'enabledFeatures' => $enabledFeats,
+        'planFeatures' => $customPlanFeatures,
         'adminWhatsapp' => '+6019-5326399',
         'message' => 'Akaun disahkan aktif oleh pelayan.'
     ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
@@ -337,7 +357,52 @@ if ($action === 'block_user') {
     exit;
 }
 
-// 4. Arahan: Senarai Semua Pengguna & Status Untuk Paparan Admin
+// 4. Arahan: Broadcast Update APK Terkini (OTA Prompt kepada semua pengguna APK)
+if ($action === 'broadcast_apk_update') {
+    $version = trim($data['version'] ?? '2.5');
+    $msg = trim($data['message'] ?? "Versi baharu Psyco Time X Pro v{$version} kini sedia untuk dimuat turun.");
+    $url = trim($data['downloadUrl'] ?? 'https://www.psycotimexpro.my/training-management/index.php#download-apk');
+    $active = isset($data['active']) ? (bool)$data['active'] : true;
+
+    $controlConfig['latest_apk_version'] = $version;
+    $controlConfig['apk_update_message'] = $msg;
+    $controlConfig['apk_download_url'] = $url;
+    $controlConfig['apk_update_available'] = $active;
+    $controlConfig['broadcast_message'] = $msg;
+    $controlConfig['updated_at'] = date('Y-m-d H:i:s');
+    file_put_contents($controlFile, json_encode($controlConfig, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+
+    echo json_encode([
+        'status' => 'success',
+        'latestApkVersion' => $version,
+        'apkUpdateAvailable' => $active,
+        'message' => $active
+            ? "Broadcast Update APK v{$version} BERJAYA DIHANTAR! Semua pengguna yang membuka APK akan menerima popup muat turun."
+            : "Notifikasi Broadcast Update APK telah dimatikan."
+    ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+// 5. Arahan: Kemaskini Senarai Ciri / Option Pakej (Admin Package Feature Toggle Matrix)
+if ($action === 'update_plan_features') {
+    $planKey = trim($data['planKey'] ?? 'plan_rm30');
+    $enabledFeatures = $data['enabledFeatures'] ?? [];
+    if (!is_array($enabledFeatures)) {
+        $enabledFeatures = [];
+    }
+    $customPlanFeatures[$planKey] = array_values($enabledFeatures);
+    writeJsonFile($planFeaturesFile, $customPlanFeatures);
+
+    echo json_encode([
+        'status' => 'success',
+        'planKey' => $planKey,
+        'enabledFeatures' => $customPlanFeatures[$planKey],
+        'message' => "Konfigurasi ciri untuk pakej {$planKey} berjaya dikemaskini dan diselaraskan!"
+    ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+// 6. Arahan: Senarai Semua Pengguna & Status Untuk Paparan Admin
 if ($action === 'get_system_status') {
     $users = readJsonFile($usersFile);
     echo json_encode([
@@ -345,6 +410,11 @@ if ($action === 'get_system_status') {
         'killSwitchActive' => $controlConfig['kill_switch_active'] ?? false,
         'killSwitchMessage' => $controlConfig['kill_switch_message'] ?? '',
         'broadcastMessage' => $controlConfig['broadcast_message'] ?? '',
+        'latestApkVersion' => $controlConfig['latest_apk_version'] ?? '2.5',
+        'apkUpdateAvailable' => (bool)($controlConfig['apk_update_available'] ?? false),
+        'apkUpdateMessage' => $controlConfig['apk_update_message'] ?? '',
+        'apkDownloadUrl' => $controlConfig['apk_download_url'] ?? 'https://www.psycotimexpro.my/training-management/index.php#download-apk',
+        'planFeatures' => $customPlanFeatures,
         'totalUsers' => count($users),
         'users' => $users
     ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
