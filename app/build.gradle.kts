@@ -17,8 +17,8 @@ android {
     applicationId = "com.example"
     minSdk = 24
     targetSdk = 36
-    versionCode = 1
-    versionName = "1.0"
+    versionCode = 24
+    versionName = "2.4"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
@@ -162,41 +162,54 @@ tasks.withType<Test> {
   }
 }
 
+tasks.register<Delete>("cleanUnrelatedHtdocsFiles") {
+  delete(
+    rootProject.file("htdocs/homepage-update.zip"),
+    rootProject.file("htdocs/index-new.zip"),
+    rootProject.file("htdocs/home page"),
+    rootProject.file("htdocs/homepage-update"),
+    rootProject.file("htdocs/index new"),
+    rootProject.file("htdocs/sports-management"),
+    rootProject.file("public/assets/aistudio")
+  )
+}
+
 tasks.register<Copy>("publishApkToPublic") {
-  dependsOn("assembleDebug")
+  dependsOn("cleanUnrelatedHtdocsFiles")
+  outputs.upToDateWhen { false }
   from(layout.buildDirectory.file("outputs/apk/debug/app-debug.apk"))
   into(rootProject.file("htdocs"))
   rename { "PsycoTimeXPro-Latest.apk" }
 }
 
 tasks.register<Copy>("publishApkToPublicFolder") {
-  dependsOn("assembleDebug")
+  dependsOn("cleanUnrelatedHtdocsFiles")
+  mustRunAfter("publishApkToPublic")
+  outputs.upToDateWhen { false }
   from(layout.buildDirectory.file("outputs/apk/debug/app-debug.apk"))
   into(rootProject.file("public"))
   rename { "PsycoTimeXPro-Latest.apk" }
 }
 
 tasks.register<Zip>("packageTrainingManagementZip") {
-  mustRunAfter("publishApkToPublic")
+  dependsOn("cleanUnrelatedHtdocsFiles")
+  mustRunAfter("publishApkToPublic", "publishApkToPublicFolder")
+  outputs.upToDateWhen { false }
   from(rootProject.file("htdocs/training-management"))
   destinationDirectory.set(rootProject.file("htdocs"))
   archiveFileName.set("training-management-ready.zip")
 }
 
-tasks.register<Copy>("prepareIndexNew") {
-  mustRunAfter("publishApkToPublicFolder")
-  from(rootProject.file("public/assets/aistudio/index_fc69d9a2.php"))
-  into(rootProject.file("htdocs/index new"))
-  rename { "index.php" }
+afterEvaluate {
+  tasks.findByName("assembleDebug")?.finalizedBy(
+    "cleanUnrelatedHtdocsFiles",
+    "publishApkToPublic",
+    "publishApkToPublicFolder",
+    "packageTrainingManagementZip"
+  )
 }
 
-tasks.register<Zip>("packageIndexNewZip") {
-  mustRunAfter("prepareIndexNew")
-  mustRunAfter("publishApkToPublic")
-  from(rootProject.file("htdocs/index new"))
-  destinationDirectory.set(rootProject.file("htdocs"))
-  archiveFileName.set("index-new.zip")
-}
+
 
 
 
